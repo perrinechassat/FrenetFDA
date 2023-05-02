@@ -4,7 +4,7 @@ from scipy.integrate import cumtrapz
 from FrenetFDA.utils.smoothing_utils import LocalPolynomialSmoothing
 
     
-def compute_arc_length(Y, time, scale=True, smooth=True, smoothing_param=0.01, CV_optimization={"flag":False, "h_grid":np.array([]), "K":10}):
+def compute_arc_length(Y, time, scale=True, smooth=True, smoothing_param=None, CV_optimization={"flag":False, "h_grid":np.array([]), "K":10}):
 
     """ 
             Compute the arc length function and its derivative. (In all case the attribute "grid_arc_s" is scaled.)
@@ -19,7 +19,7 @@ def compute_arc_length(Y, time, scale=True, smooth=True, smoothing_param=0.01, C
     time = (time - time.min()) / (time.max() - time.min())
     
     if smooth==True:
-        derivatives = compute_derivatives(Y, time, deg=4, h=smoothing_param, CV_optimization_h=CV_optimization)
+        derivatives, h_opt = compute_derivatives(Y, time, deg=3, h=smoothing_param, CV_optimization_h=CV_optimization)
         sdot = np.linalg.norm(derivatives[1], axis=1)
     else:
         Ydot = np.gradient(Y, 1./N)
@@ -64,9 +64,10 @@ def compute_derivatives(Y, time, deg, h=None, CV_optimization_h={"flag":False, "
                 h_opt, err_h = LP.grid_search_CV_optimization_bandwidth(Y, time, time, h_grid, K_split=CV_optimization_h["K"])
                 derivatives = LP.fit(Y, time, time, h_opt)
     else:   
+        h_opt = h
         derivatives = LocalPolynomialSmoothing(deg).fit(Y, time, time, h)
 
-    return derivatives
+    return derivatives, h_opt
 
 
 

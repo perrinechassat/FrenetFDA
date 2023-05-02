@@ -23,7 +23,6 @@ def adaptive_kernel(t, delta):
     return np.power((1 - np.power((np.abs(t)/delta),3)), 3)
 
 
-
 def compute_weight_neighbors_local_smoothing(grid_in, grid_out, h, adaptive=False):
 
     neighbor_obs = []
@@ -216,14 +215,19 @@ def grid_search_GCV_optimization_Bspline_hyperparameters(dim, grid, data_init, n
     if N_param_smoothing==0:
         penalization = False
         N_param_smoothing = 1
-        regularization_parameter_list = np.array([0])
+        regularization_parameter_list = np.zeros((1,dim))
         print('Begin grid search optimisation with', N_param_basis, 'combinations of parameters...')
     else:
         penalization = True
         print('Begin grid search optimisation with', N_param_basis*N_param_smoothing, 'combinations of parameters...')
 
+    if regularization_parameter_list.ndim == 1:
+        regularization_parameter_list = np.stack([regularization_parameter_list for i in range(dim)], axis=-1)
+    if nb_basis_list.ndim == 1:
+        nb_basis_list = np.stack([nb_basis_list for i in range(dim)], axis=-1)
+    
     V = np.expand_dims(grid, 1)
-    tab_GCV_scores = np.zeros((N_param_basis, N_param_smoothing))
+    tab_GCV_scores = np.zeros((N_param_basis, N_param_smoothing, dim))
 
     for i in range(N_param_basis):
         nb_basis = nb_basis_list[i]
@@ -238,9 +242,12 @@ def grid_search_GCV_optimization_Bspline_hyperparameters(dim, grid, data_init, n
             for j in range(N_param_smoothing):
                 tab_GCV_scores[i,j] = Bspline_repres.GCV_score(basis_matrix, data, weights_matrix, regularization_parameter_list[j])
 
-    ind = np.unravel_index(np.argmin(tab_GCV_scores, axis=None), tab_GCV_scores.shape)
-    nb_basis_opt = nb_basis_list[ind[0]]
-    regularization_parameter_opt = regularization_parameter_list[ind[1]]
+    nb_basis_opt = np.zeros((dim))
+    regularization_parameter_opt = np.zeros((dim))
+    for i in range(dim):
+        ind = np.unravel_index(np.argmin(tab_GCV_scores[:,:,i], axis=None), tab_GCV_scores[:,:,i].shape)
+        nb_basis_opt[i] = nb_basis_list[ind[0],i]
+        regularization_parameter_opt[i] = regularization_parameter_list[ind[1],i]
     
     print('Optimal parameters selected by grid search optimisation: ', 'nb_basis =', nb_basis_opt, 'regularization_parameter =', regularization_parameter_opt)
     return nb_basis_opt, regularization_parameter_opt, tab_GCV_scores
@@ -287,7 +294,7 @@ class VectorBSplineSmoothing:
         if isinstance(nb_basis, int) or isinstance(nb_basis, float) or isinstance(nb_basis, np.int64) or isinstance(nb_basis, np.int32):
             self.nb_basis = np.repeat(int(nb_basis), dim)
         elif len(nb_basis)==dim:
-            self.nb_basis = nb_basis
+            self.nb_basis = nb_basis.astype(int)
         else:
             raise Exception("Invalide value of nb_basis.")
 
@@ -343,8 +350,9 @@ class VectorBSplineSmoothing:
         SSE = np.diag(np.reshape(err @ weights_matrix, (-1,self.dim)).T @ (np.reshape(basis_matrix @ coefs, (-1,self.dim)) - data))
         df_lbda = basis_matrix @ np.linalg.inv(basis_matrix.T @ weights_matrix @ basis_matrix + regularization_parameter_matrix @ self.penalty_matrix) @ basis_matrix.T @ weights_matrix
         df_lbda = np.sum(np.reshape(np.diag(df_lbda), (-1,self.dim)), axis=0)
-        GCV_score = np.sum(np.array([(N*SSE[i])/((N - df_lbda[i])**2) for i in range(self.dim)]))
-        
+        GCV_score = np.array([(N*SSE[i])/((N - df_lbda[i])**2) for i in range(self.dim)])
+        # GCV_score = np.sum(np.array([(N*SSE[i])/((N - df_lbda[i])**2) for i in range(self.dim)]))
+    
         return GCV_score
     
 
@@ -403,19 +411,28 @@ class VectorBSplineSmoothing:
         data, weights_matrix = self.check_data(grid, data, weights)
 
         n_param = len(regularization_parameter_list)
+        if regularization_parameter_list.ndim==1:
+            regularization_parameter_list = np.stack([regularization_parameter_list for i in range(self.dim)], axis=-1)
         print('Begin grid search optimisation with', n_param, 'combinations of parameters...')
 
         if parallel:
             func = lambda lbda: self.GCV_score(basis_matrix, data, weights_matrix, lbda)
             out = Parallel(n_jobs=-1)(delayed(func)(regularization_parameter_list[i]) for i in range(n_param))
-            ind = np.argmin(out, axis=0)
-            res = regularization_parameter_list[ind]
+            res = np.zeros((self.dim))
+            for i in range(self.dim):
+                ind = np.argmin(out[:,i])
+                res[i] = regularization_parameter_list[ind][i]
+            # ind = np.argmin(out, axis=0)
+            # res = regularization_parameter_list[ind]
         else:
-            GCV_scores = np.zeros((n_param))
+            GCV_scores = np.zeros((n_param, self.dim))
             for i in range(n_param):
                 GCV_scores[i] = self.GCV_score(basis_matrix, data, weights_matrix, regularization_parameter_list[i])
-            ind = np.argmin(GCV_scores)
-            res = regularization_parameter_list[ind] 
+            res = np.zeros((self.dim))
+            for i in range(self.dim):
+                ind = np.argmin(GCV_scores[:,i])
+                res[i] = regularization_parameter_list[ind][i]
+            # res = regularization_parameter_list[ind] 
         
         print('Optimal regularization parameter selected by grid search optimisation: ', res)
         return res

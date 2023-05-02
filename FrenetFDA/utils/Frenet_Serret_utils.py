@@ -1,6 +1,9 @@
 import numpy as np
 from scipy.integrate import solve_ivp
 from fdasrsf import curve_functions as cf
+from FrenetFDA.utils.Lie_group.SE3_utils import SE3
+from scipy.linalg import block_diag
+
 
 def solve_FrenetSerret_ODE_SE(theta, t_eval, Z0=None,  method='Radau'):
     N, dim = theta(t_eval).shape
@@ -82,3 +85,105 @@ def centering(X):
     cent = -cf.calculatecentroid(X.T)
     X = X + np.tile(cent,(N,1))
     return X
+
+def Euclidean_dist_cent_rot(Y, X):
+    Y_cent = centering(Y)
+    X_cent = centering(X)
+    new_X, R = find_best_rotation(Y_cent, X_cent)
+    dist = np.linalg.norm((Y_cent - new_X))**2
+    return dist 
+
+
+def solve_FrenetSerret_SDE_SE3(theta, Sigma, L, t_eval, Z0=None):
+    """
+        Solve the Frenet-Serret SDE $ dZ(s) = Z(s)(w_\theta(s)ds + LdB(s))^\wedge $ 
+    """
+    N, dim = theta(t_eval).shape
+    if Z0 is None:
+        Z0 = np.eye(dim+2)
+    Z = np.zeros((N, dim+2, dim+2))
+    Z[0] = Z0
+    for i in range(1,N):
+        delta_t = t_eval[i]-t_eval[i-1]
+        Z[i] = Z[i-1]@SE3.exp(delta_t*np.array([theta(t_eval[i-1])[1], 0, theta(t_eval[i-1])[0], 1, 0, 0]) + np.sqrt(delta_t)*L @ np.random.multivariate_normal(np.zeros(2), Sigma(t_eval[i-1])))
+    return Z 
+
+
+def generate_Frenet_state_GP(theta, Sigma, L, t_eval, mu0, P0, method='covariance'):
+    mu_Z = solve_FrenetSerret_ODE_SE(theta, t_eval, Z0=mu0)
+    if method=='covariance':
+        P_mat_full, P = solve_FrenetSerret_SDE_full_cov_matrix(theta, Sigma, L, t_eval, P0)
+        xi_arr = np.random.multivariate_normal(mean=np.zeros(len(P_mat_full)), cov=P_mat_full)
+        xi_arr = np.reshape(xi_arr, (len(t_eval),P0.shape[0]))
+        Z = np.zeros((len(t_eval),mu0.shape[0],mu0.shape[0]))
+        for i in range(len(t_eval)):
+            Z[i] = mu_Z[i]@SE3.exp(-xi_arr[i])
+    else:
+        xi_arr = solve_FrenetSerret_SDE_linearized(theta, Sigma, L, t_eval, P0) 
+        Z = np.zeros((len(t_eval),mu0.shape[0],mu0.shape[0]))
+        for i in range(len(t_eval)):
+            Z[i] = mu_Z[i]@SE3.exp(-xi_arr[i])
+    return Z
+
+
+
+def solve_FrenetSerret_SDE_linearized(theta, Sigma, L, t_eval, P0):
+    xi0 = np.random.multivariate_normal(np.zeros(P0.shape[0]), P0)
+    N = len(t_eval)
+    xi = np.zeros((N,xi0.shape[0]))
+    xi[0] = xi0
+    for i in range(1,N):
+        delta_t = t_eval[i]-t_eval[i-1]
+        xi[i] = -delta_t*SE3.Ad(np.array([theta(t_eval[i-1])[1], 0, theta(t_eval[i-1])[0], 1, 0, 0]))@xi[i-1] - np.sqrt(delta_t)*L@np.random.multivariate_normal(np.zeros(2), Sigma(t_eval[i-1]))
+    return xi
+
+
+def solve_FrenetSerret_SDE_cov_matrix(theta, Sigma, L, t_eval, P0):
+    dim_g = P0.shape[0]
+    F =  lambda s: -SE3.Ad(np.array([theta(s)[1], 0*s, theta(s)[0], 1+0*s, 0*s, 0*s]))
+    ode_func = lambda t,p: (np.matmul(F(t),p.reshape(dim_g, dim_g)) + np.matmul(p.reshape(dim_g, dim_g),F(t).T) + L @ Sigma(t) @ L.T).flatten()
+    sol = solve_ivp(ode_func, t_span=(t_eval[0], t_eval[-1]), y0=P0.flatten(), t_eval=t_eval) #, method='Radau')
+    P = sol.y.reshape(dim_g, dim_g, len(t_eval))
+    P = np.moveaxis(P, 2, 0)
+    return P 
+
+
+def solve_FrenetSerret_SDE_full_cov_matrix(theta, Sigma, L, t_eval, P0):
+    """
+        Attention only in dimension 3.
+
+    """
+    N = len(t_eval)
+    N, dim_theta = theta(t_eval).shape
+    n = dim_theta+1
+    dim_g = int((1/2)*n*(n+1))
+    rho = np.zeros((n,1))
+    rho[0,0] = 1
+    A_theta = lambda s: np.vstack((np.hstack(((- np.diag(theta(s), 1) + np.diag(theta(s), -1)), rho)), np.zeros(n+1)))
+    ode_U = lambda u,p: (np.matmul(-SE3.Ad(SE3.vee(A_theta(u))),p.reshape(dim_g,dim_g))).flatten()
+    sol_U = solve_ivp(ode_U, t_span=(0,1), y0=np.eye(dim_g).flatten(), t_eval=t_eval)
+    U_sol_phi = sol_U.y.reshape(dim_g,dim_g,len(t_eval))
+    C = np.zeros((dim_g*N,dim_g*N))
+    for i in range(N):
+        for j in range(i+1):
+            if i==j:
+                C[i*dim_g:(i+1)*dim_g,j*dim_g:(j+1)*dim_g] = np.eye(dim_g)
+            else:
+                C[i*dim_g:(i+1)*dim_g,j*dim_g:(j+1)*dim_g] = U_sol_phi[:,:,i]@np.linalg.inv(U_sol_phi[:,:,j])   
+    W_appox = np.zeros(((N),dim_g,dim_g))
+    W_appox[0] = P0
+    for i in range(1,N):
+        K_pts = 5
+        x = np.linspace(t_eval[i-1],t_eval[i],K_pts)
+        w_to_int = np.zeros((dim_g,dim_g,K_pts))
+        for k in range(K_pts):
+            phi = SE3.Ad_group(SE3.exp(-(t_eval[i]-x[k])*SE3.vee(A_theta((t_eval[i]+x[k])/2))))
+            w_to_int[:,:,k] = phi @ L @ Sigma(x[k]) @ L.T @ phi.T
+        W_appox[i] = np.trapz(w_to_int, x=x)
+    W_mat = block_diag(*W_appox)
+    P_mat = C@W_mat@C.T
+    P = np.reshape(P_mat, (len(t_eval),dim_g,len(t_eval),dim_g))
+    P = np.moveaxis(P, (1,2), (2,1))
+    return P_mat, P
+
+

@@ -28,6 +28,7 @@ class ApproxFrenetODE:
             self.dim = dim-1
             self.Q = Z[:,:self.dim,:self.dim]
             self.Z = Z
+        self.dim_theta = len(np.diag(np.eye(self.dim), k=1))
         self.__raw_estimates()
 
 
@@ -38,7 +39,7 @@ class ApproxFrenetODE:
     def __raw_estimates(self):
         grid_v = (self.grid[1:] + self.grid[:-1])/2
         grid_u = self.grid[1:] - self.grid[:-1]
-        raw_theta = np.zeros((self.N-1, self.dim-1))
+        raw_theta = np.zeros((self.N-1, self.dim_theta))
         for i in range(self.N-1):
             obs_vi = -(1/grid_u[i])*SO3.log(self.Q[i+1].T @ self.Q[i])
             raw_theta[i,0] = obs_vi[2]
@@ -52,7 +53,7 @@ class ApproxFrenetODE:
             penalization = False
         else:
             penalization = True
-        Bspline_repres = VectorBSplineSmoothing(self.dim-1, nb_basis, domain_range=(self.grid[0], self.grid[-1]), order=order, penalization=penalization)
+        Bspline_repres = VectorBSplineSmoothing(self.dim_theta, nb_basis, domain_range=(self.grid[0], self.grid[-1]), order=order, penalization=penalization)
         Bspline_repres.fit(self.raw_grid, self.raw_data, regularization_parameter=regularization_parameter)
         cf_limits = Bspline_repres.compute_confidence_limits(0.95)
         return Bspline_repres
@@ -70,7 +71,7 @@ class ApproxFrenetODE:
             Optimization of smoothing parameters: number of basis and regularization parameter.
 
         """
-        nb_basis_opt, regularization_parameter_opt, tab_GCV_scores = grid_search_GCV_optimization_Bspline_hyperparameters(self.dim-1, self.raw_grid, self.raw_data, nb_basis_list, regularization_parameter_list, order=order, parallel=parallel)
+        nb_basis_opt, regularization_parameter_opt, tab_GCV_scores = grid_search_GCV_optimization_Bspline_hyperparameters(self.dim_theta, self.raw_grid, self.raw_data, nb_basis_list, regularization_parameter_list, order=order, parallel=parallel)
         
         return nb_basis_opt, regularization_parameter_opt, tab_GCV_scores
 
@@ -96,6 +97,7 @@ class LocalApproxFrenetODE:
             self.dim = dim-1
             self.Q = Z[:,:self.dim,:self.dim]
             self.Z = Z
+        self.dim_theta = len(np.diag(np.eye(self.dim), k=1))
         self.adaptive_ind = adaptive
 
     def raw_estimates(self, h):
@@ -184,7 +186,7 @@ class LocalApproxFrenetODE:
             penalization = False
         else:
             penalization = True
-        Bspline_repres = VectorBSplineSmoothing(self.dim-1, nb_basis, domain_range=(self.grid[0], self.grid[-1]), order=order, penalization=penalization)
+        Bspline_repres = VectorBSplineSmoothing(self.dim_theta, nb_basis, domain_range=(self.grid[0], self.grid[-1]), order=order, penalization=penalization)
         Bspline_repres.fit(grid_theta, raw_theta, weights=weight_theta, regularization_parameter=regularization_parameter)
         cf_limits = Bspline_repres.compute_confidence_limits(0.95)
         return Bspline_repres
@@ -221,19 +223,24 @@ class LocalApproxFrenetODE:
             penalization = False
             N_param_smoothing = 1
             regularization_parameter_list = np.array([0])
-            print('Begin grid search optimisation with', N_param_basis*N_param_bandwidth, 'combinations of parameters...')
         else:
             penalization = True
-            print('Begin grid search optimisation with', N_param_basis*N_param_smoothing*N_param_bandwidth, 'combinations of parameters...')
+
+        if regularization_parameter_list.ndim == 1:
+            regularization_parameter_list = np.stack([regularization_parameter_list for i in range(self.dim_theta)], axis=-1)
+        if nb_basis_list.ndim == 1:
+            nb_basis_list = np.stack([nb_basis_list for i in range(self.dim_theta)], axis=-1)
 
 
         if method=='1':
             
+            print('Begin grid search optimisation with', N_param_basis*N_param_smoothing*N_param_bandwidth, 'combinations of parameters...')
+
             error_bandwidth = np.zeros(N_param_bandwidth)
-            tab_GCV_scores = np.zeros((N_param_basis, N_param_bandwidth, N_param_smoothing))
+            tab_GCV_scores = np.zeros((N_param_basis, N_param_bandwidth, N_param_smoothing, self.dim_theta))
             for i in range(N_param_basis):
                 nb_basis = nb_basis_list[i]
-                Bspline_repres = VectorBSplineSmoothing(self.dim-1, nb_basis, domain_range=(self.grid[0], self.grid[-1]), order=order, penalization=penalization)
+                Bspline_repres = VectorBSplineSmoothing(self.dim_theta, nb_basis, domain_range=(self.grid[0], self.grid[-1]), order=order, penalization=penalization)
                 for j in range(N_param_bandwidth):
                     grid_theta, raw_theta, weight_theta = self.raw_estimates(bandwidth_list[j])
                     V = np.expand_dims(grid_theta, 1)
@@ -243,10 +250,13 @@ class LocalApproxFrenetODE:
                         tab_GCV_scores[i,j,k] = Bspline_repres.GCV_score(basis_matrix, data, weights_matrix, regularization_parameter_list[k])
             for j in range(N_param_bandwidth):
                 grid_theta, raw_theta, weight_theta = self.raw_estimates(bandwidth_list[j])
-                ind = np.unravel_index(np.argmin(tab_GCV_scores[:,j,:], axis=None), tab_GCV_scores[:,j,:].shape)
-                nb_basis_opt = nb_basis_list[ind[0]]
-                regularization_parameter_opt = regularization_parameter_list[ind[1]]
-                Bspline_repres = VectorBSplineSmoothing(self.dim-1, nb_basis_opt, domain_range=(self.grid[0], self.grid[-1]), order=order, penalization=penalization)
+                nb_basis_opt = np.zeros((self.dim_theta))
+                regularization_parameter_opt = np.zeros((self.dim_theta))
+                for i in range(self.dim_theta):
+                    ind = np.unravel_index(np.argmin(tab_GCV_scores[:,j,:,i], axis=None), tab_GCV_scores[:,j,:,i].shape)
+                    nb_basis_opt[i] = nb_basis_list[ind[0],i]
+                    regularization_parameter_opt[i] = regularization_parameter_list[ind[1],i]
+                Bspline_repres = VectorBSplineSmoothing(self.dim_theta, nb_basis_opt, domain_range=(self.grid[0], self.grid[-1]), order=order, penalization=penalization)
                 Bspline_repres.fit(grid_theta, raw_theta, weights=weight_theta, regularization_parameter=regularization_parameter_opt)
                 if self.Z is None:
                     Q_pred = solve_FrenetSerret_ODE_SO(Bspline_repres.evaluate, self.grid, self.Q[0])
@@ -255,60 +265,53 @@ class LocalApproxFrenetODE:
                     Z_pred = solve_FrenetSerret_ODE_SE(Bspline_repres.evaluate, self.grid, self.Z[0])
                     error_bandwidth[j] = np.mean(SE3.geodesic_distance(self.Z, Z_pred))
 
-            ind = np.argmin(error_bandwidth)
-            h_opt = bandwidth_list[ind]
-            ind = np.unravel_index(np.argmin(tab_GCV_scores[:,ind,:], axis=None), tab_GCV_scores[:,ind,:].shape)
-            nb_basis_opt = nb_basis_list[ind[0]]
-            regularization_parameter_opt = regularization_parameter_list[ind[1]]
+            # ind = np.argmin(error_bandwidth)
+            # h_opt = bandwidth_list[ind]
+            # ind = np.unravel_index(np.argmin(tab_GCV_scores[:,ind,:], axis=None), tab_GCV_scores[:,ind,:].shape)
+            # nb_basis_opt = nb_basis_list[ind[0]]
+            # regularization_parameter_opt = regularization_parameter_list[ind[1]]
+
+            ind_h = np.argmin(error_bandwidth)
+            h_opt = bandwidth_list[ind_h]
+            nb_basis_opt = np.zeros((self.dim_theta))
+            regularization_parameter_opt = np.zeros((self.dim_theta))
+            for i in range(self.dim_theta):
+                ind = np.unravel_index(np.argmin(tab_GCV_scores[:,ind_h,:,i], axis=None), tab_GCV_scores[:,ind_h,:,i].shape)
+                nb_basis_opt[i] = nb_basis_list[ind[0],i]
+                regularization_parameter_opt[i] = regularization_parameter_list[ind[1],i]
 
             print('Optimal parameters selected by grid search optimisation: ', 'bandwidth =', h_opt, 'nb_basis =', nb_basis_opt, 'regularization_parameter =', regularization_parameter_opt)
             return h_opt, nb_basis_opt, regularization_parameter_opt, tab_GCV_scores, error_bandwidth
 
 
-        if method=='3':
-
-            error_bandwidth = np.zeros(N_param_bandwidth)
-            optimal_lbda_nb_basis = np.empty((N_param_bandwidth), dtype=object)
-            tab_GCV_scores_bandwidth = np.zeros((N_param_bandwidth, N_param_basis, N_param_smoothing))
-            for i in range(N_param_bandwidth):
-                h = bandwidth_list[i]
-                grid_theta, raw_theta, weight_theta = self.raw_estimates(h)
-                nb_basis_opt, regularization_parameter_opt, tab_GCV_scores_bandwidth[i] = grid_search_GCV_optimization_Bspline_hyperparameters(self.dim-1, grid_theta, raw_theta, nb_basis_list, regularization_parameter_list, order=order, weights=weight_theta, parallel=parallel)
-                optimal_lbda_nb_basis[i] = np.array([regularization_parameter_opt, nb_basis_opt])
-                Bspline_repres = VectorBSplineSmoothing(self.dim-1, nb_basis_opt, domain_range=(self.grid[0], self.grid[-1]), order=order, penalization=penalization)
-                Bspline_repres.fit(grid_theta, raw_theta, weights=weight_theta, regularization_parameter=regularization_parameter_opt)
-                if self.Z is None:
-                    Q_pred = solve_FrenetSerret_ODE_SO(Bspline_repres.evaluate, self.grid, self.Q[0])
-                    error_bandwidth[i] = np.mean(SO3.geodesic_distance(self.Q, Q_pred))
-                else:
-                    Z_pred = solve_FrenetSerret_ODE_SE(Bspline_repres.evaluate, self.grid, self.Z[0])
-                    error_bandwidth[i] = np.mean(SE3.geodesic_distance(self.Z, Z_pred))
-            ind = np.argmin(error_bandwidth)
-            h_opt = bandwidth_list[ind]
-            arr_opt = optimal_lbda_nb_basis[ind]
-            regularization_parameter_opt = arr_opt[0]
-            nb_basis_opt = arr_opt[1]
-
-            print('Optimal parameters selected by grid search optimisation: ', 'bandwidth =', h_opt, 'nb_basis =', nb_basis_opt, 'regularization_parameter =', regularization_parameter_opt)
-            return h_opt, nb_basis_opt, regularization_parameter_opt, tab_GCV_scores_bandwidth, error_bandwidth
-        
-
         elif method=='2':
-                
+            
+            regularization_parameter_list = np.array(np.meshgrid(*regularization_parameter_list.T)).reshape((2,-1))
+            regularization_parameter_list = np.moveaxis(regularization_parameter_list, 0,1)
+            nb_basis_list = np.array(np.meshgrid(*nb_basis_list.T)).reshape((2,-1))
+            nb_basis_list = np.moveaxis(nb_basis_list, 0,1)
+
+            N_param_basis = len(nb_basis_list)
+            N_param_smoothing = len(regularization_parameter_list)
+            N_param_bandwidth = len(bandwidth_list)
+
+            print('Begin grid search optimisation with', N_param_basis*N_param_smoothing*N_param_bandwidth, 'combinations of parameters...')
+
             kf = KFold(n_splits=n_splits, shuffle=True)
             grid_split = self.grid[1:-1]
 
             CV_error_tab = np.zeros((N_param_basis, N_param_bandwidth, N_param_smoothing))
             for i in range(N_param_basis):
                 nb_basis = nb_basis_list[i]
-                Bspline_repres = VectorBSplineSmoothing(self.dim-1, nb_basis, domain_range=(self.grid[0], self.grid[-1]), order=order, penalization=penalization)
+                Bspline_repres = VectorBSplineSmoothing(self.dim_theta, nb_basis, domain_range=(self.grid[0], self.grid[-1]), order=order, penalization=penalization)
                 for j in range(N_param_bandwidth):
                     h = bandwidth_list[j]
                     for k in range(N_param_smoothing):
                         lbda = regularization_parameter_list[k]
                         print('nb_basis:', nb_basis, 'h:', h, 'lbda:', lbda)
                         if parallel:
-                            CV_err = Parallel(n_jobs=10)(delayed(self.__step_cross_val)(train_index, test_index, h, lbda, Bspline_repres) for train_index, test_index in kf.split(grid_split))
+                            func = lambda train_ind, test_ind : self.__step_cross_val(train_ind, test_ind, h, lbda, Bspline_repres)
+                            CV_err = Parallel(n_jobs=10)(delayed(func)(train_index, test_index) for train_index, test_index in kf.split(grid_split))
                             CV_error_tab[i,j,k] = np.mean(CV_err)
                         else:
                             CV_err = []
@@ -326,8 +329,8 @@ class LocalApproxFrenetODE:
 
     
 
-    def bayesian_optimization_hyperparameters(self):
-        pass
+    # def bayesian_optimization_hyperparameters(self):
+    #     pass
 
     
     

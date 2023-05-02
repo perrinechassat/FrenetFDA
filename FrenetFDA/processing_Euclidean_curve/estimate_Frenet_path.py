@@ -84,7 +84,7 @@ class GramSchmidtOrthogonalization:
 class ConstrainedLocalPolynomialRegression:
 
 
-    def __init__(self, Y, arc_length, adaptative=True, deg_polynomial=3, ibound=0):
+    def __init__(self, Y, arc_length, adaptative=False, deg_polynomial=3, ibound=0):
         self.N, self.dim = Y.shape
         if self.dim < 2:
             raise Exception("The Frenet Serret framework is defined only for curves in R^d with d >= 2.")
@@ -106,14 +106,14 @@ class ConstrainedLocalPolynomialRegression:
             reparam_grid = self.grid_arc_s
         # Q_LP, X_LP, vkappa, Param, Param0, vparam, success = self.__constrained_local_polynomial_regression(self.Y, self.grid_arc_s, reparam_grid, h)
         Q_LP, X_LP = self.__constrained_local_polynomial_regression(self.Y, self.grid_arc_s, reparam_grid, h)
-        Z = np.concatenate((Q_LP, X_LP[:,:,np.newaxis]), axis=-1)
+        Z = np.concatenate((Q_LP, X_LP[:,:,np.newaxis]), axis=-1) 
         vec = np.zeros((len(reparam_grid),1,4))
         vec[:,:,3] = np.ones((len(reparam_grid),1))
         self.Z = np.concatenate((Z, vec), axis=1)
         self.Q = Q_LP
         self.X = X_LP
 
-        return Z, Q_LP, X_LP
+        return self.Z, self.Q, self.X
     
 
     def grid_search_CV_optimization_bandwidth(self, bandwidth_grid=np.array([]), K_split=10):
@@ -154,11 +154,11 @@ class ConstrainedLocalPolynomialRegression:
                vt    - input grid
                h     - scalar
                p     - degree of polynomial (defaul = 3)
-               iflag - [1,1] for both constraints
+               iflag - [1,1] for both constraints 
                    [1,0] for |b1|=1
                    [0,1] for <b1,b2>=0
-               ibound - 1 for boundary correction
-                        0 by default
+               ibound - 1 for boundary correction 
+                        0 by default 
             Outputs:
                 Q
                 X
