@@ -85,7 +85,7 @@ class FrenetStateSpace:
         time_end = time.time()
         self.nb_iterations = k
         self.duration = time_end - time_init
-        print('End. \n Number of iterations:', k, ', total duration:', self.duration, ' seconds.')
+        print('End expectation maximization algo. \n Number of iterations:', k, ', total duration:', self.duration, ' seconds.')
 
 
     def E_step(self):
@@ -117,7 +117,7 @@ class FrenetStateSpace:
         self.regularization_parameter, self.regularization_parameter_matrix = self.Bspline_decomp.check_regularization_parameter(self.regularization_parameter)
         # Optimization of theta given lambda
         self.coefs, self.Sigma, self.mat_weights = self.opti_coefs_and_Sigma(tol, max_iter, self.regularization_parameter_matrix, model_Sigma)
-        self.plot_theta()
+        # self.plot_theta()
         self.P0 = self.P[0]
         self.mu0 = self.Z[0]
 
@@ -398,7 +398,8 @@ class FrenetStateSpace:
         self.tab_sigma = []
         self.tab_theta = []
         self.tab_Gamma = []
-
+        self.tab_P0 = []
+        self.tab_mu0 = []
 
     def tab_increment(self, rel_error=None, val_expected_loglikelihood=None):
         if rel_error is not None:
@@ -412,12 +413,17 @@ class FrenetStateSpace:
         if hasattr(self, "Q"):
             self.tab_Q.append(self.Q)
         if hasattr(self, "Sigma"):
-            self.tab_sigma.append(np.array([self.Sigma(vi) for vi in self.v]))
+            # self.tab_sigma.append(np.array([self.Sigma(vi) for vi in self.v]))
+            self.tab_sigma.append(np.sqrt(np.trace(self.Sigma(self.v[1]))/2))
         if hasattr(self, "theta"):
             self.tab_theta.append(self.theta(self.v))
-        if hasattr(self, "W"):
+        if hasattr(self, "Gamma"):
             self.tab_Gamma.append(self.Gamma)
-
+        if hasattr(self, "P0"):
+            self.tab_P0.append(self.P0)
+        if hasattr(self, "mu0"):
+            self.tab_mu0.append(self.mu0)
+        
 
     def save_tab_results(self, filename):
         dic = {"tab_rel_error": self.tab_rel_error, "tab_expected_loglikelihood": self.tab_expected_loglikelihood, "tab_Z": self.tab_Z, "tab_X": self.tab_X, 

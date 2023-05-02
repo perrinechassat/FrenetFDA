@@ -132,7 +132,7 @@ class LocalPolynomialSmoothing:
                 h_opt = bandwidth_grid[np.where(err_h==np.min(err_h))]
             else:
                 h_opt = bandwidth_grid[np.where(err_h==np.min(err_h))][0]
-            print('Optimal smoothing parameter h find by cross-validation:', h_opt)
+            # print('Optimal smoothing parameter h find by cross-validation:', h_opt)
             return h_opt, err_h
 
 
@@ -216,10 +216,10 @@ def grid_search_GCV_optimization_Bspline_hyperparameters(dim, grid, data_init, n
         penalization = False
         N_param_smoothing = 1
         regularization_parameter_list = np.zeros((1,dim))
-        print('Begin grid search optimisation with', N_param_basis, 'combinations of parameters...')
+        # print('Begin grid search optimisation with', N_param_basis, 'combinations of parameters...')
     else:
         penalization = True
-        print('Begin grid search optimisation with', N_param_basis*N_param_smoothing, 'combinations of parameters...')
+        # print('Begin grid search optimisation with', N_param_basis*N_param_smoothing, 'combinations of parameters...')
 
     if regularization_parameter_list.ndim == 1:
         regularization_parameter_list = np.stack([regularization_parameter_list for i in range(dim)], axis=-1)
@@ -249,7 +249,7 @@ def grid_search_GCV_optimization_Bspline_hyperparameters(dim, grid, data_init, n
         nb_basis_opt[i] = nb_basis_list[ind[0],i]
         regularization_parameter_opt[i] = regularization_parameter_list[ind[1],i]
     
-    print('Optimal parameters selected by grid search optimisation: ', 'nb_basis =', nb_basis_opt, 'regularization_parameter =', regularization_parameter_opt)
+    # print('Optimal parameters selected by grid search optimisation: ', 'nb_basis =', nb_basis_opt, 'regularization_parameter =', regularization_parameter_opt)
     return nb_basis_opt, regularization_parameter_opt, tab_GCV_scores
 
 
@@ -413,7 +413,7 @@ class VectorBSplineSmoothing:
         n_param = len(regularization_parameter_list)
         if regularization_parameter_list.ndim==1:
             regularization_parameter_list = np.stack([regularization_parameter_list for i in range(self.dim)], axis=-1)
-        print('Begin grid search optimisation with', n_param, 'combinations of parameters...')
+        # print('Begin grid search optimisation with', n_param, 'combinations of parameters...')
 
         if parallel:
             func = lambda lbda: self.GCV_score(basis_matrix, data, weights_matrix, lbda)
@@ -434,7 +434,7 @@ class VectorBSplineSmoothing:
                 res[i] = regularization_parameter_list[ind][i]
             # res = regularization_parameter_list[ind] 
         
-        print('Optimal regularization parameter selected by grid search optimisation: ', res)
+        # print('Optimal regularization parameter selected by grid search optimisation: ', res)
         return res
 
 
@@ -460,7 +460,7 @@ class VectorBSplineSmoothing:
                     n_jobs=-1,            # use all the cores for parallel calculation
                     verbose=verbose)
         x = res.x
-        print('Optimal regularization parameter selected by bayesian optimization: ', x)
+        # print('Optimal regularization parameter selected by bayesian optimization: ', x)
         return x
 
 

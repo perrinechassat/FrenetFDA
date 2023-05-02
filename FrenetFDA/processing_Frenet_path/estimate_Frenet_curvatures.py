@@ -234,7 +234,7 @@ class LocalApproxFrenetODE:
 
         if method=='1':
             
-            print('Begin grid search optimisation with', N_param_basis*N_param_smoothing*N_param_bandwidth, 'combinations of parameters...')
+            # print('Begin grid search optimisation with', N_param_basis*N_param_smoothing*N_param_bandwidth, 'combinations of parameters...')
 
             error_bandwidth = np.zeros(N_param_bandwidth)
             tab_GCV_scores = np.zeros((N_param_basis, N_param_bandwidth, N_param_smoothing, self.dim_theta))
@@ -280,7 +280,7 @@ class LocalApproxFrenetODE:
                 nb_basis_opt[i] = nb_basis_list[ind[0],i]
                 regularization_parameter_opt[i] = regularization_parameter_list[ind[1],i]
 
-            print('Optimal parameters selected by grid search optimisation: ', 'bandwidth =', h_opt, 'nb_basis =', nb_basis_opt, 'regularization_parameter =', regularization_parameter_opt)
+            # print('Optimal parameters selected by grid search optimisation: ', 'bandwidth =', h_opt, 'nb_basis =', nb_basis_opt, 'regularization_parameter =', regularization_parameter_opt)
             return h_opt, nb_basis_opt, regularization_parameter_opt, tab_GCV_scores, error_bandwidth
 
 
@@ -295,7 +295,7 @@ class LocalApproxFrenetODE:
             N_param_smoothing = len(regularization_parameter_list)
             N_param_bandwidth = len(bandwidth_list)
 
-            print('Begin grid search optimisation with', N_param_basis*N_param_smoothing*N_param_bandwidth, 'combinations of parameters...')
+            # print('Begin grid search optimisation with', N_param_basis*N_param_smoothing*N_param_bandwidth, 'combinations of parameters...')
 
             kf = KFold(n_splits=n_splits, shuffle=True)
             grid_split = self.grid[1:-1]
@@ -308,7 +308,7 @@ class LocalApproxFrenetODE:
                     h = bandwidth_list[j]
                     for k in range(N_param_smoothing):
                         lbda = regularization_parameter_list[k]
-                        print('nb_basis:', nb_basis, 'h:', h, 'lbda:', lbda)
+                        # print('nb_basis:', nb_basis, 'h:', h, 'lbda:', lbda)
                         if parallel:
                             func = lambda train_ind, test_ind : self.__step_cross_val(train_ind, test_ind, h, lbda, Bspline_repres)
                             CV_err = Parallel(n_jobs=10)(delayed(func)(train_index, test_index) for train_index, test_index in kf.split(grid_split))
@@ -324,7 +324,7 @@ class LocalApproxFrenetODE:
             h_opt = bandwidth_list[ind[1]]
             regularization_parameter_opt = regularization_parameter_list[ind[2]]
             
-            print('Optimal parameters selected by grid search optimisation: ', 'bandwidth =', h_opt, 'nb_basis =', nb_basis_opt, 'regularization_parameter =', regularization_parameter_opt)
+            # print('Optimal parameters selected by grid search optimisation: ', 'bandwidth =', h_opt, 'nb_basis =', nb_basis_opt, 'regularization_parameter =', regularization_parameter_opt)
             return h_opt, nb_basis_opt, regularization_parameter_opt, CV_error_tab
 
     
