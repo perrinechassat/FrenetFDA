@@ -1,6 +1,10 @@
 import numpy as np
+import os
+import sys
+stderr = sys.stderr
+sys.stderr = open(os.devnull, 'w')
 from geomstats.geometry.special_orthogonal import SpecialOrthogonal
-
+sys.stderr = stderr
 
 class SO3:
     """Rotation matrix in :math:`SO(3)`

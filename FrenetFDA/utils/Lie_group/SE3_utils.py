@@ -1,7 +1,11 @@
 import numpy as np
 from FrenetFDA.utils.Lie_group.SO3_utils import SO3
+import os
+import sys
+stderr = sys.stderr
+sys.stderr = open(os.devnull, 'w')
 from geomstats.geometry.special_euclidean import SpecialEuclidean
-
+sys.stderr = stderr
 
 class SE3:
     """Homogeneous transformation matrix in :math:`SE(3)`.
