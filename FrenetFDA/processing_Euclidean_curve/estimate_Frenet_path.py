@@ -137,7 +137,7 @@ class ConstrainedLocalPolynomialRegression:
                 h_opt = bandwidth_grid[np.where(err_h==np.min(err_h))]
             else:
                 h_opt = bandwidth_grid[np.where(err_h==np.min(err_h))][0]
-            print('Optimal smoothing parameter h find by cross-validation:', h_opt)
+            # print('Optimal smoothing parameter h find by cross-validation:', h_opt)
 
             return h_opt, err_h
     
