@@ -48,15 +48,16 @@ if not os.path.exists(final_directory):
 """ Definition of the true parameters """
 
 ## Theta 
-curv = lambda s : 2*np.cos(2*np.pi*s) + 5
-tors = lambda s : 2*np.sin(2*np.pi*s) + 1
 def theta(s):
-    if isinstance(s, int) or isinstance(s, float):
-        return np.array([curv(s), tors(s)])
-    elif isinstance(s, np.ndarray):
-        return np.vstack((curv(s), tors(s))).T
-    else:
-        raise ValueError('Variable is not a float, a int or a NumPy array.')
+   curv = lambda s : 2*np.cos(2*np.pi*s) + 5
+   tors = lambda s : 2*np.sin(2*np.pi*s) + 1
+   if isinstance(s, int) or isinstance(s, float):
+      return np.array([curv(s), tors(s)])
+   elif isinstance(s, np.ndarray):
+      return np.vstack((curv(s), tors(s))).T
+   else:
+      raise ValueError('Variable is not a float, a int or a NumPy array.')
+   
 arc_length_fct = lambda s: s
 # def warping(s,a):
 #     if np.abs(a)<1e-15:
@@ -117,7 +118,7 @@ print('--------------------- Start scenario 1.1 ---------------------')
 time_init = time.time()
 
 with tqdm(total=N_simu) as pbar:
-   arr_FS_statespace_S1_1 = Parallel(n_jobs=50)(delayed(scenario_1_1)(theta, Sigma, mu0, P0, Gamma, N, arc_length_fct, nb_basis, bandwidth_grid_init, reg_param_grid_init, reg_param_grid_EM, max_iter, tol) for k in range(N_simu))
+   res_S1_1 = Parallel(n_jobs=50)(delayed(scenario_1_1)(theta, Sigma, mu0, P0, Gamma, N, arc_length_fct, nb_basis, bandwidth_grid_init, reg_param_grid_init, reg_param_grid_EM, max_iter, tol) for k in range(N_simu))
    pbar.update()
 
 # arr_FS_statespace_S1_1 = np.empty((N_simu), dtype=object)
@@ -130,7 +131,7 @@ duration = time_end - time_init
 
 filename = filename_base + "scenario_1_1"
 
-dic = {"arr_FS_statespace":arr_FS_statespace_S1_1}
+dic = {"results_S1_1":res_S1_1}
 
 if os.path.isfile(filename):
    print("Le fichier ", filename, " existe déjà.")
@@ -152,7 +153,7 @@ print('--------------------- Start scenario 1.2 ---------------------')
 time_init = time.time()
 
 with tqdm(total=N_simu) as pbar:
-   arr_FS_statespace_S1_2 = Parallel(n_jobs=50)(delayed(scenario_1_2)(theta, Sigma, mu0, P0, Gamma, N, arc_length_fct, nb_basis, bandwidth_grid_init, reg_param_grid_init, reg_param_grid_EM, max_iter, tol) for k in range(N_simu))
+   res_S1_2 = Parallel(n_jobs=50)(delayed(scenario_1_2)(theta, Sigma, mu0, P0, Gamma, N, arc_length_fct, nb_basis, bandwidth_grid_init, reg_param_grid_init, reg_param_grid_EM, max_iter, tol) for k in range(N_simu))
    pbar.update()
 
 time_end = time.time()
@@ -160,7 +161,7 @@ duration = time_end - time_init
 
 filename = filename_base + "scenario_1_2"
 
-dic = {"arr_FS_statespace":arr_FS_statespace_S1_2}
+dic = {"results_S1_2":res_S1_2}
 
 if os.path.isfile(filename):
    print("Le fichier ", filename, " existe déjà.")
@@ -181,7 +182,7 @@ print('--------------------- Start of scenario 1.3 ---------------------')
 time_init = time.time()
 
 with tqdm(total=N_simu) as pbar:
-   arr_FS_statespace_S1_3 = Parallel(n_jobs=50)(delayed(scenario_1_3)(theta, Sigma, mu0, P0, Gamma, N, arc_length_fct, nb_basis, bandwidth_grid_init, reg_param_grid_init, reg_param_grid_EM, max_iter, tol) for k in range(N_simu))
+   res_S1_3 = Parallel(n_jobs=50)(delayed(scenario_1_3)(theta, Sigma, mu0, P0, Gamma, N, arc_length_fct, nb_basis, bandwidth_grid_init, reg_param_grid_init, reg_param_grid_EM, max_iter, tol) for k in range(N_simu))
    pbar.update()
 
 time_end = time.time()
@@ -189,7 +190,7 @@ duration = time_end - time_init
 
 filename = filename_base + "scenario_1_3"
 
-dic = {"arr_FS_statespace":arr_FS_statespace_S1_3}
+dic = {"results_S1_3":res_S1_3}
 
 if os.path.isfile(filename):
    print("Le fichier ", filename, " existe déjà.")
@@ -210,7 +211,7 @@ print('--------------------- Start scenario 1.4 ---------------------')
 time_init = time.time()
 
 with tqdm(total=N_simu) as pbar:
-   arr_FS_statespace_S1_4 = Parallel(n_jobs=50)(delayed(scenario_1_4)(theta, Sigma, mu0, P0, Gamma, N, arc_length_fct, nb_basis, bandwidth_grid_init, reg_param_grid_init, reg_param_grid_EM, max_iter, tol) for k in range(N_simu))
+   res_S1_4 = Parallel(n_jobs=50)(delayed(scenario_1_4)(theta, Sigma, mu0, P0, Gamma, N, arc_length_fct, nb_basis, bandwidth_grid_init, reg_param_grid_init, reg_param_grid_EM, max_iter, tol) for k in range(N_simu))
    pbar.update()
 
 time_end = time.time()
@@ -218,7 +219,7 @@ duration = time_end - time_init
 
 filename = filename_base + "scenario_1_4"
 
-dic = {"arr_FS_statespace":arr_FS_statespace_S1_4}
+dic = {"results_S1_4":res_S1_4}
 
 if os.path.isfile(filename):
    print("Le fichier ", filename, " existe déjà.")
@@ -239,7 +240,7 @@ print('--------------------- Start scenario 1.5 ---------------------')
 time_init = time.time()
 
 with tqdm(total=N_simu) as pbar:
-   arr_FS_statespace_S1_5 = Parallel(n_jobs=50)(delayed(scenario_1_5)(theta, Sigma, mu0, P0, Gamma, N, arc_length_fct, nb_basis, bandwidth_grid_init, reg_param_grid_init, reg_param_grid_EM, max_iter, tol) for k in range(N_simu))
+   res_S1_5 = Parallel(n_jobs=50)(delayed(scenario_1_5)(theta, Sigma, mu0, P0, Gamma, N, arc_length_fct, nb_basis, bandwidth_grid_init, reg_param_grid_init, reg_param_grid_EM, max_iter, tol) for k in range(N_simu))
    pbar.update()
 
 time_end = time.time()
@@ -247,7 +248,7 @@ duration = time_end - time_init
 
 filename = filename_base + "scenario_1_5"
 
-dic = {"arr_FS_statespace":arr_FS_statespace_S1_5}
+dic = {"results_S1_5":res_S1_5}
 
 if os.path.isfile(filename):
    print("Le fichier ", filename, " existe déjà.")

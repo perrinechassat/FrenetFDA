@@ -86,7 +86,7 @@ def scenario_1_1(theta, Sigma, mu0, P0, Gamma, N, arc_length_fct, nb_basis, band
    except:
       FS_statespace = [sig, Basis_extrins, Z_GS]
 
-   return FS_statespace
+   return FS_statespace, Z_GS
 
 
 
@@ -142,7 +142,7 @@ def scenario_1_2(theta, Sigma, mu0, P0, Gamma, N, arc_length_fct, nb_basis, band
    except:
       FS_statespace = [sig, Bspline_approxODE, Z_GS]
 
-   return FS_statespace
+   return FS_statespace, Z_GS
 
 
 
@@ -177,12 +177,12 @@ def scenario_1_3(theta, Sigma, mu0, P0, Gamma, N, arc_length_fct, nb_basis, band
 
 
    # Sigma_hat
-   mu_Z_theta_extrins = solve_FrenetSerret_ODE_SE(Bspline_localapproxODE.evaluate, grid_arc_s, Z0=mu0_hat, method='Linearized')
+   mu_Z_theta = solve_FrenetSerret_ODE_SE(Bspline_localapproxODE.evaluate, grid_arc_s, Z0=mu0_hat, method='Linearized')
    Sigma_hat = np.zeros((N, 2, 2))
    for i in range(N):
       L = np.zeros((6,2))
       L[0,1], L[2,0] = 1, 1
-      xi = -SE3.log(np.linalg.inv(mu_Z_theta_extrins[i])@Z_GS[i])
+      xi = -SE3.log(np.linalg.inv(mu_Z_theta[i])@Z_GS[i])
       Sigma_hat[i] = L.T @ xi[:,np.newaxis] @ xi[np.newaxis,:] @ L
    sig = np.sqrt((np.mean(Sigma_hat[:,0,0]) + np.mean(Sigma_hat[:,1,1]))/2)
    Sigma_hat = lambda s: sig**2*np.array([[1+0*s, 0*s], [0*s, 1+0*s]])
@@ -197,7 +197,7 @@ def scenario_1_3(theta, Sigma, mu0, P0, Gamma, N, arc_length_fct, nb_basis, band
    except:
       FS_statespace = [sig, Bspline_localapproxODE, Z_GS]
 
-   return FS_statespace
+   return FS_statespace, Z_GS
 
 
 
@@ -251,7 +251,7 @@ def scenario_1_4(theta, Sigma, mu0, P0, Gamma, N, arc_length_fct, nb_basis, band
    except:
       FS_statespace = [sig, Bspline_approxODE, Z_CLP]
    
-   return FS_statespace
+   return FS_statespace, Z_CLP
 
 
 
@@ -306,7 +306,7 @@ def scenario_1_5(theta, Sigma, mu0, P0, Gamma, N, arc_length_fct, nb_basis, band
    except:
       FS_statespace = [sig, Bspline_localapproxODE, Z_CLP]
 
-   return FS_statespace
+   return FS_statespace, Z_CLP
 
 
 
