@@ -1,3 +1,4 @@
 *.ipynb
 Simulations_EM/results/
 *.cpython-38.pyc
+Simulations_EM/__pycache__/
