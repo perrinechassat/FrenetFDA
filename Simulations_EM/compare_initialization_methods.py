@@ -13,6 +13,7 @@ import os.path
 import os
 import dill as pickle
 from simulations_tools import * 
+from tqdm import tqdm
 
 """ 
 
@@ -35,8 +36,8 @@ Scenario 1: Simulation code to compare the different methods of initialization.
 
 """
 
-directory = r"results/scenario_1/model_01"
-filename_base = "results/scenario_1/model_01/"
+directory = r"results/scenario_1/model_02"
+filename_base = "results/scenario_1/model_02/"
 
 current_directory = os.getcwd()
 final_directory = os.path.join(current_directory, directory)
@@ -79,14 +80,14 @@ P0 = 0.001**2*np.eye(6)
 
 ## number of samples and basis fct
 N = 200
-nb_basis = 30
+nb_basis = 15
 
 ## grid of parameters
-bandwidth_grid_init = np.array([0.05, 0.1, 0.12, 0.15, 0.17, 0.2, 0.22, 0.25, 0.3])
-reg_param_grid_init = np.array([1e-06, 1e-05,1e-04,1e-03,1e-02,1e-01])
+bandwidth_grid_init = np.array([0.05, 0.1, 0.12, 0.15, 0.17, 0.2, 0.25])
+reg_param_grid_init = np.array([1e-06, 1e-05, 1e-04, 1e-03, 1e-02, 1e-01])
 
 ## Param EM
-max_iter = 100
+max_iter = 200
 tol = 1e-3
 reg_param_grid_EM = np.array([[1e-06,1e-06], [1e-05,1e-05], [1e-04,1e-04], [1e-03,1e-03], [1e-02,1e-02], [1e-01,1e-01]])
 reg_param_grid_EM = np.array(np.meshgrid(*reg_param_grid_EM.T)).reshape((2,-1))
@@ -115,9 +116,13 @@ print('--------------------- Start scenario 1.1 ---------------------')
 
 time_init = time.time()
 
-arr_FS_statespace_S1_1 = Parallel(n_jobs=-1)(delayed(scenario_1_1)(theta, Sigma, mu0, P0, Gamma, N, arc_length_fct, nb_basis, bandwidth_grid_init, reg_param_grid_init, reg_param_grid_EM, max_iter, tol) for k in range(N_simu))
+with tqdm(total=N_simu) as pbar:
+   arr_FS_statespace_S1_1 = Parallel(n_jobs=50)(delayed(scenario_1_1)(theta, Sigma, mu0, P0, Gamma, N, arc_length_fct, nb_basis, bandwidth_grid_init, reg_param_grid_init, reg_param_grid_EM, max_iter, tol) for k in range(N_simu))
+   pbar.update()
+
 # arr_FS_statespace_S1_1 = np.empty((N_simu), dtype=object)
 # for k in range(N_simu):
+#    print('iteration:', k)
 #    arr_FS_statespace_S1_1[k] = scenario_1_1(theta, Sigma, mu0, P0, Gamma, N, arc_length_fct, nb_basis, bandwidth_grid_init, reg_param_grid_init, reg_param_grid_EM, max_iter, tol)
 
 time_end = time.time()
@@ -146,7 +151,9 @@ print('--------------------- Start scenario 1.2 ---------------------')
 
 time_init = time.time()
 
-arr_FS_statespace_S1_2 = Parallel(n_jobs=-1)(delayed(scenario_1_2)(theta, Sigma, mu0, P0, Gamma, N, arc_length_fct, nb_basis, bandwidth_grid_init, reg_param_grid_init, reg_param_grid_EM, max_iter, tol) for k in range(N_simu))
+with tqdm(total=N_simu) as pbar:
+   arr_FS_statespace_S1_2 = Parallel(n_jobs=50)(delayed(scenario_1_2)(theta, Sigma, mu0, P0, Gamma, N, arc_length_fct, nb_basis, bandwidth_grid_init, reg_param_grid_init, reg_param_grid_EM, max_iter, tol) for k in range(N_simu))
+   pbar.update()
 
 time_end = time.time()
 duration = time_end - time_init
@@ -173,7 +180,9 @@ print('--------------------- Start of scenario 1.3 ---------------------')
 
 time_init = time.time()
 
-arr_FS_statespace_S1_3 = Parallel(n_jobs=-1)(delayed(scenario_1_3)(theta, Sigma, mu0, P0, Gamma, N, arc_length_fct, nb_basis, bandwidth_grid_init, reg_param_grid_init, reg_param_grid_EM, max_iter, tol) for k in range(N_simu))
+with tqdm(total=N_simu) as pbar:
+   arr_FS_statespace_S1_3 = Parallel(n_jobs=50)(delayed(scenario_1_3)(theta, Sigma, mu0, P0, Gamma, N, arc_length_fct, nb_basis, bandwidth_grid_init, reg_param_grid_init, reg_param_grid_EM, max_iter, tol) for k in range(N_simu))
+   pbar.update()
 
 time_end = time.time()
 duration = time_end - time_init
@@ -200,7 +209,9 @@ print('--------------------- Start scenario 1.4 ---------------------')
 
 time_init = time.time()
 
-arr_FS_statespace_S1_4 = Parallel(n_jobs=-1)(delayed(scenario_1_4)(theta, Sigma, mu0, P0, Gamma, N, arc_length_fct, nb_basis, bandwidth_grid_init, reg_param_grid_init, reg_param_grid_EM, max_iter, tol) for k in range(N_simu))
+with tqdm(total=N_simu) as pbar:
+   arr_FS_statespace_S1_4 = Parallel(n_jobs=50)(delayed(scenario_1_4)(theta, Sigma, mu0, P0, Gamma, N, arc_length_fct, nb_basis, bandwidth_grid_init, reg_param_grid_init, reg_param_grid_EM, max_iter, tol) for k in range(N_simu))
+   pbar.update()
 
 time_end = time.time()
 duration = time_end - time_init
@@ -227,7 +238,9 @@ print('--------------------- Start scenario 1.5 ---------------------')
 
 time_init = time.time()
 
-arr_FS_statespace_S1_5 = Parallel(n_jobs=-1)(delayed(scenario_1_5)(theta, Sigma, mu0, P0, Gamma, N, arc_length_fct, nb_basis, bandwidth_grid_init, reg_param_grid_init, reg_param_grid_EM, max_iter, tol) for k in range(N_simu))
+with tqdm(total=N_simu) as pbar:
+   arr_FS_statespace_S1_5 = Parallel(n_jobs=50)(delayed(scenario_1_5)(theta, Sigma, mu0, P0, Gamma, N, arc_length_fct, nb_basis, bandwidth_grid_init, reg_param_grid_init, reg_param_grid_EM, max_iter, tol) for k in range(N_simu))
+   pbar.update()
 
 time_end = time.time()
 duration = time_end - time_init

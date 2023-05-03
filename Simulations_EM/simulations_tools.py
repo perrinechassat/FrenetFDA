@@ -8,6 +8,7 @@ from FrenetFDA.processing_Euclidean_curve.preprocessing import *
 from FrenetFDA.processing_Euclidean_curve.estimate_Frenet_path import GramSchmidtOrthogonalization, ConstrainedLocalPolynomialRegression
 from FrenetFDA.processing_Euclidean_curve.estimate_Frenet_curvatures import ExtrinsicFormulas
 from FrenetFDA.processing_Frenet_path.estimate_Frenet_curvatures import ApproxFrenetODE, LocalApproxFrenetODE
+import time
 
 
 def model_scenario_1(theta, Sigma, mu0, P0, Gamma, N, arc_length_fct):
@@ -15,8 +16,8 @@ def model_scenario_1(theta, Sigma, mu0, P0, Gamma, N, arc_length_fct):
       If Sigma==None the model is deterministic. 
 
    """
-   time = np.linspace(0,1,N)
-   arc_length = arc_length_fct(time)
+   time_grid = np.linspace(0,1,N)
+   arc_length = arc_length_fct(time_grid)
    L = np.zeros((6,2))
    L[0,1], L[2,0] = 1, 1
    xi0 = np.random.multivariate_normal(np.zeros(6), P0)
@@ -43,24 +44,24 @@ def scenario_1_1(theta, Sigma, mu0, P0, Gamma, N, arc_length_fct, nb_basis, band
 
    ####     Initialization of parameters    ####
 
-   time = np.linspace(0,1,N)
-   derivatives, h_opt = compute_derivatives(Y, time, deg=3, h=None, CV_optimization_h={"flag":True, "h_grid":bandwidth_grid_init, "K":20})
-   grid_arc_s, L, arc_s, arc_s_dot = compute_arc_length(Y, time, smooth=True, smoothing_param=h_opt)
+   grid_time = np.linspace(0,1,N)
+   derivatives, h_opt = compute_derivatives(Y, grid_time, deg=3, h=None, CV_optimization_h={"flag":True, "h_grid":bandwidth_grid_init, "K":10})
+   grid_arc_s, L, arc_s, arc_s_dot = compute_arc_length(Y, grid_time, smooth=True, smoothing_param=h_opt)
 
    # Gamma
    Gamma_hat = ((Y - derivatives[0]).T @ (Y - derivatives[0]))/N
 
    # Z_hat
    GS_orthog = GramSchmidtOrthogonalization(Y, grid_arc_s, deg=3)
-   h_opt, err_h = GS_orthog.grid_search_CV_optimization_bandwidth(bandwidth_grid=bandwidth_grid_init, K_split=20)
+   h_opt, err_h = GS_orthog.grid_search_CV_optimization_bandwidth(bandwidth_grid=bandwidth_grid_init, K_split=10)
    Z_GS, Q_GS, X_GS = GS_orthog.fit(h_opt) 
 
    # mu0_hat
    mu0_hat = Z_GS[0]
 
    # theta_hat
-   extrins_model_theta = ExtrinsicFormulas(Y, time, grid_arc_s, deg_polynomial=3)
-   h_opt, nb_basis_opt, regularization_parameter_opt, CV_error_tab = extrins_model_theta.grid_search_optimization_hyperparameters(bandwidth_grid_init, np.array([nb_basis]), reg_param_grid_init, method='2', n_splits=20)
+   extrins_model_theta = ExtrinsicFormulas(Y, grid_time, grid_arc_s, deg_polynomial=3)
+   h_opt, nb_basis_opt, regularization_parameter_opt, CV_error_tab = extrins_model_theta.grid_search_optimization_hyperparameters(bandwidth_grid_init, np.array([nb_basis]), reg_param_grid_init, method='2', n_splits=10)
    Basis_extrins = extrins_model_theta.Bspline_smooth_estimates(h_opt, nb_basis_opt, regularization_parameter=regularization_parameter_opt)
 
    # Sigma_hat
@@ -101,7 +102,7 @@ def scenario_1_2(theta, Sigma, mu0, P0, Gamma, N, arc_length_fct, nb_basis, band
    ####     Initialization of parameters    ####
 
    time = np.linspace(0,1,N)
-   derivatives, h_opt = compute_derivatives(Y, time, deg=3, h=None, CV_optimization_h={"flag":True, "h_grid":bandwidth_grid_init, "K":20})
+   derivatives, h_opt = compute_derivatives(Y, time, deg=3, h=None, CV_optimization_h={"flag":True, "h_grid":bandwidth_grid_init, "K":10})
    grid_arc_s, L, arc_s, arc_s_dot = compute_arc_length(Y, time, smooth=True, smoothing_param=h_opt)
 
    # Gamma
@@ -109,7 +110,7 @@ def scenario_1_2(theta, Sigma, mu0, P0, Gamma, N, arc_length_fct, nb_basis, band
 
    # Z_hat
    GS_orthog = GramSchmidtOrthogonalization(Y, grid_arc_s, deg=3)
-   h_opt, err_h = GS_orthog.grid_search_CV_optimization_bandwidth(bandwidth_grid=bandwidth_grid_init, K_split=20)
+   h_opt, err_h = GS_orthog.grid_search_CV_optimization_bandwidth(bandwidth_grid=bandwidth_grid_init, K_split=10)
    Z_GS, Q_GS, X_GS = GS_orthog.fit(h_opt) 
 
    # mu0_hat
@@ -155,7 +156,7 @@ def scenario_1_3(theta, Sigma, mu0, P0, Gamma, N, arc_length_fct, nb_basis, band
    ####     Initialization of parameters    ####
 
    time = np.linspace(0,1,N)
-   derivatives, h_opt = compute_derivatives(Y, time, deg=3, h=None, CV_optimization_h={"flag":True, "h_grid":bandwidth_grid_init, "K":20})
+   derivatives, h_opt = compute_derivatives(Y, time, deg=3, h=None, CV_optimization_h={"flag":True, "h_grid":bandwidth_grid_init, "K":10})
    grid_arc_s, L, arc_s, arc_s_dot = compute_arc_length(Y, time, smooth=True, smoothing_param=h_opt)
 
    # Gamma
@@ -163,7 +164,7 @@ def scenario_1_3(theta, Sigma, mu0, P0, Gamma, N, arc_length_fct, nb_basis, band
 
    # Z_hat
    GS_orthog = GramSchmidtOrthogonalization(Y, grid_arc_s, deg=3)
-   h_opt, err_h = GS_orthog.grid_search_CV_optimization_bandwidth(bandwidth_grid=bandwidth_grid_init, K_split=20)
+   h_opt, err_h = GS_orthog.grid_search_CV_optimization_bandwidth(bandwidth_grid=bandwidth_grid_init, K_split=10)
    Z_GS, Q_GS, X_GS = GS_orthog.fit(h_opt) 
 
    # mu0_hat
@@ -210,7 +211,7 @@ def scenario_1_4(theta, Sigma, mu0, P0, Gamma, N, arc_length_fct, nb_basis, band
    ####     Initialization of parameters    ####
 
    time = np.linspace(0,1,N)
-   derivatives, h_opt = compute_derivatives(Y, time, deg=3, h=None, CV_optimization_h={"flag":True, "h_grid":bandwidth_grid_init, "K":20})
+   derivatives, h_opt = compute_derivatives(Y, time, deg=3, h=None, CV_optimization_h={"flag":True, "h_grid":bandwidth_grid_init, "K":10})
    grid_arc_s, L, arc_s, arc_s_dot = compute_arc_length(Y, time, smooth=True, smoothing_param=h_opt)
 
    # Gamma
@@ -218,7 +219,7 @@ def scenario_1_4(theta, Sigma, mu0, P0, Gamma, N, arc_length_fct, nb_basis, band
 
    # Z_hat
    CLP_reg = ConstrainedLocalPolynomialRegression(Y, grid_arc_s, adaptative=False, deg_polynomial=3)
-   h_opt, err_h = CLP_reg.grid_search_CV_optimization_bandwidth(bandwidth_grid=bandwidth_grid_init, K_split=20)
+   h_opt, err_h = CLP_reg.grid_search_CV_optimization_bandwidth(bandwidth_grid=bandwidth_grid_init, K_split=10)
    Z_CLP, Q_CLP, X_CLP = CLP_reg.fit(h_opt)
 
    # mu0_hat
@@ -264,7 +265,7 @@ def scenario_1_5(theta, Sigma, mu0, P0, Gamma, N, arc_length_fct, nb_basis, band
    ####     Initialization of parameters    ####
 
    time = np.linspace(0,1,N)
-   derivatives, h_opt = compute_derivatives(Y, time, deg=3, h=None, CV_optimization_h={"flag":True, "h_grid":bandwidth_grid_init, "K":20})
+   derivatives, h_opt = compute_derivatives(Y, time, deg=3, h=None, CV_optimization_h={"flag":True, "h_grid":bandwidth_grid_init, "K":10})
    grid_arc_s, L, arc_s, arc_s_dot = compute_arc_length(Y, time, smooth=True, smoothing_param=h_opt)
 
    # Gamma
@@ -272,7 +273,7 @@ def scenario_1_5(theta, Sigma, mu0, P0, Gamma, N, arc_length_fct, nb_basis, band
 
    # Z_hat
    CLP_reg = ConstrainedLocalPolynomialRegression(Y, grid_arc_s, adaptative=False, deg_polynomial=3)
-   h_opt, err_h = CLP_reg.grid_search_CV_optimization_bandwidth(bandwidth_grid=bandwidth_grid_init, K_split=20)
+   h_opt, err_h = CLP_reg.grid_search_CV_optimization_bandwidth(bandwidth_grid=bandwidth_grid_init, K_split=10)
    Z_CLP, Q_CLP, X_CLP = CLP_reg.fit(h_opt)
 
    # mu0_hat

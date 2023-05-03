@@ -3,7 +3,7 @@ from scipy.integrate import solve_ivp
 from scipy.linalg import expm, block_diag
 from FrenetFDA.utils.Lie_group.SE3_utils import SE3
 from FrenetFDA.utils.Lie_group.SO3_utils import SO3
-
+import time as ttime 
 
 class IEKFilterSmootherFrenetState():
 
@@ -70,7 +70,7 @@ class IEKFilterSmootherFrenetState():
         Az  = lambda t: np.concatenate((np.concatenate((A11, A12), axis=1), np.concatenate((A21, A22(t)), axis=1)))
         Z0  = np.concatenate((X0, Q0[:,0], Q0[:,1], Q0[:,2]))
         ode_func = lambda t,z: np.matmul(Az(t),z)
-        sol = solve_ivp(ode_func, t_span=t_span, y0=Z0, t_eval=np.array([t_span[-1]]), method='Radau')
+        sol = solve_ivp(ode_func, t_span=t_span, y0=Z0, t_eval=np.array([t_span[-1]])) #, method='Radau')
         Z = sol.y[:,0]
         self.X = Z[0:self.n]
         self.Q = np.vstack((Z[self.n:2*self.n], Z[2*self.n:3*self.n], Z[3*self.n:4*self.n])).T

@@ -301,23 +301,47 @@ class LocalApproxFrenetODE:
             grid_split = self.grid[1:-1]
 
             CV_error_tab = np.zeros((N_param_basis, N_param_bandwidth, N_param_smoothing))
-            for i in range(N_param_basis):
-                nb_basis = nb_basis_list[i]
-                Bspline_repres = VectorBSplineSmoothing(self.dim_theta, nb_basis, domain_range=(self.grid[0], self.grid[-1]), order=order, penalization=penalization)
-                for j in range(N_param_bandwidth):
-                    h = bandwidth_list[j]
-                    for k in range(N_param_smoothing):
-                        lbda = regularization_parameter_list[k]
-                        # print('nb_basis:', nb_basis, 'h:', h, 'lbda:', lbda)
-                        if parallel:
+            if parallel:
+                for i in range(N_param_basis):
+                    nb_basis = nb_basis_list[i]
+                    Bspline_repres = VectorBSplineSmoothing(self.dim_theta, nb_basis, domain_range=(self.grid[0], self.grid[-1]), order=order, penalization=penalization)
+                    for j in range(N_param_bandwidth):
+                        h = bandwidth_list[j]
+                        for k in range(N_param_smoothing):
+                            lbda = regularization_parameter_list[k]
                             func = lambda train_ind, test_ind : self.__step_cross_val(train_ind, test_ind, h, lbda, Bspline_repres)
                             CV_err = Parallel(n_jobs=10)(delayed(func)(train_index, test_index) for train_index, test_index in kf.split(grid_split))
                             CV_error_tab[i,j,k] = np.mean(CV_err)
-                        else:
-                            CV_err = []
-                            for train_index, test_index in kf.split(grid_split):
-                                CV_err.append(self.__step_cross_val(train_index, test_index, h, lbda, Bspline_repres))
-                            CV_error_tab[i,j,k] = np.mean(CV_err)
+
+
+            else:
+                for i in range(N_param_basis):
+                    nb_basis = nb_basis_list[i]
+                    Bspline_repres = VectorBSplineSmoothing(self.dim-1, nb_basis, domain_range=(self.grid_arc_s[0], self.grid_arc_s[-1]), order=order, penalization=penalization)
+                    for j in range(N_param_bandwidth):
+                        h = bandwidth_list[j]
+                        CV_err_lbda = np.zeros((N_param_smoothing,n_splits))
+                        k_split = 0
+                        for train_index, test_index in kf.split(grid_split):
+                            train_index = train_index+1
+                            test_index = test_index+1
+                            train_index = np.concatenate((np.array([0]), train_index, np.array([len(self.grid[1:-1])+1])))
+                            grid_train = self.grid[train_index]
+                            Q_train = self.Q[train_index]
+                            Q_test = self.Q[test_index]
+                            grid_theta_train, raw_theta_train, weight_theta_train = self.__raw_estimates(h, grid_train, Q_train)
+                            for k in range(N_param_smoothing):
+                                lbda = regularization_parameter_list[k]
+                                Bspline_repres.fit(grid_theta_train, raw_theta_train, weights=weight_theta_train, regularization_parameter=lbda)
+                                if self.Z is None:
+                                    Q_test_pred = solve_FrenetSerret_ODE_SO(Bspline_repres.evaluate, self.grid, self.Q[0])
+                                    dist = np.mean(SO3.geodesic_distance(Q_test, Q_test_pred[test_index]))
+                                else:
+                                    Z_test_pred = solve_FrenetSerret_ODE_SE(Bspline_repres.evaluate, self.grid, self.Z[0])
+                                    dist = np.mean(SE3.geodesic_distance(self.Z[test_index], Z_test_pred[test_index]))
+                                CV_err_lbda[k,k_split] = dist
+                            k_split += 1 
+                        CV_error_tab[i,j,:] = np.mean(CV_err_lbda, axis=1) 
 
             ind = np.unravel_index(np.argmin(CV_error_tab, axis=None), CV_error_tab.shape)
             nb_basis_opt = nb_basis_list[ind[0]]

@@ -5,7 +5,7 @@ from FrenetFDA.utils.Lie_group.SE3_utils import SE3
 from scipy.linalg import block_diag
 
 
-def solve_FrenetSerret_ODE_SE(theta, t_eval, Z0=None,  method='Radau'):
+def solve_FrenetSerret_ODE_SE(theta, t_eval, Z0=None,  method='Linearized'):
     N, dim = theta(t_eval).shape
     if Z0 is None:
         Z0 = np.eye(dim+2)
