@@ -11,7 +11,7 @@ from FrenetFDA.processing_Frenet_path.estimate_Frenet_curvatures import ApproxFr
 import time
 
 
-def model_scenario_1(theta, Sigma, mu0, P0, Gamma, N, arc_length_fct):
+def model_scenario(theta, Sigma, mu0, P0, Gamma, N, arc_length_fct):
    """ 
       If Sigma==None the model is deterministic. 
 
@@ -40,7 +40,7 @@ def scenario_1_1(theta, Sigma, mu0, P0, Gamma, N, arc_length_fct, nb_basis, band
    
    ####     Generation of one sample of the model    ####
 
-   Z, Q, X, Y = model_scenario_1(theta, Sigma, mu0, P0, Gamma, N, arc_length_fct)
+   Z, Q, X, Y = model_scenario(theta, Sigma, mu0, P0, Gamma, N, arc_length_fct)
 
    ####     Initialization of parameters    ####
 
@@ -97,7 +97,7 @@ def scenario_1_2(theta, Sigma, mu0, P0, Gamma, N, arc_length_fct, nb_basis, band
 
    ####     Generation of one sample of the model    ####
 
-   Z, Q, X, Y = model_scenario_1(theta, Sigma, mu0, P0, Gamma, N, arc_length_fct)
+   Z, Q, X, Y = model_scenario(theta, Sigma, mu0, P0, Gamma, N, arc_length_fct)
 
    ####     Initialization of parameters    ####
 
@@ -151,7 +151,7 @@ def scenario_1_3(theta, Sigma, mu0, P0, Gamma, N, arc_length_fct, nb_basis, band
    
     ####     Generation of one sample of the model    ####
 
-   Z, Q, X, Y = model_scenario_1(theta, Sigma, mu0, P0, Gamma, N, arc_length_fct)
+   Z, Q, X, Y = model_scenario(theta, Sigma, mu0, P0, Gamma, N, arc_length_fct)
 
    ####     Initialization of parameters    ####
 
@@ -206,7 +206,7 @@ def scenario_1_4(theta, Sigma, mu0, P0, Gamma, N, arc_length_fct, nb_basis, band
    
    ####     Generation of one sample of the model    ####
 
-   Z, Q, X, Y = model_scenario_1(theta, Sigma, mu0, P0, Gamma, N, arc_length_fct)
+   Z, Q, X, Y = model_scenario(theta, Sigma, mu0, P0, Gamma, N, arc_length_fct)
 
    ####     Initialization of parameters    ####
 
@@ -260,7 +260,7 @@ def scenario_1_5(theta, Sigma, mu0, P0, Gamma, N, arc_length_fct, nb_basis, band
    
    ####     Generation of one sample of the model    ####
 
-   Z, Q, X, Y = model_scenario_1(theta, Sigma, mu0, P0, Gamma, N, arc_length_fct)
+   Z, Q, X, Y = model_scenario(theta, Sigma, mu0, P0, Gamma, N, arc_length_fct)
 
    ####     Initialization of parameters    ####
 
@@ -310,3 +310,9 @@ def scenario_1_5(theta, Sigma, mu0, P0, Gamma, N, arc_length_fct, nb_basis, band
 
 
 
+def scenario_2(theta, Sigma, mu0, P0, Gamma, N, arc_length_fct, nb_basis, bandwidth_grid_init, reg_param_grid_init, reg_param_grid_EM, max_iter_EM, tol_EM):
+   """ Scenario 2: Initialization fixed to ... and only sigma will be modified. """
+
+   FS_statespace, Z_init, Z = scenario_1_1(theta, Sigma, mu0, P0, Gamma, N, arc_length_fct, nb_basis, bandwidth_grid_init, reg_param_grid_init, reg_param_grid_EM, max_iter_EM, tol_EM)
+
+   return FS_statespace, Z_init, Z 

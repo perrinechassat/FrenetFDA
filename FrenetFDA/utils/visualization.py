@@ -402,46 +402,46 @@ def plot_3D(features, names, save=False, filename='', mode='lines'):
 
 
 
-# def plot_curvatures_grey(s, kappa, tau, kappa_mean, tau_mean, names_mean, names1, path="", size=[100,100]):
-#     N = len(kappa)
-#     n = len(kappa_mean)
-#     fig = go.Figure(layout=layout)
-#     for i in range(N):
-#         fig.add_trace(go.Scatter(x=s, y=kappa[i], mode='lines', name=names1+str(i), opacity=0.8, line=dict(
-#                 width=1.5,dash='solid',color='grey',),showlegend=False))
-#     for i in range(n):
-#         fig.add_trace(go.Scatter(x=s, y=kappa_mean[i], mode='lines', name=names_mean[i], line=dict(width=3, color=dict_color[names_mean[i]]),showlegend=False))
-#         # fig.add_trace(go.Scatter(x=s, y=kappa_mean[i], mode='lines', name=names_mean[i], line=dict(width=3, color=dict_color[names_mean[i]])))
+def plot_curvatures_grey(s, kappa, tau, kappa_mean, tau_mean, names_mean, names1, path="", size=[100,100]):
+    N = len(kappa)
+    n = len(kappa_mean)
+    fig = go.Figure(layout=layout)
+    for i in range(N):
+        fig.add_trace(go.Scatter(x=s, y=kappa[i], mode='lines', name=names1+str(i), opacity=0.8, line=dict(
+                width=1.5,dash='solid',color='grey',),showlegend=False))
+    for i in range(n):
+        fig.add_trace(go.Scatter(x=s, y=kappa_mean[i], mode='lines', name=names_mean[i], line=dict(width=3), showlegend=False))
+        # fig.add_trace(go.Scatter(x=s, y=kappa_mean[i], mode='lines', name=names_mean[i], line=dict(width=3, color=dict_color[names_mean[i]])))
 
-#     # fig.update_layout(legend=dict(orientation="h",yanchor="top",y=1.15,xanchor="right", x=1), xaxis_title='s', yaxis_title='curvature')
-#     if path!="":
-#         fig.write_html(path+"kappa.html")
-#     fig.update_xaxes(showline=True, showgrid=False, linewidth=1, linecolor='black')
-#     fig.update_yaxes(showline=True, showgrid=False, linewidth=1, linecolor='black')
-#     fig.update_layout(
-#     autosize=False,
-#     width=size[0],
-#     height=size[1],)
-#     fig.show()
+    # fig.update_layout(legend=dict(orientation="h",yanchor="top",y=1.15,xanchor="right", x=1), xaxis_title='s', yaxis_title='curvature')
+    if path!="":
+        fig.write_html(path+"kappa.html")
+    fig.update_xaxes(showline=True, showgrid=False, linewidth=1, linecolor='black')
+    fig.update_yaxes(showline=True, showgrid=False, linewidth=1, linecolor='black')
+    fig.update_layout(
+    autosize=False,
+    width=size[0],
+    height=size[1],)
+    fig.show()
 
-#     fig = go.Figure(layout=layout)
-#     for i in range(N):
-#         fig.add_trace(go.Scatter(x=s, y=tau[i], mode='lines', name=names1+str(i), opacity=0.8, line=dict(
-#                 width=1.5,dash='solid',color='grey',),showlegend=False))
-#     for i in range(n):
-#         fig.add_trace(go.Scatter(x=s, y=tau_mean[i], mode='lines', name=names_mean[i], line=dict(width=3, color=dict_color[names_mean[i]]),showlegend=False))
-#         # fig.add_trace(go.Scatter(x=s, y=tau_mean[i], mode='lines', name=names_mean[i], line=dict(width=3, color=dict_color[names_mean[i]])))
+    fig = go.Figure(layout=layout)
+    for i in range(N):
+        fig.add_trace(go.Scatter(x=s, y=tau[i], mode='lines', name=names1+str(i), opacity=0.8, line=dict(
+                width=1.5,dash='solid',color='grey',),showlegend=False))
+    for i in range(n):
+        fig.add_trace(go.Scatter(x=s, y=tau_mean[i], mode='lines', name=names_mean[i], line=dict(width=3),showlegend=False))
+        # fig.add_trace(go.Scatter(x=s, y=tau_mean[i], mode='lines', name=names_mean[i], line=dict(width=3, color=dict_color[names_mean[i]])))
 
-#     # fig.update_layout(legend=dict(orientation="h",yanchor="top",y=1.15,xanchor="right", x=1), xaxis_title='s', yaxis_title='torsion')
-#     if path!="":
-#         fig.write_html(path+"tors.html")
-#     fig.update_xaxes(showline=True, showgrid=False, linewidth=1, linecolor='black')
-#     fig.update_yaxes(showline=True, showgrid=False, linewidth=1, linecolor='black')
-#     fig.update_layout(
-#     autosize=False,
-#     width=size[0],
-#     height=size[1],)
-#     fig.show()
+    # fig.update_layout(legend=dict(orientation="h",yanchor="top",y=1.15,xanchor="right", x=1), xaxis_title='s', yaxis_title='torsion')
+    if path!="":
+        fig.write_html(path+"tors.html")
+    fig.update_xaxes(showline=True, showgrid=False, linewidth=1, linecolor='black')
+    fig.update_yaxes(showline=True, showgrid=False, linewidth=1, linecolor='black')
+    fig.update_layout(
+    autosize=False,
+    width=size[0],
+    height=size[1],)
+    fig.show()
 
 
 # def plot_curvatures(s, kappa, tau, kappa_mean, tau_mean, names_mean, names1, path=""):
