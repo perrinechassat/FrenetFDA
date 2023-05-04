@@ -86,7 +86,7 @@ def scenario_1_1(theta, Sigma, mu0, P0, Gamma, N, arc_length_fct, nb_basis, band
    except:
       FS_statespace = [sig, Basis_extrins, Z_GS]
 
-   return FS_statespace, Z_GS
+   return FS_statespace, Z_GS, Z
 
 
 
@@ -142,7 +142,7 @@ def scenario_1_2(theta, Sigma, mu0, P0, Gamma, N, arc_length_fct, nb_basis, band
    except:
       FS_statespace = [sig, Bspline_approxODE, Z_GS]
 
-   return FS_statespace, Z_GS
+   return FS_statespace, Z_GS, Z
 
 
 
@@ -197,7 +197,7 @@ def scenario_1_3(theta, Sigma, mu0, P0, Gamma, N, arc_length_fct, nb_basis, band
    except:
       FS_statespace = [sig, Bspline_localapproxODE, Z_GS]
 
-   return FS_statespace, Z_GS
+   return FS_statespace, Z_GS, Z
 
 
 
@@ -251,7 +251,7 @@ def scenario_1_4(theta, Sigma, mu0, P0, Gamma, N, arc_length_fct, nb_basis, band
    except:
       FS_statespace = [sig, Bspline_approxODE, Z_CLP]
    
-   return FS_statespace, Z_CLP
+   return FS_statespace, Z_CLP, Z
 
 
 
@@ -306,7 +306,7 @@ def scenario_1_5(theta, Sigma, mu0, P0, Gamma, N, arc_length_fct, nb_basis, band
    except:
       FS_statespace = [sig, Bspline_localapproxODE, Z_CLP]
 
-   return FS_statespace, Z_CLP
+   return FS_statespace, Z_CLP, Z
 
 
 

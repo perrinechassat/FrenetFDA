@@ -317,7 +317,7 @@ class LocalApproxFrenetODE:
             else:
                 for i in range(N_param_basis):
                     nb_basis = nb_basis_list[i]
-                    Bspline_repres = VectorBSplineSmoothing(self.dim-1, nb_basis, domain_range=(self.grid_arc_s[0], self.grid_arc_s[-1]), order=order, penalization=penalization)
+                    Bspline_repres = VectorBSplineSmoothing(self.dim_theta, nb_basis, domain_range=(self.grid[0], self.grid[-1]), order=order, penalization=penalization)
                     for j in range(N_param_bandwidth):
                         h = bandwidth_list[j]
                         CV_err_lbda = np.zeros((N_param_smoothing,n_splits))
