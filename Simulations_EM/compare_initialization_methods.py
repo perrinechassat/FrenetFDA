@@ -36,8 +36,8 @@ Scenario 1: Simulation code to compare the different methods of initialization.
 
 """
 
-directory = r"results/scenario_1/model_02"
-filename_base = "results/scenario_1/model_02/"
+directory = r"results/scenario_1/model_03"
+filename_base = "results/scenario_1/model_03/"
 
 current_directory = os.getcwd()
 final_directory = os.path.join(current_directory, directory)
@@ -90,7 +90,8 @@ reg_param_grid_init = np.array([1e-06, 1e-05, 1e-04, 1e-03, 1e-02, 1e-01])
 ## Param EM
 max_iter = 200
 tol = 1e-3
-reg_param_grid_EM = np.array([[1e-06,1e-06], [1e-05,1e-05], [1e-04,1e-04], [1e-03,1e-03], [1e-02,1e-02], [1e-01,1e-01]])
+# reg_param_grid_EM = np.array([[1e-06,1e-06], [1e-05,1e-05], [1e-04,1e-04], [1e-03,1e-03], [1e-02,1e-02], [1e-01,1e-01]])
+reg_param_grid_EM = np.array([[1e-04,1e-04], [1e-03,1e-03], [1e-02,1e-02], [1e-01,1e-01]])
 reg_param_grid_EM = np.array(np.meshgrid(*reg_param_grid_EM.T)).reshape((2,-1))
 reg_param_grid_EM = np.moveaxis(reg_param_grid_EM, 0,1)
 
@@ -113,34 +114,34 @@ N_simu = 100
 
 """ S1.1: LP + GS + Extrinsic formulas """
 
-# print('--------------------- Start scenario 1.1 ---------------------')
+print('--------------------- Start scenario 1.1 ---------------------')
 
-# time_init = time.time()
+time_init = time.time()
 
-# with tqdm(total=N_simu) as pbar:
-#    res_S1_1 = Parallel(n_jobs=50)(delayed(scenario_1_1)(theta, Sigma, mu0, P0, Gamma, N, arc_length_fct, nb_basis, bandwidth_grid_init, reg_param_grid_init, reg_param_grid_EM, max_iter, tol) for k in range(N_simu))
-#    pbar.update()
+with tqdm(total=N_simu) as pbar:
+   res_S1_1 = Parallel(n_jobs=50)(delayed(scenario_1_1)(theta, Sigma, mu0, P0, Gamma, N, arc_length_fct, nb_basis, bandwidth_grid_init, reg_param_grid_init, reg_param_grid_EM, max_iter, tol) for k in range(N_simu))
+   pbar.update()
 
-# # arr_FS_statespace_S1_1 = np.empty((N_simu), dtype=object)
-# # for k in range(N_simu):
-# #    print('iteration:', k)
-# #    arr_FS_statespace_S1_1[k] = scenario_1_1(theta, Sigma, mu0, P0, Gamma, N, arc_length_fct, nb_basis, bandwidth_grid_init, reg_param_grid_init, reg_param_grid_EM, max_iter, tol)
+# arr_FS_statespace_S1_1 = np.empty((N_simu), dtype=object)
+# for k in range(N_simu):
+#    print('iteration:', k)
+#    arr_FS_statespace_S1_1[k] = scenario_1_1(theta, Sigma, mu0, P0, Gamma, N, arc_length_fct, nb_basis, bandwidth_grid_init, reg_param_grid_init, reg_param_grid_EM, max_iter, tol)
 
-# time_end = time.time()
-# duration = time_end - time_init
+time_end = time.time()
+duration = time_end - time_init
 
-# filename = filename_base + "scenario_1_1"
+filename = filename_base + "scenario_1_1"
 
-# dic = {"results_S1_1":res_S1_1}
+dic = {"results_S1_1":res_S1_1}
 
-# if os.path.isfile(filename):
-#    print("Le fichier ", filename, " existe déjà.")
-#    filename = filename + '_bis'
-# fil = open(filename,"xb")
-# pickle.dump(dic,fil)
-# fil.close()
+if os.path.isfile(filename):
+   print("Le fichier ", filename, " existe déjà.")
+   filename = filename + '_bis'
+fil = open(filename,"xb")
+pickle.dump(dic,fil)
+fil.close()
 
-# print('End of scenario 1.1: time spent', duration, 'seconds. \n')
+print('End of scenario 1.1: time spent', duration, 'seconds. \n')
 
 
 
@@ -177,87 +178,87 @@ N_simu = 100
 
 """ S1.3: LP + GS + Local Approx ODE """
 
-print('--------------------- Start of scenario 1.3 ---------------------')
+# print('--------------------- Start of scenario 1.3 ---------------------')
 
-time_init = time.time()
+# time_init = time.time()
 
-with tqdm(total=N_simu) as pbar:
-   res_S1_3 = Parallel(n_jobs=50)(delayed(scenario_1_3)(theta, Sigma, mu0, P0, Gamma, N, arc_length_fct, nb_basis, bandwidth_grid_init, reg_param_grid_init, reg_param_grid_EM, max_iter, tol) for k in range(N_simu))
-   pbar.update()
+# with tqdm(total=N_simu) as pbar:
+#    res_S1_3 = Parallel(n_jobs=50)(delayed(scenario_1_3)(theta, Sigma, mu0, P0, Gamma, N, arc_length_fct, nb_basis, bandwidth_grid_init, reg_param_grid_init, reg_param_grid_EM, max_iter, tol) for k in range(N_simu))
+#    pbar.update()
 
-time_end = time.time()
-duration = time_end - time_init
+# time_end = time.time()
+# duration = time_end - time_init
 
-filename = filename_base + "scenario_1_3"
+# filename = filename_base + "scenario_1_3"
 
-dic = {"results_S1_3":res_S1_3}
+# dic = {"results_S1_3":res_S1_3}
 
-if os.path.isfile(filename):
-   print("Le fichier ", filename, " existe déjà.")
-   filename = filename + '_bis'
-fil = open(filename,"xb")
-pickle.dump(dic,fil)
-fil.close()
+# if os.path.isfile(filename):
+#    print("Le fichier ", filename, " existe déjà.")
+#    filename = filename + '_bis'
+# fil = open(filename,"xb")
+# pickle.dump(dic,fil)
+# fil.close()
 
-print('End of scenario 1.3: time spent', duration, 'seconds. \n')
+# print('End of scenario 1.3: time spent', duration, 'seconds. \n')
 
 
 
 
 """ S1.4: CLP + Approx ODE """
 
-print('--------------------- Start scenario 1.4 ---------------------')
+# print('--------------------- Start scenario 1.4 ---------------------')
 
-time_init = time.time()
+# time_init = time.time()
 
-with tqdm(total=N_simu) as pbar:
-   res_S1_4 = Parallel(n_jobs=50)(delayed(scenario_1_4)(theta, Sigma, mu0, P0, Gamma, N, arc_length_fct, nb_basis, bandwidth_grid_init, reg_param_grid_init, reg_param_grid_EM, max_iter, tol) for k in range(N_simu))
-   pbar.update()
+# with tqdm(total=N_simu) as pbar:
+#    res_S1_4 = Parallel(n_jobs=50)(delayed(scenario_1_4)(theta, Sigma, mu0, P0, Gamma, N, arc_length_fct, nb_basis, bandwidth_grid_init, reg_param_grid_init, reg_param_grid_EM, max_iter, tol) for k in range(N_simu))
+#    pbar.update()
 
-time_end = time.time()
-duration = time_end - time_init
+# time_end = time.time()
+# duration = time_end - time_init
 
-filename = filename_base + "scenario_1_4"
+# filename = filename_base + "scenario_1_4"
 
-dic = {"results_S1_4":res_S1_4}
+# dic = {"results_S1_4":res_S1_4}
 
-if os.path.isfile(filename):
-   print("Le fichier ", filename, " existe déjà.")
-   filename = filename + '_bis'
-fil = open(filename,"xb")
-pickle.dump(dic,fil)
-fil.close()
+# if os.path.isfile(filename):
+#    print("Le fichier ", filename, " existe déjà.")
+#    filename = filename + '_bis'
+# fil = open(filename,"xb")
+# pickle.dump(dic,fil)
+# fil.close()
 
-print('End of scenario 1.4: time spent', duration, 'seconds. \n')
+# print('End of scenario 1.4: time spent', duration, 'seconds. \n')
 
 
 
 
 """ S1.5: CLP + Local Approx ODE """
 
-print('--------------------- Start scenario 1.5 ---------------------')
+# print('--------------------- Start scenario 1.5 ---------------------')
 
-time_init = time.time()
+# time_init = time.time()
 
-with tqdm(total=N_simu) as pbar:
-   res_S1_5 = Parallel(n_jobs=50)(delayed(scenario_1_5)(theta, Sigma, mu0, P0, Gamma, N, arc_length_fct, nb_basis, bandwidth_grid_init, reg_param_grid_init, reg_param_grid_EM, max_iter, tol) for k in range(N_simu))
-   pbar.update()
+# with tqdm(total=N_simu) as pbar:
+#    res_S1_5 = Parallel(n_jobs=50)(delayed(scenario_1_5)(theta, Sigma, mu0, P0, Gamma, N, arc_length_fct, nb_basis, bandwidth_grid_init, reg_param_grid_init, reg_param_grid_EM, max_iter, tol) for k in range(N_simu))
+#    pbar.update()
 
-time_end = time.time()
-duration = time_end - time_init
+# time_end = time.time()
+# duration = time_end - time_init
 
-filename = filename_base + "scenario_1_5"
+# filename = filename_base + "scenario_1_5"
 
-dic = {"results_S1_5":res_S1_5}
+# dic = {"results_S1_5":res_S1_5}
 
-if os.path.isfile(filename):
-   print("Le fichier ", filename, " existe déjà.")
-   filename = filename + '_bis'
-fil = open(filename,"xb")
-pickle.dump(dic,fil)
-fil.close()
+# if os.path.isfile(filename):
+#    print("Le fichier ", filename, " existe déjà.")
+#    filename = filename + '_bis'
+# fil = open(filename,"xb")
+# pickle.dump(dic,fil)
+# fil.close()
 
-print('End of scenario 1.5: time spent', duration, 'seconds. \n')
+# print('End of scenario 1.5: time spent', duration, 'seconds. \n')
 
 
 
