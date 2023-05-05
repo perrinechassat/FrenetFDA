@@ -316,3 +316,60 @@ def scenario_2(theta, Sigma, mu0, P0, Gamma, N, arc_length_fct, nb_basis, bandwi
    FS_statespace, Z_init, Z = scenario_1_1(theta, Sigma, mu0, P0, Gamma, N, arc_length_fct, nb_basis, bandwidth_grid_init, reg_param_grid_init, reg_param_grid_EM, max_iter_EM, tol_EM)
 
    return FS_statespace, Z_init, Z 
+
+
+
+def scenario_1_1_bis(theta, Sigma, mu0, P0, Gamma, N, arc_length_fct, nb_basis, bandwidth_grid_init, reg_param_grid_init, reg_param_grid_EM, max_iter_EM, tol_EM):
+   """ Scenario 1.1: Initialization method LP + GS + Extrinsic formulas """
+
+   
+   ####     Generation of one sample of the model    ####
+
+   Z, Q, X, Y = model_scenario(theta, Sigma, mu0, P0, Gamma, N, arc_length_fct)
+
+   ####     Initialization of parameters    ####
+
+   grid_time = np.linspace(0,1,N)
+   derivatives, h_opt = compute_derivatives(Y, grid_time, deg=3, h=None, CV_optimization_h={"flag":True, "h_grid":bandwidth_grid_init, "K":10})
+   grid_arc_s, L, arc_s, arc_s_dot = compute_arc_length(Y, grid_time, smooth=True, smoothing_param=h_opt)
+
+   # Gamma
+   Gamma_hat = ((Y - derivatives[0]).T @ (Y - derivatives[0]))/N
+
+   # Z_hat
+   GS_orthog = GramSchmidtOrthogonalization(Y, grid_arc_s, deg=3)
+   h_opt, err_h = GS_orthog.grid_search_CV_optimization_bandwidth(bandwidth_grid=bandwidth_grid_init, K_split=10)
+   Z_GS, Q_GS, X_GS = GS_orthog.fit(h_opt) 
+
+   # mu0_hat
+   mu0_hat = Z_GS[0]
+
+   # theta_hat
+   extrins_model_theta = ExtrinsicFormulas(Y, grid_time, grid_arc_s, deg_polynomial=3)
+   h_opt, nb_basis_opt, regularization_parameter_opt, CV_error_tab = extrins_model_theta.grid_search_optimization_hyperparameters(bandwidth_grid_init, np.array([nb_basis]), reg_param_grid_init, method='2', n_splits=10)
+   Basis_extrins = extrins_model_theta.Bspline_smooth_estimates(h_opt, nb_basis_opt, regularization_parameter=regularization_parameter_opt)
+
+   # Sigma_hat
+   # mu_Z_theta_extrins = solve_FrenetSerret_ODE_SE(Basis_extrins.evaluate, grid_arc_s, Z0=mu0_hat, method='Linearized')
+   # Sigma_hat = np.zeros((N, 2, 2))
+   # for i in range(N):
+   #    L = np.zeros((6,2))
+   #    L[0,1], L[2,0] = 1, 1
+   #    xi = -SE3.log(np.linalg.inv(mu_Z_theta_extrins[i])@Z_GS[i])
+   #    Sigma_hat[i] = L.T @ xi[:,np.newaxis] @ xi[np.newaxis,:] @ L
+   # sig = np.sqrt((np.mean(Sigma_hat[:,0,0]) + np.mean(Sigma_hat[:,1,1]))/2)
+   # print('sigma:', sig)
+   sig = 0.03
+   Sigma_hat = lambda s: sig**2*np.array([[1+0*s, 0*s], [0*s, 1+0*s]])
+   
+   # P0_hat
+   P0_hat = sig**2*np.eye(6)
+
+   try:
+      ####     Run the EM    ####
+      FS_statespace = FrenetStateSpace(grid_arc_s, Y)
+      FS_statespace.expectation_maximization(tol_EM, max_iter_EM, nb_basis=nb_basis, regularization_parameter_list=reg_param_grid_EM, init_params = {"W":Gamma_hat, "coefs":Basis_extrins.coefs, "mu0":mu0_hat, "Sigma":Sigma_hat, "P0":P0_hat}, init_states = None, method='autre', model_Sigma='scalar')
+   except:
+      FS_statespace = [sig, Basis_extrins, Z_GS]
+
+   return FS_statespace, Z_GS, Z
