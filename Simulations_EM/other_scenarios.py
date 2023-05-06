@@ -16,137 +16,137 @@ from simulations_tools import *
 from tqdm import tqdm
 
 
-""" 
+# """ 
 
-Scenario 3: Simulation code to compare the results in function of the observation noise. 
+# Scenario 3: Simulation code to compare the results in function of the observation noise. 
     
-    Scenario:
-        1. $\Gamma = \gamma^2 I$ with $\gamma = 0.001$
-        2. $\Gamma = \gamma^2 I$ with $\gamma = 0.005$
-    and all the others parameters are the same for all scenarios.
+#     Scenario:
+#         1. $\Gamma = \gamma^2 I$ with $\gamma = 0.001$
+#         2. $\Gamma = \gamma^2 I$ with $\gamma = 0.005$
+#     and all the others parameters are the same for all scenarios.
 
-"""
+# """
 
-directory = r"results/scenario_3/model_01"
-filename_base = "results/scenario_3/model_01/"
+# directory = r"results/scenario_3/model_01"
+# filename_base = "results/scenario_3/model_01/"
 
-current_directory = os.getcwd()
-final_directory = os.path.join(current_directory, directory)
-if not os.path.exists(final_directory):
-   os.makedirs(final_directory)
+# current_directory = os.getcwd()
+# final_directory = os.path.join(current_directory, directory)
+# if not os.path.exists(final_directory):
+#    os.makedirs(final_directory)
 
 
-""" Definition of the true parameters """
+# """ Definition of the true parameters """
 
-## Theta 
-def theta(s):
-   curv = lambda s : 2*np.cos(2*np.pi*s) + 5
-   tors = lambda s : 2*np.sin(2*np.pi*s) + 1
-   if isinstance(s, int) or isinstance(s, float):
-      return np.array([curv(s), tors(s)])
-   elif isinstance(s, np.ndarray):
-      return np.vstack((curv(s), tors(s))).T
-   else:
-      raise ValueError('Variable is not a float, a int or a NumPy array.')
+# ## Theta 
+# def theta(s):
+#    curv = lambda s : 2*np.cos(2*np.pi*s) + 5
+#    tors = lambda s : 2*np.sin(2*np.pi*s) + 1
+#    if isinstance(s, int) or isinstance(s, float):
+#       return np.array([curv(s), tors(s)])
+#    elif isinstance(s, np.ndarray):
+#       return np.vstack((curv(s), tors(s))).T
+#    else:
+#       raise ValueError('Variable is not a float, a int or a NumPy array.')
    
-arc_length_fct = lambda s: s
+# arc_length_fct = lambda s: s
 
-## Sigma
-Sigma = None 
-## mu_0 and P_0
-mu0 = np.eye(4)
-P0 = 0.001**2*np.eye(6)
-## number of samples and basis fct
-N = 200
-nb_basis = 15
-## grid of parameters
-bandwidth_grid_init = np.array([0.05, 0.1, 0.12, 0.15, 0.17, 0.2, 0.25])
-reg_param_grid_init = np.array([1e-06, 1e-05, 1e-04, 1e-03, 1e-02, 1e-01])
-## Param EM
-max_iter = 300
-tol = 1e-3
-# reg_param_grid_EM = np.array([[1e-06,1e-06], [1e-05,1e-05], [1e-04,1e-04], [1e-03,1e-03], [1e-02,1e-02], [1e-01,1e-01]])
-reg_param_grid_EM = np.array([[1e-04,1e-04], [1e-03,1e-03], [1e-02,1e-02], [1e-01,1e-01]])
-reg_param_grid_EM = np.array(np.meshgrid(*reg_param_grid_EM.T)).reshape((2,-1))
-reg_param_grid_EM = np.moveaxis(reg_param_grid_EM, 0,1)
-## Number of simulations 
-N_simu = 100
-
-
-filename = filename_base + "model"
-dic = {"nb_iterations_simu": N_simu, "P0": P0, "mu0": mu0, "theta":theta, "Sigma":Sigma, "reg_param_grid_EM":reg_param_grid_EM, "max_iter":max_iter, "tol":tol, "N":N, 
-       "arc_length_fct": arc_length_fct, "bandwidth_grid_init" : bandwidth_grid_init, "nb_basis":nb_basis, "reg_param_grid_init": reg_param_grid_init}
-if os.path.isfile(filename):
-   print("Le fichier ", filename, " existe déjà.")
-   filename = filename + '_bis'
-fil = open(filename,"xb")
-pickle.dump(dic,fil)
-fil.close()
+# ## Sigma
+# Sigma = None 
+# ## mu_0 and P_0
+# mu0 = np.eye(4)
+# P0 = 0.001**2*np.eye(6)
+# ## number of samples and basis fct
+# N = 200
+# nb_basis = 15
+# ## grid of parameters
+# bandwidth_grid_init = np.array([0.05, 0.1, 0.12, 0.15, 0.17, 0.2, 0.25])
+# reg_param_grid_init = np.array([1e-06, 1e-05, 1e-04, 1e-03, 1e-02, 1e-01])
+# ## Param EM
+# max_iter = 300
+# tol = 1e-3
+# # reg_param_grid_EM = np.array([[1e-06,1e-06], [1e-05,1e-05], [1e-04,1e-04], [1e-03,1e-03], [1e-02,1e-02], [1e-01,1e-01]])
+# reg_param_grid_EM = np.array([[1e-04,1e-04], [1e-03,1e-03], [1e-02,1e-02], [1e-01,1e-01]])
+# reg_param_grid_EM = np.array(np.meshgrid(*reg_param_grid_EM.T)).reshape((2,-1))
+# reg_param_grid_EM = np.moveaxis(reg_param_grid_EM, 0,1)
+# ## Number of simulations 
+# N_simu = 100
 
 
-""" S3.1: gamma = 0.001 """
-
-print('--------------------- Start scenario 3.1 ---------------------')
-
-time_init = time.time()
-
-## Gamma
-gamma = 0.001
-Gamma = gamma**2*np.eye(3)
-
-
-with tqdm(total=N_simu) as pbar:
-   res_S3_1 = Parallel(n_jobs=50)(delayed(scenario_1_1_bis)(theta, Sigma, mu0, P0, Gamma, N, arc_length_fct, nb_basis, bandwidth_grid_init, reg_param_grid_init, reg_param_grid_EM, max_iter, tol) for k in range(N_simu))
-   pbar.update()
-
-time_end = time.time()
-duration = time_end - time_init
-
-filename = filename_base + "scenario_3_1"
-
-dic = {"results_S3_1":res_S3_1, "gamma": gamma}
-
-if os.path.isfile(filename):
-   print("Le fichier ", filename, " existe déjà.")
-   filename = filename + '_bis'
-fil = open(filename,"xb")
-pickle.dump(dic,fil)
-fil.close()
-
-print('End of scenario 3.1: time spent', duration, 'seconds. \n')
+# filename = filename_base + "model"
+# dic = {"nb_iterations_simu": N_simu, "P0": P0, "mu0": mu0, "theta":theta, "Sigma":Sigma, "reg_param_grid_EM":reg_param_grid_EM, "max_iter":max_iter, "tol":tol, "N":N, 
+#        "arc_length_fct": arc_length_fct, "bandwidth_grid_init" : bandwidth_grid_init, "nb_basis":nb_basis, "reg_param_grid_init": reg_param_grid_init}
+# if os.path.isfile(filename):
+#    print("Le fichier ", filename, " existe déjà.")
+#    filename = filename + '_bis'
+# fil = open(filename,"xb")
+# pickle.dump(dic,fil)
+# fil.close()
 
 
+# """ S3.1: gamma = 0.001 """
 
-""" S3.2: gamma = 0.005 """
+# print('--------------------- Start scenario 3.1 ---------------------')
 
-print('--------------------- Start scenario 3.2 ---------------------')
+# time_init = time.time()
 
-time_init = time.time()
-
-## Gamma
-gamma = 0.005
-Gamma = gamma**2*np.eye(3)
+# ## Gamma
+# gamma = 0.001
+# Gamma = gamma**2*np.eye(3)
 
 
-with tqdm(total=N_simu) as pbar:
-   res_S3_2 = Parallel(n_jobs=50)(delayed(scenario_1_1_bis)(theta, Sigma, mu0, P0, Gamma, N, arc_length_fct, nb_basis, bandwidth_grid_init, reg_param_grid_init, reg_param_grid_EM, max_iter, tol) for k in range(N_simu))
-   pbar.update()
+# with tqdm(total=N_simu) as pbar:
+#    res_S3_1 = Parallel(n_jobs=50)(delayed(scenario_1_1_bis)(theta, Sigma, mu0, P0, Gamma, N, arc_length_fct, nb_basis, bandwidth_grid_init, reg_param_grid_init, reg_param_grid_EM, max_iter, tol) for k in range(N_simu))
+#    pbar.update()
 
-time_end = time.time()
-duration = time_end - time_init
+# time_end = time.time()
+# duration = time_end - time_init
 
-filename = filename_base + "scenario_3_2"
+# filename = filename_base + "scenario_3_1"
 
-dic = {"results_S3_2":res_S3_2, "gamma": gamma}
+# dic = {"results_S3_1":res_S3_1, "gamma": gamma}
 
-if os.path.isfile(filename):
-   print("Le fichier ", filename, " existe déjà.")
-   filename = filename + '_bis'
-fil = open(filename,"xb")
-pickle.dump(dic,fil)
-fil.close()
+# if os.path.isfile(filename):
+#    print("Le fichier ", filename, " existe déjà.")
+#    filename = filename + '_bis'
+# fil = open(filename,"xb")
+# pickle.dump(dic,fil)
+# fil.close()
 
-print('End of scenario 3.2: time spent', duration, 'seconds. \n')
+# print('End of scenario 3.1: time spent', duration, 'seconds. \n')
+
+
+
+# """ S3.2: gamma = 0.005 """
+
+# print('--------------------- Start scenario 3.2 ---------------------')
+
+# time_init = time.time()
+
+# ## Gamma
+# gamma = 0.005
+# Gamma = gamma**2*np.eye(3)
+
+
+# with tqdm(total=N_simu) as pbar:
+#    res_S3_2 = Parallel(n_jobs=50)(delayed(scenario_1_1_bis)(theta, Sigma, mu0, P0, Gamma, N, arc_length_fct, nb_basis, bandwidth_grid_init, reg_param_grid_init, reg_param_grid_EM, max_iter, tol) for k in range(N_simu))
+#    pbar.update()
+
+# time_end = time.time()
+# duration = time_end - time_init
+
+# filename = filename_base + "scenario_3_2"
+
+# dic = {"results_S3_2":res_S3_2, "gamma": gamma}
+
+# if os.path.isfile(filename):
+#    print("Le fichier ", filename, " existe déjà.")
+#    filename = filename + '_bis'
+# fil = open(filename,"xb")
+# pickle.dump(dic,fil)
+# fil.close()
+
+# print('End of scenario 3.2: time spent', duration, 'seconds. \n')
 
 
 
