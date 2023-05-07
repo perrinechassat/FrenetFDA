@@ -154,106 +154,6 @@ from tqdm import tqdm
 
 
 
-""" 
-
-Scenario 4: Simulation code to compare the results in function of the number of sample points. 
-    
-    Scenario:
-        1. N = 200   (same as Scenario 3.1)
-        2. N = 100
-    and all the others parameters are the same for all scenarios.
-
-"""
-
-
-directory = r"results/scenario_4/model_01"
-filename_base = "results/scenario_4/model_01/"
-
-current_directory = os.getcwd()
-final_directory = os.path.join(current_directory, directory)
-if not os.path.exists(final_directory):
-   os.makedirs(final_directory)
-
-
-""" Definition of the true parameters """
-
-## Theta 
-def theta(s):
-   curv = lambda s : 2*np.cos(2*np.pi*s) + 5
-   tors = lambda s : 2*np.sin(2*np.pi*s) + 1
-   if isinstance(s, int) or isinstance(s, float):
-      return np.array([curv(s), tors(s)])
-   elif isinstance(s, np.ndarray):
-      return np.vstack((curv(s), tors(s))).T
-   else:
-      raise ValueError('Variable is not a float, a int or a NumPy array.')
-   
-arc_length_fct = lambda s: s
-
-## Sigma
-Sigma = None 
-## mu_0 and P_0
-mu0 = np.eye(4)
-P0 = 0.001**2*np.eye(6)
-## Gamma
-gamma = 0.001
-Gamma = gamma**2*np.eye(3)
-## grid of parameters
-bandwidth_grid_init = np.array([0.05, 0.1, 0.12, 0.15, 0.17, 0.2, 0.25])
-reg_param_grid_init = np.array([1e-06, 1e-05, 1e-04, 1e-03, 1e-02, 1e-01])
-## Param EM
-max_iter = 300
-tol = 1e-3
-# reg_param_grid_EM = np.array([[1e-06,1e-06], [1e-05,1e-05], [1e-04,1e-04], [1e-03,1e-03], [1e-02,1e-02], [1e-01,1e-01]])
-reg_param_grid_EM = np.array([[1e-04,1e-04], [1e-03,1e-03], [1e-02,1e-02], [1e-01,1e-01]])
-reg_param_grid_EM = np.array(np.meshgrid(*reg_param_grid_EM.T)).reshape((2,-1))
-reg_param_grid_EM = np.moveaxis(reg_param_grid_EM, 0,1)
-## Number of simulations 
-N_simu = 100
-
-
-filename = filename_base + "model"
-dic = {"nb_iterations_simu": N_simu, "P0": P0, "mu0": mu0, "theta":theta, "Gamma":Gamma, "Sigma":Sigma, "reg_param_grid_EM":reg_param_grid_EM, "max_iter":max_iter, "tol":tol, 
-       "arc_length_fct": arc_length_fct, "bandwidth_grid_init" : bandwidth_grid_init, "reg_param_grid_init": reg_param_grid_init}
-if os.path.isfile(filename):
-   print("Le fichier ", filename, " existe déjà.")
-   filename = filename + '_bis'
-fil = open(filename,"xb")
-pickle.dump(dic,fil)
-fil.close()
-
-
-
-""" S4.2: N = 100 """
-
-print('--------------------- Start scenario 4.2 ---------------------')
-
-time_init = time.time()
-
-## number of samples and basis fct
-N = 100
-nb_basis = 10
-
-with tqdm(total=N_simu) as pbar:
-   res_S4_2 = Parallel(n_jobs=50)(delayed(scenario_1_1_bis)(theta, Sigma, mu0, P0, Gamma, N, arc_length_fct, nb_basis, bandwidth_grid_init, reg_param_grid_init, reg_param_grid_EM, max_iter, tol) for k in range(N_simu))
-   pbar.update()
-
-time_end = time.time()
-duration = time_end - time_init
-
-filename = filename_base + "scenario_4_2"
-
-dic = {"results_S4_2":res_S4_2, "N": N, "nb_basis": nb_basis}
-
-if os.path.isfile(filename):
-   print("Le fichier ", filename, " existe déjà.")
-   filename = filename + '_bis'
-fil = open(filename,"xb")
-pickle.dump(dic,fil)
-fil.close()
-
-print('End of scenario 4.2: time spent', duration, 'seconds. \n')
-
 
 
 
@@ -440,3 +340,116 @@ pickle.dump(dic,fil)
 fil.close()
 
 print('End of scenario 5.4: time spent', duration, 'seconds. \n')
+
+
+
+
+
+
+
+
+""" 
+
+Scenario 4: Simulation code to compare the results in function of the number of sample points. 
+    
+    Scenario:
+        1. N = 200   (same as Scenario 3.1)
+        2. N = 100
+    and all the others parameters are the same for all scenarios.
+
+"""
+
+
+directory = r"results/scenario_4/model_01"
+filename_base = "results/scenario_4/model_01/"
+
+current_directory = os.getcwd()
+final_directory = os.path.join(current_directory, directory)
+if not os.path.exists(final_directory):
+   os.makedirs(final_directory)
+
+
+""" Definition of the true parameters """
+
+## Theta 
+def theta(s):
+   curv = lambda s : 2*np.cos(2*np.pi*s) + 5
+   tors = lambda s : 2*np.sin(2*np.pi*s) + 1
+   if isinstance(s, int) or isinstance(s, float):
+      return np.array([curv(s), tors(s)])
+   elif isinstance(s, np.ndarray):
+      return np.vstack((curv(s), tors(s))).T
+   else:
+      raise ValueError('Variable is not a float, a int or a NumPy array.')
+   
+arc_length_fct = lambda s: s
+
+## Sigma
+Sigma = None 
+## mu_0 and P_0
+mu0 = np.eye(4)
+P0 = 0.001**2*np.eye(6)
+## Gamma
+gamma = 0.001
+Gamma = gamma**2*np.eye(3)
+## grid of parameters
+bandwidth_grid_init = np.array([0.05, 0.1, 0.12, 0.15, 0.17, 0.2, 0.25])
+reg_param_grid_init = np.array([1e-06, 1e-05, 1e-04, 1e-03, 1e-02, 1e-01])
+## Param EM
+max_iter = 300
+tol = 1e-3
+reg_param_grid_EM = np.array([[1e-06,1e-06], [1e-05,1e-05], [1e-04,1e-04], [1e-03,1e-03], [1e-02,1e-02], [1e-01,1e-01]])
+reg_param_grid_EM = np.array(np.meshgrid(*reg_param_grid_EM.T)).reshape((2,-1))
+reg_param_grid_EM = np.moveaxis(reg_param_grid_EM, 0,1)
+## Number of simulations 
+N_simu = 100
+
+
+filename = filename_base + "model"
+dic = {"nb_iterations_simu": N_simu, "P0": P0, "mu0": mu0, "theta":theta, "Gamma":Gamma, "Sigma":Sigma, "reg_param_grid_EM":reg_param_grid_EM, "max_iter":max_iter, "tol":tol, 
+       "arc_length_fct": arc_length_fct, "bandwidth_grid_init" : bandwidth_grid_init, "reg_param_grid_init": reg_param_grid_init}
+if os.path.isfile(filename):
+   print("Le fichier ", filename, " existe déjà.")
+   filename = filename + '_bis'
+fil = open(filename,"xb")
+pickle.dump(dic,fil)
+fil.close()
+
+
+
+""" S4.2: N = 100 """
+
+print('--------------------- Start scenario 4.2 ---------------------')
+
+time_init = time.time()
+
+## number of samples and basis fct
+N = 100
+nb_basis = 10
+
+
+with tqdm(total=N_simu) as pbar:
+   res_S4_2 = Parallel(n_jobs=50)(delayed(scenario_1_1_bis)(theta, Sigma, mu0, P0, Gamma, N, arc_length_fct, nb_basis, bandwidth_grid_init, reg_param_grid_init, reg_param_grid_EM, max_iter, tol) for k in range(N_simu))
+   pbar.update()
+
+# res_S4_2 = []
+# for k in range(N_simu):
+#    print('k:', k)
+#    res_S4_2.append(scenario_1_1_bis(theta, Sigma, mu0, P0, Gamma, N, arc_length_fct, nb_basis, bandwidth_grid_init, reg_param_grid_init, reg_param_grid_EM, max_iter, tol)) 
+   
+
+time_end = time.time()
+duration = time_end - time_init
+
+filename = filename_base + "scenario_4_2"
+
+dic = {"results_S4_2":res_S4_2, "N": N, "nb_basis": nb_basis}
+
+if os.path.isfile(filename):
+   print("Le fichier ", filename, " existe déjà.")
+   filename = filename + '_bis'
+fil = open(filename,"xb")
+pickle.dump(dic,fil)
+fil.close()
+
+print('End of scenario 4.2: time spent', duration, 'seconds. \n')
