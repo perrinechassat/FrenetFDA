@@ -433,7 +433,7 @@ Gamma = gamma**2*np.eye(3)
 
 
 with tqdm(total=N_simu) as pbar:
-   res_S4_2 = Parallel(n_jobs=50)(delayed(scenario_1_1_bis)(theta, Sigma, mu0, P0, Gamma, N, arc_length_fct, nb_basis, bandwidth_grid_init, reg_param_grid_init, reg_param_grid_EM, max_iter, tol) for k in range(N_simu))
+   res_S4_2 = Parallel(n_jobs=50)(delayed(scenario_1_2)(theta, Sigma, mu0, P0, Gamma, N, arc_length_fct, nb_basis, bandwidth_grid_init, reg_param_grid_init, reg_param_grid_EM, max_iter, tol) for k in range(N_simu))
    pbar.update()
 
 # res_S4_2 = []
@@ -460,6 +460,42 @@ print('End of scenario 4.2: time spent', duration, 'seconds. \n')
 
 
 
+""" S4.1: N = 200 gamma=0.001"""
+
+print('--------------------- Start scenario 4.1 ---------------------')
+
+time_init = time.time()
+
+## number of samples and basis fct
+N = 200
+nb_basis = 15
+## Gamma
+gamma = 0.001
+Gamma = gamma**2*np.eye(3)
+
+
+with tqdm(total=N_simu) as pbar:
+   res_S4_1 = Parallel(n_jobs=50)(delayed(scenario_1_2)(theta, Sigma, mu0, P0, Gamma, N, arc_length_fct, nb_basis, bandwidth_grid_init, reg_param_grid_init, reg_param_grid_EM, max_iter, tol) for k in range(N_simu))
+   pbar.update()
+
+
+time_end = time.time()
+duration = time_end - time_init
+
+filename = filename_base + "scenario_4_1"
+
+dic = {"results_S4_1":res_S4_1, "N": N, "nb_basis": nb_basis, "gamma":gamma}
+
+if os.path.isfile(filename):
+   print("Le fichier ", filename, " existe déjà.")
+   filename = filename + '_bis'
+fil = open(filename,"xb")
+pickle.dump(dic,fil)
+fil.close()
+
+print('End of scenario 4.1: time spent', duration, 'seconds. \n')
+
+
 
 """ S4.4: N = 100 gamma=0.005"""
 
@@ -476,7 +512,7 @@ Gamma = gamma**2*np.eye(3)
 
 
 with tqdm(total=N_simu) as pbar:
-   res_S4_4 = Parallel(n_jobs=50)(delayed(scenario_1_1_bis)(theta, Sigma, mu0, P0, Gamma, N, arc_length_fct, nb_basis, bandwidth_grid_init, reg_param_grid_init, reg_param_grid_EM, max_iter, tol) for k in range(N_simu))
+   res_S4_4 = Parallel(n_jobs=50)(delayed(scenario_1_2)(theta, Sigma, mu0, P0, Gamma, N, arc_length_fct, nb_basis, bandwidth_grid_init, reg_param_grid_init, reg_param_grid_EM, max_iter, tol) for k in range(N_simu))
    pbar.update()
 
 
