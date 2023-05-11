@@ -251,7 +251,7 @@ class IEKFilterSmootherFrenetState():
 
             if j < self.N-1:
                 x = np.linspace(self.grid[j],self.grid[j+1],self.K_pts)
-                w_to_int = np.zeros((6,6,self.K_pts))
+                w_to_int = np.zeros((self.dim_g,self.dim_g,self.K_pts))
                 for k in range(self.K_pts):
                     phi = self.list_U[j*(self.K_pts-1),:,:]@np.linalg.inv(self.list_U[j*(self.K_pts-1)+k,:,:])
                     w_to_int[:,:,k] = phi @ self.L @ self.Sigma(x[k]) @ self.L.T @ phi.T
@@ -321,7 +321,7 @@ class LatentForceIEKFilterSmootherFrenetState():
         self.L = np.array([[0,1],[0,0],[1,0],[0,0],[0,0],[0,0]])
         self.F = lambda s: np.vstack((np.hstack((-SE3.Ad(np.array([theta(s)[1], 0*s, theta(s)[0], 1+0*s, 0*s, 0*s])), self.L)), np.zeros((self.dim_theta, self.dim_state))))
         self.A = lambda s: -SO3.wedge(np.array([theta(s)[1], 0*s, theta(s)[0]]))
-        self.H = np.hstack((np.hstack((np.zeros((self.n, self.n)), np.eye(self.n))), np.zeros(self.dim_theta)))
+        self.H = np.hstack((np.hstack((np.zeros((self.n, self.n)), np.eye(self.n))), np.zeros((self.n,self.dim_theta))))
         self.L_a = np.vstack((np.zeros((self.dim_g, self.dim_theta)), np.eye(self.dim_theta)))
         
 
@@ -358,17 +358,17 @@ class LatentForceIEKFilterSmootherFrenetState():
         """
         
         """
-        ode_func = lambda t,p: (np.matmul(self.F(t),p.reshape(self.dim_g, self.dim_g)) + np.matmul(p.reshape(self.dim_g, self.dim_g),self.F(t).T) + self.L_a @ self.Sigma(t) @ self.L_a.T).flatten()
+        ode_func = lambda t,p: (np.matmul(self.F(t),p.reshape(self.dim_state, self.dim_state)) + np.matmul(p.reshape(self.dim_state, self.dim_state),self.F(t).T) + self.L_a @ self.Sigma(t) @ self.L_a.T).flatten()
         sol = solve_ivp(ode_func, t_span=t_span, y0=self.P.flatten(), t_eval=np.array([t_span[-1]])) #, method='Radau')
-        self.P = sol.y[:,-1].reshape(self.dim_g, self.dim_g)
+        self.P = sol.y[:,-1].reshape(self.dim_state, self.dim_state)
 
     def __propagation_C(self, t_span):
         """
         
         """
-        ode_func = lambda t,c: np.matmul(self.F(t), c.reshape(self.dim_g, self.dim_g)).flatten()
-        sol = solve_ivp(ode_func, t_span=t_span, y0=(np.eye(self.dim_g)).flatten(), t_eval=np.array([t_span[-1]])) #, method='Radau')
-        self.C = sol.y[:,0].reshape(self.dim_g, self.dim_g)
+        ode_func = lambda t,c: np.matmul(self.F(t), c.reshape(self.dim_state, self.dim_state)).flatten()
+        sol = solve_ivp(ode_func, t_span=t_span, y0=(np.eye(self.dim_state)).flatten(), t_eval=np.array([t_span[-1]])) #, method='Radau')
+        self.C = sol.y[:,0].reshape(self.dim_state, self.dim_state)
 
 
     def __propagation_U(self, t_span):
@@ -378,9 +378,9 @@ class LatentForceIEKFilterSmootherFrenetState():
         x_eval = np.linspace(t_span[0],t_span[-1],self.K_pts)
         u_eval = x_eval[1:] - x_eval[:-1]
         v_eval = (x_eval[1:] + x_eval[:-1])/2
-        ode_func = lambda t,p: (np.matmul(self.F(t),p.reshape(self.dim_g, self.dim_g)) + np.matmul(p.reshape(self.dim_g, self.dim_g),self.F(t).T) + self.L_a @ self.Sigma(t) @ self.L_a.T).flatten()
+        ode_func = lambda t,p: (np.matmul(self.F(t),p.reshape(self.dim_state, self.dim_state)) + np.matmul(p.reshape(self.dim_state, self.dim_state),self.F(t).T) + self.L_a @ self.Sigma(t) @ self.L_a.T).flatten()
         sol = solve_ivp(ode_func, t_span=t_span, y0=self.P.flatten(), t_eval=v_eval) #, method='Radau')
-        self.list_P = sol.y[:,:].reshape(self.dim_g, self.dim_g, self.K_pts-1)
+        self.list_P = sol.y[:,:].reshape(self.dim_state, self.dim_state, self.K_pts-1)
         for i in range(self.K_pts-1):
             self.U = expm(u_eval[i]*(self.F(v_eval[i]) + self.L_a @ self.Sigma(v_eval[i]) @ self.L_a.T @np.linalg.inv(self.list_P[:,:,i])))@self.U
             self.list_U.append(self.U)
@@ -393,7 +393,7 @@ class LatentForceIEKFilterSmootherFrenetState():
         if self.n == 3:
             t_span = np.array([ti, tf])
             self.__propagation_Z(t_span)
-            self.__propagation_xi(t_span)
+            self.__propagation_xa(t_span)
             self.__propagation_C(t_span)
             self.__propagation_U(t_span)
             self.__propagation_P(t_span)
@@ -407,10 +407,10 @@ class LatentForceIEKFilterSmootherFrenetState():
         """
         S = self.H @ self.P @ self.H.T + (self.Q).T @ self.Gamma @ self.Q
         if S.any() == np.zeros((self.n,self.n)).any():
-            self.K = np.zeros((self.dim_g,self.n))
+            self.K = np.zeros((self.dim_state,self.n))
         else:
             self.K = self.P @ self.H.T @ np.linalg.inv(S)
-        I = np.eye(self.dim_g)
+        I = np.eye(self.dim_state)
         self.P = (I - self.K @ self.H) @ self.P
         self.P = (self.P+self.P.T)/2
         eps = self.K @ (self.Q).T @ (y - self.X) 
@@ -432,7 +432,7 @@ class LatentForceIEKFilterSmootherFrenetState():
         self.N = len(grid)
         self.grid = grid
         pred_Z, pred_xa, pred_P, pred_C = [], [], [], []
-        track_Z, track_Q, track_X, track_xa, track_P, track_eta = [self.Z], [self.Q], [self.X], [self.xi], [self.P], [self.eta]
+        track_Z, track_Q, track_X, track_xa, track_P, track_eta = [self.Z], [self.Q], [self.X], [self.xa], [self.P], [self.eta]
 
         for si, sf, y in zip(grid[:-1], grid[1:], Y):
             ''' Propagation step '''
@@ -474,9 +474,15 @@ class LatentForceIEKFilterSmootherFrenetState():
             self.tracking(grid, Y)
 
         self.Z_S = self.track_Z[-1]
+        self.Z_S_2 = self.track_Z[-1]
+        self.Z_S_3 = self.track_Z[-1]
+
         self.xa_S = self.track_xa[-1]
         I = np.eye(self.dim_g)
         smooth_Z = [self.Z_S]
+        smooth_Z_2 = [self.Z_S_2]
+        smooth_Z_3 = [self.Z_S_3]
+
         smooth_xa = [self.xa_S]
         smooth_gain = []
 
@@ -489,8 +495,22 @@ class LatentForceIEKFilterSmootherFrenetState():
                 smooth_gain.append(D)
 
             self.xa_S = xa_t + D@(self.xa_S - xa_p)
+
             self.Z_S = Z_t@SE3.exp(D[:self.dim_g,:self.dim_g]@SE3.log(np.linalg.inv(Z_p)@self.Z_S))
+
+            err = (self.xa_S - xa_p)
+            eps = D@err
+            self.Z_S_2 = Z_t@SE3.exp(eps[:self.dim_g])
+
+            err = (self.xa_S - xa_p)
+            err[:self.dim_g] = SE3.log(np.linalg.inv(Z_p)@self.Z_S)
+            eps = D@err
+            self.Z_S_3 = Z_t@SE3.exp(eps[:self.dim_g])
+
             smooth_Z.append(self.Z_S)
+            smooth_Z_2.append(self.Z_S_2)
+            smooth_Z_3.append(self.Z_S_3)
+
             smooth_xa.append(self.xa_S)
 
         P_full, P_full_mat = self.__compute_full_P_smooth()
@@ -502,6 +522,9 @@ class LatentForceIEKFilterSmootherFrenetState():
                 smooth_P_dble[i-1] = P_full[i-1,i,:,:]
 
         self.smooth_Z = np.array(list(reversed(smooth_Z)))
+        self.smooth_Z_2 = np.array(list(reversed(smooth_Z_2)))
+        self.smooth_Z_3 = np.array(list(reversed(smooth_Z_3)))
+
         self.smooth_xa = np.array(list(reversed(smooth_xa)))
         self.smooth_eta = self.smooth_xa[:,self.dim_g:]
         self.smooth_Q = self.smooth_Z[:,0:self.n,0:self.n]
@@ -529,10 +552,10 @@ class LatentForceIEKFilterSmootherFrenetState():
 
             if j < self.N-1:
                 x = np.linspace(self.grid[j],self.grid[j+1],self.K_pts)
-                w_to_int = np.zeros((6,6,self.K_pts))
+                w_to_int = np.zeros((self.dim_state,self.dim_state,self.K_pts))
                 for k in range(self.K_pts):
                     phi = self.list_U[j*(self.K_pts-1),:,:]@np.linalg.inv(self.list_U[j*(self.K_pts-1)+k,:,:])
-                    w_to_int[:,:,k] = phi @ self.L_a @ self.Sigma(x[k]) @ self.L._aT @ phi.T
+                    w_to_int[:,:,k] = phi @ self.L_a @ self.Sigma(x[k]) @ self.L_a.T @ phi.T
                 W_appox[j] = np.trapz(w_to_int, x=x)
         W_mat = block_diag(*W_appox)
         P_mat = C@W_mat@C.T

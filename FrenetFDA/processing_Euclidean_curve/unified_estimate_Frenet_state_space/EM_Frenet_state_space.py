@@ -15,6 +15,127 @@ from skfda.misc.operators import LinearDifferentialOperator
 import time as ttime
 
 
+class MLE:
+
+    def __init__(self, grid_obs, Y_obs, Z_obs):
+        self.grid = grid_obs
+        self.Y = Y_obs[1:]
+        self.Z = Z_obs
+        self.X = Z_obs[:,:3,3]
+        self.Q = Z_obs[:,:3,:3]
+        self.N = len(self.Y)
+        self.u = self.grid[1:] - self.grid[:-1]
+        self.v = (self.grid[1:] + self.grid[:-1])/2
+        # self.v = self.grid[:-1]
+        L = np.zeros((6,2))
+        L[0,1], L[2,0] = 1, 1
+        self.L = L
+    
+    def opti_other_param(self):
+        self.mu0 = self.Z[0]
+        self.P0 = np.zeros((6,6))
+        Gamma = np.zeros((3,3))
+        for i in range(1,self.N+1):
+            Gamma += (self.Y[i-1]-self.X[i])[:,np.newaxis]@(self.Y[i-1]-self.X[i])[np.newaxis,:] 
+        self.Gamma = Gamma/self.N
+        return self.mu0, self.P0, self.Gamma
+    
+    def def_model_theta(self, nb_basis):
+        self.nb_basis = nb_basis
+        self.Bspline_decomp = VectorBSplineSmoothing(2, nb_basis, domain_range=(self.grid[0], self.grid[-1]), order=4, penalization=True)
+        V = np.expand_dims(self.v, 1)
+        self.basis_matrix = self.Bspline_decomp.basis(V,).reshape((self.Bspline_decomp.basis.n_basis, -1)).T
+        r = np.zeros((self.N,6))
+        r_tilde = np.zeros((self.N,2))
+        for i in range(self.N):
+            r[i] = -(1/self.u[i])*SE3.log(np.linalg.inv(self.Z[i+1])@self.Z[i])
+            r_tilde[i] = self.L.T@r[i] 
+        self.r = r
+        self.r_tilde = r_tilde
+
+    
+    def __compute_L_tilde(self, coefs):
+        L_tilde = np.zeros((self.N,2,2))
+        L_tilde_inv = np.zeros((self.N,2,2))
+        theta_v = np.reshape(self.basis_matrix @ coefs, (-1,2))
+        for i in range(self.N):
+            phi_vi = SE3.Ad_group(SE3.exp(-(self.grid[i+1]-self.v[i])*np.array([theta_v[i,1],0,theta_v[i,0],1,0,0])))
+            L_tilde[i] = self.L.T @ phi_vi @ self.L
+            L_tilde_inv[i] = np.linalg.inv(L_tilde[i])
+        return L_tilde, L_tilde_inv
+    
+
+    def compute_weights(self, coefs):
+        L_tilde, L_tilde_inv = self.__compute_L_tilde(coefs)
+        weights = np.zeros((self.N,2,2))
+        for i in range(self.N):
+            weights[i] = self.u[i]*L_tilde_inv[i].T@L_tilde_inv[i]
+        mat_weights = block_diag(*weights)
+        return mat_weights, weights
+    
+
+    def step_opti_coefs(self, mat_weights, reg_param_mat):
+        left = self.basis_matrix.T @ mat_weights @ self.basis_matrix + reg_param_mat @ self.Bspline_decomp.penalty_matrix    
+        right = self.basis_matrix.T @ mat_weights @ np.reshape(self.r_tilde, (self.N*(2),))
+        coefs_tem = np.linalg.solve(left, right)
+        coefs_tem = np.reshape(coefs_tem,(-1,2))
+        new_coefs = np.reshape(coefs_tem, (-1,))
+        return new_coefs
+        
+
+    def opti_coefs(self, reg_param):
+        lbda, reg_param_mat = self.Bspline_decomp.check_regularization_parameter(reg_param)
+        coefs_init = np.zeros((self.nb_basis*2))
+        mat_weights, weights = self.compute_weights(coefs_init)
+    
+        tol = 0.001
+        max_iter = 100
+        old_theta = np.reshape(self.basis_matrix @ coefs_init, (-1,2))
+        rel_error = 2*tol
+        k = 0 
+        print('Coefs optimization:')
+        while rel_error > tol and k < max_iter:
+            coefs_opt = self.step_opti_coefs(mat_weights, reg_param_mat)
+            mat_weights, weights = self.compute_weights(coefs_opt)
+            new_theta = np.reshape(self.basis_matrix @ coefs_opt, (-1,2))
+            rel_error = np.linalg.norm(old_theta - new_theta)/np.linalg.norm(new_theta)
+            print('     iteration:', k, ', relative error:', rel_error)
+            old_theta = new_theta
+            k += 1
+        self.coefs = coefs_opt
+        self.mat_weights = mat_weights
+        self.hat_matrix = self.basis_matrix @ np.linalg.inv(self.basis_matrix.T @ mat_weights @ self.basis_matrix + reg_param_mat @ self.Bspline_decomp.penalty_matrix) @ self.basis_matrix.T @ mat_weights
+        
+    def opti_sigma(self):
+        error = (np.eye(self.hat_matrix.shape[0])-self.hat_matrix)@np.reshape(self.r_tilde, (self.N*2,))
+        sigma_square = (1/(2*self.N))*np.trace(self.mat_weights@(error[:,np.newaxis]@error[np.newaxis,:]))
+        self.sigma_square = sigma_square
+        self.sigma = np.sqrt(sigma_square)
+    
+
+    def compute_GCV_criteria(self):
+        error = (np.eye(self.hat_matrix.shape[0])-self.hat_matrix)@np.reshape(self.r_tilde, (self.N*2,))
+        GCV = self.N*(np.linalg.norm(error)**2)/(np.trace((np.eye(self.hat_matrix.shape[0])-self.hat_matrix))**2) 
+        V0 = self.N*(np.linalg.norm(error)**2)/(np.trace(np.linalg.inv(self.mat_weights)@(np.eye(self.hat_matrix.shape[0])-self.hat_matrix))**2) 
+        V1 = self.N*np.squeeze((error[np.newaxis,:]@self.mat_weights@error))/(np.trace((np.eye(self.hat_matrix.shape[0])-self.hat_matrix))**2)
+        V2 = self.N*(np.linalg.norm(self.mat_weights@error)**2)/(np.trace(self.mat_weights@(np.eye(self.hat_matrix.shape[0])-self.hat_matrix))**2)
+        U0 = (1/self.N)*(np.linalg.norm(error)**2) - (self.sigma_square/self.N)*np.trace(np.linalg.inv(self.mat_weights)) + 2*(self.sigma_square/self.N)*np.trace(np.linalg.inv(self.mat_weights)@self.hat_matrix)
+        U1 = (1/self.N)*np.squeeze((error[np.newaxis,:]@self.mat_weights@error)) - (self.sigma_square/self.N)*np.trace(np.eye(self.mat_weights.shape[0])) + 2*(self.sigma_square/self.N)*np.trace(self.hat_matrix)
+        U2 = (1/self.N)*(np.linalg.norm(self.mat_weights@error)**2) - (self.sigma_square/self.N)*np.trace(self.mat_weights) + 2*(self.sigma_square/self.N)*np.trace(self.mat_weights@self.hat_matrix)
+        L = self.N*np.log(np.squeeze((error[np.newaxis,:]@self.mat_weights@error))) + np.log(np.linalg.det(np.linalg.inv(self.mat_weights))) + np.log(self.N)*np.trace(self.hat_matrix)
+        return GCV, V0, V1, V2, U0, U1, U2, L
+
+
+    def compute_true_MSE(self, theta, sigma):
+        # true_theta = theta(self.grid[:-1])
+        true_theta = theta(self.v)
+        error = true_theta - np.reshape(self.basis_matrix @ self.coefs, (-1,2))
+        MSE_theta = np.linalg.norm(error, axis=0)
+        MSE = np.linalg.norm(error)
+        error_sigma = np.linalg.norm(sigma-self.sigma)
+        return MSE_theta, MSE, error_sigma
+
+
 class FrenetStateSpace:
 
     def __init__(self, grid_obs, Y_obs, dim=3):

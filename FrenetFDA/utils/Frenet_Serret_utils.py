@@ -105,7 +105,9 @@ def solve_FrenetSerret_SDE_SE3(theta, Sigma, L, t_eval, Z0=None):
     Z[0] = Z0
     for i in range(1,N):
         delta_t = t_eval[i]-t_eval[i-1]
-        Z[i] = Z[i-1]@SE3.exp(delta_t*np.array([theta(t_eval[i-1])[1], 0, theta(t_eval[i-1])[0], 1, 0, 0]) + np.sqrt(delta_t)*L @ np.random.multivariate_normal(np.zeros(2), Sigma(t_eval[i-1])))
+        pts = (t_eval[i]+t_eval[i-1])/2
+        # Z[i] = Z[i-1]@SE3.exp(delta_t*np.array([theta(t_eval[i-1])[1], 0, theta(t_eval[i-1])[0], 1, 0, 0]) + np.sqrt(delta_t)*L @ np.random.multivariate_normal(np.zeros(2), Sigma(t_eval[i-1])))
+        Z[i] = Z[i-1]@SE3.exp(delta_t*np.array([theta(pts)[1], 0, theta(pts)[0], 1, 0, 0]) + np.sqrt(delta_t)*L @ np.random.multivariate_normal(np.zeros(2), Sigma(pts)))
     return Z 
 
 
