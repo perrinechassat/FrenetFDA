@@ -93,13 +93,13 @@ class MLE:
         old_theta = np.reshape(self.basis_matrix @ coefs_init, (-1,2))
         rel_error = 2*tol
         k = 0 
-        print('Coefs optimization:')
+        # print('Coefs optimization:')
         while rel_error > tol and k < max_iter:
             coefs_opt = self.step_opti_coefs(mat_weights, reg_param_mat)
             mat_weights, weights = self.compute_weights(coefs_opt)
             new_theta = np.reshape(self.basis_matrix @ coefs_opt, (-1,2))
             rel_error = np.linalg.norm(old_theta - new_theta)/np.linalg.norm(new_theta)
-            print('     iteration:', k, ', relative error:', rel_error)
+            # print('     iteration:', k, ', relative error:', rel_error)
             old_theta = new_theta
             k += 1
         self.coefs = coefs_opt
