@@ -24,7 +24,10 @@ def simu_test_GCV(sigma, theta, mu0, P0, Gamma, N, arc_length, grid_lambda):
     xi0 = np.random.multivariate_normal(np.zeros(6), P0)
     Z0 = mu0 @ SE3.exp(-xi0)
 
-    Z_sde = solve_FrenetSerret_SDE_SE3(theta, Sigma, L, arc_length, Z0=Z0)
+    mat_L = np.zeros((6,2))
+    mat_L[0,1], mat_L[2,0] = 1, 1
+
+    Z_sde = solve_FrenetSerret_SDE_SE3(theta, Sigma, mat_L, arc_length, Z0=Z0)
     Q_sde = Z_sde[:,:3,:3]
     X_sde = Z_sde[:,:3,3]
 
@@ -32,9 +35,7 @@ def simu_test_GCV(sigma, theta, mu0, P0, Gamma, N, arc_length, grid_lambda):
     xi_sde_vec = np.zeros((N*6))
     Z_gp = np.zeros((N,4,4))
 
-    L = np.zeros((6,2))
-    L[0,1], L[2,0] = 1, 1
-    P_mat_full, P = solve_FrenetSerret_SDE_full_cov_matrix(theta, Sigma, L, arc_length, P0)
+    P_mat_full, P = solve_FrenetSerret_SDE_full_cov_matrix(theta, Sigma, mat_L, arc_length, P0)
     xi_gp_vec = np.random.multivariate_normal(mean=np.zeros(len(P_mat_full)), cov=P_mat_full)
     xi_gp = np.reshape(xi_gp_vec, (N,6))
     for j in range(N):
