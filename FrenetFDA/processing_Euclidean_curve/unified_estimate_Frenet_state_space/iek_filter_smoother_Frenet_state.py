@@ -202,8 +202,10 @@ class IEKFilterSmootherFrenetState():
             self.tracking(grid, Y)
 
         self.Z_S = self.track_Z[-1]
+        self.P_S = self.track_P[-1]
         I = np.eye(self.dim_g)
         smooth_Z = [self.Z_S]
+        smooth_P_bis = [self.P_S]
         smooth_gain = []
 
         for Z_t, Z_p, P_t, P_p, C in zip(reversed(self.track_Z[:-1]), reversed(self.pred_Z),reversed(self.track_P[:-1]),reversed(self.pred_P),reversed(self.pred_C)):
@@ -217,20 +219,35 @@ class IEKFilterSmootherFrenetState():
             self.Z_S = Z_t@SE3.exp(D@SE3.log(np.linalg.inv(Z_p)@self.Z_S))
             smooth_Z.append(self.Z_S)
 
-        P_full, P_full_mat = self.__compute_full_P_smooth()
-        smooth_P_dble = np.zeros((len(P_full)-1,self.dim_g,self.dim_g))
-        smooth_P = np.zeros((len(P_full),self.dim_g,self.dim_g))
-        for i in range(len(P_full)):
-            smooth_P[i] = P_full[i,i,:,:]
-            if i > 0:
-                smooth_P_dble[i-1] = P_full[i-1,i,:,:]
+            self.P_S = P_t + D @ (self.P_S - P_p) @ D.T
+            smooth_P_bis.append(self.P_S)
+
+        I = np.eye(self.dim_g)
+        self.P_dble_S = (I - self.K @ self.H) @ self.pred_C[-1] @ self.track_P[-2]
+        smooth_P_dble_bis = [self.P_dble_S.T]
+        for P_t, C, D, D_m1 in zip(reversed(self.track_P[:-1]), reversed(self.pred_C), smooth_gain, smooth_gain[1:]):
+            self.P_dble_S = P_t @ D_m1.T + D @ (self.P_dble_S - C @ P_t) @ D_m1.T
+            smooth_P_dble_bis.append(self.P_dble_S.T)
+
+        # self.smooth_P_bis = np.array(list(reversed(smooth_P_bis)))
+        # self.smooth_P_dble_bis = np.array(list(reversed(smooth_P_dble_bis)))
+
+        # P_full, P_full_mat = self.__compute_full_P_smooth()
+        # smooth_P_dble = np.zeros((len(P_full)-1,self.dim_g,self.dim_g))
+        # smooth_P = np.zeros((len(P_full),self.dim_g,self.dim_g))
+        # for i in range(len(P_full)):
+        #     smooth_P[i] = P_full[i,i,:,:]
+        #     if i > 0:
+        #         smooth_P_dble[i-1] = P_full[i-1,i,:,:]
 
         self.smooth_Z = np.array(list(reversed(smooth_Z)))
         self.smooth_Q = self.smooth_Z[:,0:self.n,0:self.n]
         self.smooth_X = self.smooth_Z[:,0:self.n,self.n]
-        self.smooth_P_dble = smooth_P_dble
-        self.smooth_P = smooth_P
-        self.smooth_P_full = P_full_mat
+        # self.smooth_P_dble = smooth_P_dble
+        # self.smooth_P = smooth_P
+        # self.smooth_P_full = P_full_mat
+        self.smooth_P_dble = np.array(list(reversed(smooth_P_dble_bis)))
+        self.smooth_P = np.array(list(reversed(smooth_P_bis)))
 
         return
 

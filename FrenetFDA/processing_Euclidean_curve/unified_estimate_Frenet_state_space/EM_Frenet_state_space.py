@@ -3,6 +3,7 @@ import FrenetFDA.utils.visualization as visu
 from FrenetFDA.utils.Lie_group.SE3_utils import SE3
 from FrenetFDA.utils.Lie_group.SO3_utils import SO3
 from FrenetFDA.utils.smoothing_utils import VectorBSplineSmoothing
+from FrenetFDA.utils.Frenet_Serret_utils import *
 from pickle import *
 import os.path
 import dill as pickle
@@ -54,7 +55,7 @@ class MLE:
         self.r_tilde = r_tilde
 
     
-    def __compute_L_tilde(self, coefs):
+    def compute_L_tilde(self, coefs):
         L_tilde = np.zeros((self.N,2,2))
         L_tilde_inv = np.zeros((self.N,2,2))
         theta_v = np.reshape(self.basis_matrix @ coefs, (-1,2))
@@ -66,7 +67,7 @@ class MLE:
     
 
     def compute_weights(self, coefs):
-        L_tilde, L_tilde_inv = self.__compute_L_tilde(coefs)
+        L_tilde, L_tilde_inv = self.compute_L_tilde(coefs)
         weights = np.zeros((self.N,2,2))
         for i in range(self.N):
             weights[i] = self.u[i]*L_tilde_inv[i].T@L_tilde_inv[i]
@@ -104,8 +105,10 @@ class MLE:
             k += 1
         self.coefs = coefs_opt
         self.mat_weights = mat_weights
+        self.weigths = weights
         self.hat_matrix = self.basis_matrix @ np.linalg.inv(self.basis_matrix.T @ mat_weights @ self.basis_matrix + reg_param_mat @ self.Bspline_decomp.penalty_matrix) @ self.basis_matrix.T @ mat_weights
-        
+
+
     def opti_sigma(self):
         error = (np.eye(self.hat_matrix.shape[0])-self.hat_matrix)@np.reshape(self.r_tilde, (self.N*2,))
         sigma_square = (1/(2*self.N))*np.trace(self.mat_weights@(error[:,np.newaxis]@error[np.newaxis,:]))
@@ -122,21 +125,61 @@ class MLE:
         U0 = (1/self.N)*(np.linalg.norm(error)**2) - (self.sigma_square/self.N)*np.trace(np.linalg.inv(self.mat_weights)) + 2*(self.sigma_square/self.N)*np.trace(np.linalg.inv(self.mat_weights)@self.hat_matrix)
         U1 = (1/self.N)*np.squeeze((error[np.newaxis,:]@self.mat_weights@error)) - (self.sigma_square/self.N)*np.trace(np.eye(self.mat_weights.shape[0])) + 2*(self.sigma_square/self.N)*np.trace(self.hat_matrix)
         U2 = (1/self.N)*(np.linalg.norm(self.mat_weights@error)**2) - (self.sigma_square/self.N)*np.trace(self.mat_weights) + 2*(self.sigma_square/self.N)*np.trace(self.mat_weights@self.hat_matrix)
-        L = self.N*np.log(np.squeeze((error[np.newaxis,:]@self.mat_weights@error))) + np.log(np.linalg.det(np.linalg.inv(self.mat_weights))) + np.log(self.N)*np.trace(self.hat_matrix)
+        L = np.squeeze(self.N*np.log(np.squeeze((error[np.newaxis,:]@self.mat_weights@error))) + np.sum(np.log(np.linalg.det(np.linalg.inv(self.weigths)))) + np.log(self.N)*np.trace(self.hat_matrix))
+        
         return GCV, V0, V1, V2, U0, U1, U2, L
+    
+
+    def theta(self, s):
+        if isinstance(s, int) or isinstance(s, float):
+            return np.squeeze(self.Bspline_decomp.basis_fct(s).T @ self.coefs)
+        elif isinstance(s, np.ndarray):
+            return np.squeeze((self.Bspline_decomp.basis_fct(s).T @ self.coefs).T)
+        else:
+            raise ValueError('Variable is not a float, a int or a NumPy array.')
+    
+    def compute_reconst_criterion(self):
+        Sigma_opt = lambda s: self.sigma_square*np.array([[1 +0*s, 0*s], [0*s, 1+0*s]])
+        Z_reconst = solve_FrenetSerret_SDE_SE3(self.theta, Sigma_opt, self.L, self.grid, Z0=self.mu0)
+        mu_Z_reconst = solve_FrenetSerret_ODE_SE(self.theta, self.grid, Z0=self.mu0)
+        X_reconst = Z_reconst[:,:3,3]
+
+        error = (np.eye(self.hat_matrix.shape[0])-self.hat_matrix)@np.reshape(self.r_tilde, (self.N*2,))
+        error_Y = X_reconst[1:] - self.Y
+
+        mse_theta = np.linalg.norm(error)**2
+        mse_Y = np.linalg.norm(error_Y)**2
+        wmse_theta = np.squeeze((error[np.newaxis,:]@self.mat_weights@error))
+        wmse_Y = 0
+        for i in range(self.N):
+            wmse_Y += np.squeeze((error_Y[i][np.newaxis,:]@np.linalg.inv(self.Gamma)@error_Y[i]))
+        loglik_hat = wmse_Y + (1/self.sigma_square)*wmse_theta + np.sum(np.log(np.linalg.det(np.linalg.inv(self.weigths))))
+        return mse_theta, wmse_theta, mse_Y, wmse_Y, loglik_hat, Z_reconst, mu_Z_reconst
+    
+        # Ksplit = KFold(n_splits=K_split, shuffle=True)
+        # err = []
+        # for train_index, test_index in Ksplit.split(self.grid[1:]):
+        #     t_train, t_test = self.grid[1:][train_index], self.grid[1:][test_index]
+        #     data_train, data_test = [train_index,:], data[test_index,:]
+        #     derivatives = self.fit(data_train, t_train, t_test, bandwidth_grid[j])
+        #     diff = derivatives[0] - data_test
+        #     err.append(np.linalg.norm(diff)**2)
+        # CV_2 = np.mean(err)
+
 
 
     def compute_true_MSE(self, theta, sigma):
         # true_theta = theta(self.grid[:-1])
         true_theta = theta(self.v)
         error = true_theta - np.reshape(self.basis_matrix @ self.coefs, (-1,2))
-        MSE_theta = np.linalg.norm(error, axis=0)
-        MSE = np.linalg.norm(error)
-        error_sigma = np.linalg.norm(sigma-self.sigma)
+        MSE_theta = np.linalg.norm(error, axis=0)**2
+        MSE = np.linalg.norm(error)**2
+        error_sigma = np.linalg.norm(sigma-self.sigma)**2
         return MSE_theta, MSE, error_sigma
 
 
 class FrenetStateSpace:
+
 
     def __init__(self, grid_obs, Y_obs, dim=3):
         self.n = dim
@@ -153,19 +196,52 @@ class FrenetStateSpace:
         self.v = (1/2)*(self.grid[1:]+self.grid[:-1])
 
 
-    def expectation_maximization(self, tol, max_iter, nb_basis, regularization_parameter_list = [], init_params = None, init_states = None, order=4, method='approx', model_Sigma='single_constant', verbose=False):
+    def maximum_complete_likelihood_estimation(self, Z_obs, nb_basis, regularization_parameter_list = [], order=4,  model_Sigma='scalar', score_lambda='GCV', true_theta=None):
+        self.Z = Z_obs
+        self.X = Z_obs[:,:3,3]
+        self.Q = Z_obs[:,:3,:3]
+        self.mu0 = self.Z[0]
+        self.P0 = np.zeros((6,6))
+        Gamma = np.zeros((3,3))
+        for i in range(1,self.N+1):
+            Gamma += (self.Y[i-1]-self.X[i])[:,np.newaxis]@(self.Y[i-1]-self.X[i])[np.newaxis,:] 
+        self.Gamma = Gamma/self.N
+
+        self.nb_basis = nb_basis
+        N_param_smoothing = len(regularization_parameter_list)    
+        if N_param_smoothing==0:
+            penalization = False
+            regularization_parameter_list = np.array([0])
+        else:
+            penalization = True
+        self.Bspline_decomp = VectorBSplineSmoothing(2, nb_basis, domain_range=(self.grid[0], self.grid[-1]), order=4, penalization=penalization)
+        V = np.expand_dims(self.v, 1)
+        self.basis_matrix = self.Bspline_decomp.basis(V,).reshape((self.Bspline_decomp.basis.n_basis, -1)).T
+        r = np.zeros((self.N,self.dim_g))
+        r_tilde = np.zeros((self.N,self.n-1))
+        for i in range(self.N):
+            r[i] = -(1/self.u[i])*SE3.log(np.linalg.inv(self.Z[i+1])@self.Z[i])
+            r_tilde[i] = self.L.T@r[i] 
+        self.r = r
+        self.r_tilde = r_tilde
+        self.cov_r_tilde = np.zeros((self.N, self.n-1, self.n-1))
+
+        self.regularization_parameter, self.score_lambda_matrix, self.true_MSE = self.opti_lambda(0.001, 10, regularization_parameter_list, model_Sigma, score_lambda, true_theta=true_theta)
+        self.regularization_parameter, self.regularization_parameter_matrix = self.Bspline_decomp.check_regularization_parameter(self.regularization_parameter)
+        # Optimization of theta given lambda
+        self.coefs, self.Sigma, self.mat_weights, self.weights, self.expect_MSE, err_obs, self.L_tilde = self.opti_coefs_and_Sigma(0.001, 10, self.regularization_parameter_matrix, model_Sigma)
+        
+
+
+    def expectation_maximization(self, tol, max_iter, nb_basis, regularization_parameter_list = [], init_params = None, order=4, method='approx', model_Sigma='scalar', score_lambda='GCV', true_theta=None, verbose=False):
 
         self.verbose = verbose
-
         self.init_tab()
-        if init_params is None and init_states is None:
-            raise Exception("Must pass in argument an initial guess estimate for the state or for the parameters")
-        elif init_params is not None and init_states is not None:
-            raise Exception("Must choose between an initial guess estimate for the state or for the parameters")
-        # elif init_states is not None and init_params is None:
-        #     self.initialized_from_state(init_states["Z"], coefs_0=init_states["init_coefs"])
+
+        if init_params is None:
+            raise Exception("Must pass in argument an initial guess estimate for the parameters")
         else:
-            self.Gamma = init_params["W"]
+            self.Gamma = init_params["Gamma"]
             self.coefs = init_params["coefs"]
             self.mu0 = init_params["mu0"]
             self.Sigma = init_params["Sigma"]
@@ -194,7 +270,7 @@ class FrenetStateSpace:
 
             self.E_step()
             self.__approx_distribution_r(method)
-            self.M_step(0.001, 5, regularization_parameter_list, model_Sigma)
+            self.M_step(0.001, 5, regularization_parameter_list, model_Sigma, score_lambda, true_theta)
 
             new_val_expected_loglikelihood = self.expected_loglikelihood()
             if self.verbose:
@@ -214,6 +290,7 @@ class FrenetStateSpace:
             print('End expectation maximization algo. \n Number of iterations:', k, ', total duration:', self.duration, ' seconds.')
 
 
+
     def E_step(self):
         """
             Expectation step: Suppose that self.sigma, self.Gamma, self.a_theta, self.mu0, self.P0 are known. Call the tracking and smoothing method.
@@ -230,28 +307,28 @@ class FrenetStateSpace:
         self.P_dble = kalman_filter.smooth_P_dble
 
 
-    def M_step(self, tol, max_iter, reg_param_list, model_Sigma):
+
+    def M_step(self, tol, max_iter, reg_param_list, model_Sigma, score_lbda, true_theta):
         """
-        
+            Maximization step:
+
         """
         if self.verbose:
             print('___ M step ___')
 
         # Optimization of W
         self.opti_Gamma()
-
-        # Optimization of lambda
-        self.regularization_parameter = self.opti_lambda(tol, max_iter, reg_param_list, model_Sigma)
-        self.regularization_parameter, self.regularization_parameter_matrix = self.Bspline_decomp.check_regularization_parameter(self.regularization_parameter)
-        
-        # Optimization of theta given lambda
-        # self.coefs, self.Sigma, self.mat_weights = self.opti_coefs_and_Sigma(tol, max_iter, self.regularization_parameter_matrix, model_Sigma)
-        self.coefs, self.Sigma, self.mat_weights, self.expect_MSE, err_obs, self.L_tilde = self.opti_coefs_and_Sigma(tol, max_iter, self.regularization_parameter_matrix, model_Sigma)
-
-        # self.plot_theta()
         self.P0 = self.P[0]
         self.mu0 = self.Z[0]
 
+        # Optimization of lambda
+        self.regularization_parameter, self.score_lambda_matrix, _ = self.opti_lambda(tol, max_iter, reg_param_list, model_Sigma, score_lbda, true_theta)
+        self.regularization_parameter, self.regularization_parameter_matrix = self.Bspline_decomp.check_regularization_parameter(self.regularization_parameter)
+        
+        # Optimization of theta given lambda
+        self.coefs, self.Sigma, self.mat_weights, self.weights, self.expect_MSE, err_obs, self.L_tilde = self.opti_coefs_and_Sigma(tol, max_iter, self.regularization_parameter_matrix, model_Sigma)
+        # self.plot_theta()
+        
 
     def theta_from_coefs(self, coefs, s):
         if isinstance(s, int) or isinstance(s, float):
@@ -311,8 +388,8 @@ class FrenetStateSpace:
         for i in range(self.N):
             weights[i] = self.u[i]*L_tilde_inv[i].T@np.linalg.inv(Sigma(self.v[i]))@L_tilde_inv[i]
         mat_weights = block_diag(*weights)
-        return mat_weights
-    
+        return mat_weights, weights
+        
     
     def __opti_coefs(self, mat_weights, reg_param_mat):
         left = self.basis_matrix.T @ mat_weights @ self.basis_matrix + reg_param_mat @ self.Bspline_decomp.penalty_matrix    
@@ -343,19 +420,15 @@ class FrenetStateSpace:
             sigma_square_1 = np.mean(res[:,0,0])
             sigma_square_2 = np.mean(res[:,1,1])
             Sigma = lambda s: np.array([[sigma_square_1,0], [0, sigma_square_2]])
-            if self.verbose:
-                print("sigma_1:", np.sqrt(sigma_square_1), "sigma_2:", np.sqrt(sigma_square_2))
-        else: # Case 'single_constant' by default
+        else:                                                               # Case 'single_constant' by default
             sigma_square = np.mean((res[:,0,0]+res[:,1,1])/2)
             Sigma = lambda s: sigma_square*np.eye(2)
-            if self.verbose:
-                print("sigma:", np.sqrt(sigma_square))
         return Sigma, res, err
     
     
     def opti_coefs_and_Sigma(self, tol, max_iter, reg_param_mat, model_Sigma):
         L_tilde, L_tilde_inv = self.__compute_L_tilde(self.coefs)
-        mat_weights = self.__compute_weights(self.Sigma, L_tilde_inv)
+        mat_weights, weights = self.__compute_weights(self.Sigma, L_tilde_inv)
         old_theta = np.reshape(self.basis_matrix @ self.coefs, (-1,self.n-1))
         rel_error = 2*tol 
         k = 0 
@@ -364,7 +437,7 @@ class FrenetStateSpace:
             coefs_opt = self.__opti_coefs(mat_weights, reg_param_mat)
             L_tilde, L_tilde_inv = self.__compute_L_tilde(coefs_opt)
             Sigma_opt, expect_MSE, err_obs = self.__opti_Sigma(coefs_opt, model_Sigma, L_tilde_inv)
-            mat_weights = self.__compute_weights(Sigma_opt, L_tilde_inv)
+            mat_weights, weights = self.__compute_weights(Sigma_opt, L_tilde_inv)
 
             new_theta = np.reshape(self.basis_matrix @ coefs_opt, (-1,self.n-1))
             rel_error = np.linalg.norm(old_theta - new_theta)/np.linalg.norm(old_theta)
@@ -373,76 +446,125 @@ class FrenetStateSpace:
             old_theta = new_theta
             k += 1
 
-        return coefs_opt, Sigma_opt, mat_weights, expect_MSE, err_obs, L_tilde
+        return coefs_opt, Sigma_opt, mat_weights, weights, expect_MSE, err_obs, L_tilde
     
 
-    def opti_lambda(self, tol, max_iter, reg_param_list, model_Sigma):
+    # def opti_lambda(self, tol, max_iter, reg_param_list, model_Sigma):
+    #     K = len(reg_param_list)
+
+    #     GCV_scores = np.zeros(K)
+    #     for k in range(K):
+
+    #         lbda, reg_param_mat = self.Bspline_decomp.check_regularization_parameter(reg_param_list[k])
+    #         coefs, Sigma, mat_weights, expect_MSE, err_obs, L_tilde = self.opti_coefs_and_Sigma(tol, max_iter, reg_param_mat, model_Sigma)
+    #         err = np.reshape(err_obs, (self.N*(self.n-1),))
+    #         hat_matrix = self.basis_matrix @ np.linalg.inv(self.basis_matrix.T @ mat_weights @ self.basis_matrix + reg_param_mat @ self.Bspline_decomp.penalty_matrix) @ self.basis_matrix.T @ mat_weights
+    #         numerator = (1/self.N)*np.squeeze(err[np.newaxis,:] @ mat_weights.T @ mat_weights @ err[:,np.newaxis]) 
+    #         denominator = ((1/self.N)*np.trace(mat_weights @ (np.eye(mat_weights.shape[0]) - hat_matrix)))**2
+    #         GCV_scores[k] = numerator/denominator
+    #         if self.verbose:
+    #             print('lambda value:', lbda, ' GCV score:', GCV_scores[k]) 
+
+    #     ind = np.argmin(GCV_scores)
+    #     lbda_opt = reg_param_list[ind] 
+    #     if self.verbose:
+    #         print('Optimal chosen lambda:', lbda_opt)
+    #     return lbda_opt
+
+    def opti_lambda(self, tol, max_iter, reg_param_list, model_Sigma, score, true_theta=None):
         K = len(reg_param_list)
+        score_lambda_matrix = np.zeros((K,K))
+        if true_theta is not None:
+            true_MSE = np.zeros((K,K))
+            true_theta_arr = true_theta(self.v)
+        else:
+            true_MSE = None
+        for i in range(K):
+            for j in range(K):
+                reg_param = np.array([reg_param_list[i], reg_param_list[j]])
+                lbda, reg_param_mat = self.Bspline_decomp.check_regularization_parameter(reg_param)
+                coefs, Sigma, mat_weights, weights, expect_MSE, err_obs, L_tilde = self.opti_coefs_and_Sigma(tol, max_iter, reg_param_mat, model_Sigma)
+                hat_matrix = self.basis_matrix @ np.linalg.inv(self.basis_matrix.T @ mat_weights @ self.basis_matrix + reg_param_mat @ self.Bspline_decomp.penalty_matrix) @ self.basis_matrix.T @ mat_weights
+                if score=='GCV':
+                    score_lambda_matrix[i,j] = self.__GCV_score(hat_matrix)
+                elif score=='V0':
+                    score_lambda_matrix[i,j] = self.__V_score(hat_matrix, mat_weights, k=0)
+                elif score=='V1':
+                    score_lambda_matrix[i,j] = self.__V_score(hat_matrix, mat_weights, k=1)
+                elif score=='V2':
+                    score_lambda_matrix[i,j] = self.__V_score(hat_matrix, mat_weights, k=2)
+                elif score=='U0' and model_Sigma!='vector':
+                    score_lambda_matrix[i,j] = self.__U_score(hat_matrix, mat_weights, np.trace(Sigma(0))/2, k=0)
+                elif score=='U1' and model_Sigma!='vector':
+                    score_lambda_matrix[i,j] = self.__U_score(hat_matrix, mat_weights, np.trace(Sigma(0))/2, k=1)
+                elif score=='U2' and model_Sigma!='vector':
+                    score_lambda_matrix[i,j] = self.__U_score(hat_matrix, mat_weights, np.trace(Sigma(0))/2, k=2)
+                elif score=='L':
+                    score_lambda_matrix[i,j] = self.__L_score(hat_matrix, mat_weights, weights)
+                elif score=='MSE_YX':
+                    score_lambda_matrix[i,j] = self.__MSE_YX_score(Sigma, coefs)
+                elif score=='MSE_YmuX':
+                    score_lambda_matrix[i,j] = self.__MSE_YmuX_score(coefs)
+                elif score=='true_MSE' and true_theta is not None:
+                    score_lambda_matrix[i,j] = self.__true_MSE(true_theta, coefs)
+                else: 
+                    raise Exception("Invalid term for optimization of lamnda score.")
+                if true_theta is not None:
+                    error = true_theta_arr - np.reshape(self.basis_matrix @ coefs, (-1,2))
+                    MSE_theta = np.linalg.norm(error, axis=0)**2
+                    true_MSE[i,j] = np.linalg.norm(error)**2
 
-        GCV_scores = np.zeros(K)
-        for k in range(K):
-
-            lbda, reg_param_mat = self.Bspline_decomp.check_regularization_parameter(reg_param_list[k])
-            coefs, Sigma, mat_weights, expect_MSE, err_obs, L_tilde = self.opti_coefs_and_Sigma(tol, max_iter, reg_param_mat, model_Sigma)
-            err = np.reshape(err_obs, (self.N*(self.n-1),))
-            hat_matrix = self.basis_matrix @ np.linalg.inv(self.basis_matrix.T @ mat_weights @ self.basis_matrix + reg_param_mat @ self.Bspline_decomp.penalty_matrix) @ self.basis_matrix.T @ mat_weights
-            numerator = (1/self.N)*np.squeeze(err[np.newaxis,:] @ mat_weights.T @ mat_weights @ err[:,np.newaxis]) 
-            denominator = ((1/self.N)*np.trace(mat_weights @ (np.eye(mat_weights.shape[0]) - hat_matrix)))**2
-            GCV_scores[k] = numerator/denominator
-            if self.verbose:
-                print('lambda value:', lbda, ' GCV score:', GCV_scores[k]) 
-
-        ind = np.argmin(GCV_scores)
-        lbda_opt = reg_param_list[ind] 
+        ind = np.squeeze(np.array(np.where(score_lambda_matrix==np.min(score_lambda_matrix))))
+        lbda_opt = np.array([reg_param_list[ind[0]], reg_param_list[ind[1]]]) 
         if self.verbose:
             print('Optimal chosen lambda:', lbda_opt)
-        return lbda_opt
+        return lbda_opt, score_lambda_matrix, true_MSE
+    
 
-
+    def __GCV_score(self, hat_matrix):
+        error = (np.eye(hat_matrix.shape[0])-hat_matrix)@np.reshape(self.r_tilde, (self.N*2,))
+        return self.N*(np.linalg.norm(error)**2)/(np.trace((np.eye(hat_matrix.shape[0])-hat_matrix))**2) 
         
-    def __compute_SSE(self, coefs, mat_weights):
-        err = np.reshape((np.reshape(self.basis_matrix @ coefs, (-1,self.n-1)) - self.r_tilde), (self.N*(self.n-1),))
-        SSE = np.diag(np.reshape(err @ mat_weights, (-1,self.n-1)).T @ (np.reshape(self.basis_matrix @ coefs, (-1,self.n-1)) - self.r_tilde))
-        # print('part 1 SSE', SSE)
-        # SSE = SSE + np.sum(np.reshape(np.diag(mat_weights @ block_diag(*self.cov_r_tilde)), (-1,self.n-1)), axis=0)
-        # print('part 2 SSE', SSE)
-        return SSE
-
-
-    def compute_sampling_variance(self):
-        SSE = self.__compute_SSE(self.coefs, self.mat_weights)
-        self.residuals_error = np.array([SSE[i]/(self.N-self.Bspline_decomp.nb_basis[i]) for i in range(self.n-1)])
-        res_mat = block_diag(*np.apply_along_axis(np.diag, 1, np.array([self.residuals_error for i in range(self.N)])))
-        S = np.linalg.inv(self.basis_matrix.T @ self.mat_weights @ self.basis_matrix + self.regularization_parameter_matrix @ self.Bspline_decomp.penalty_matrix) @ self.basis_matrix.T @ self.mat_weights
-        self.sampling_variance_coeffs = S @ res_mat @ S.T 
-        self.sampling_variance_yhat = self.basis_matrix @ self.sampling_variance_coeffs @ self.basis_matrix.T
-
-        def confidence_limits(s):
-            val = self.theta(s)
-            basis_fct_arr = self.Bspline_decomp.basis_fct(s).T 
-            if (self.n-1)==1:
-                if isinstance(s, int) or isinstance(s, float):
-                    error = 0
-                elif isinstance(s, np.ndarray):
-                    error = np.zeros((len(s)))
-                else:
-                    raise ValueError('Variable is not a float, a int or a NumPy array.')
-                error = 0.95*np.sqrt(np.diag(basis_fct_arr @ self.sampling_variance_coeffs @ basis_fct_arr.T))
-            else:
-                if isinstance(s, int) or isinstance(s, float):
-                    error = np.zeros((self.n-1))
-                elif isinstance(s, np.ndarray):
-                    error = np.zeros((self.n-1, len(s)))
-                else:
-                    raise ValueError('Variable is not a float, a int or a NumPy array.')
-                for i in range(self.n-1):
-                    error[i] = 0.95*np.sqrt(np.diag(basis_fct_arr[i] @ self.sampling_variance_coeffs @ basis_fct_arr[i].T))
-            upper_limit = val + error.T
-            lower_limit = val - error.T
-            return lower_limit, upper_limit
-        self.confidence_limits = confidence_limits
+    def __V_score(self, hat_matrix, mat_weights, k=0):
+        error = (np.eye(hat_matrix.shape[0])-hat_matrix)@np.reshape(self.r_tilde, (self.N*2,))
+        if k==0:
+            return self.N*(np.linalg.norm(error)**2)/(np.trace(np.linalg.inv(mat_weights)@(np.eye(hat_matrix.shape[0])-hat_matrix))**2) 
+        elif k==1:
+            return self.N*np.squeeze((error[np.newaxis,:]@mat_weights@error))/(np.trace((np.eye(hat_matrix.shape[0])-hat_matrix))**2)
+        elif k==2:
+            return self.N*(np.linalg.norm(mat_weights@error)**2)/(np.trace(mat_weights@(np.eye(hat_matrix.shape[0])-hat_matrix))**2)
         
+    def __U_score(self, hat_matrix, mat_weights, sigma_square, k=0):
+        error = (np.eye(hat_matrix.shape[0])-hat_matrix)@np.reshape(self.r_tilde, (self.N*2,))
+        if k==0:
+            return (1/self.N)*(np.linalg.norm(error)**2) - (sigma_square/self.N)*np.trace(np.linalg.inv(mat_weights)) + 2*(sigma_square/self.N)*np.trace(np.linalg.inv(mat_weights)@hat_matrix)
+        elif k==1:
+            return (1/self.N)*np.squeeze((error[np.newaxis,:]@mat_weights@error)) - (sigma_square/self.N)*np.trace(np.eye(mat_weights.shape[0])) + 2*(sigma_square/self.N)*np.trace(hat_matrix)
+        elif k==2:
+            return (1/self.N)*(np.linalg.norm(mat_weights@error)**2) - (sigma_square/self.N)*np.trace(mat_weights) + 2*(sigma_square/self.N)*np.trace(mat_weights@hat_matrix)
 
+    def __L_score(self, hat_matrix, mat_weights, weigths):
+        error = (np.eye(hat_matrix.shape[0])-hat_matrix)@np.reshape(self.r_tilde, (self.N*2,))
+        return np.squeeze(self.N*np.log(np.squeeze((error[np.newaxis,:]@mat_weights@error))) + np.sum(np.log(np.linalg.det(np.linalg.inv(weigths)))) + np.log(self.N)*np.trace(hat_matrix))
+
+    def __MSE_YX_score(self, Sigma, coefs):
+        Z_reconst = solve_FrenetSerret_SDE_SE3(lambda s: self.theta_from_coefs(coefs, s), Sigma, self.L, self.grid, Z0=self.mu0)
+        X_reconst = Z_reconst[:,:3,3]
+        error_Y = X_reconst[1:] - self.Y
+        score = np.linalg.norm(error_Y)**2
+        return score
+    
+    def __MSE_YmuX_score(self, coefs):
+        Z_reconst = solve_FrenetSerret_ODE_SE(lambda s: self.theta_from_coefs(coefs, s), self.grid, Z0=self.mu0)
+        X_reconst = Z_reconst[:,:3,3]
+        error_Y = X_reconst[1:] - self.Y
+        score = np.linalg.norm(error_Y)**2
+        return score
+
+    def __true_MSE(self, true_theta, coefs):
+        error = true_theta(self.v) - np.reshape(self.basis_matrix @ coefs, (-1,2))
+        score = np.linalg.norm(error)**2
+        return score
 
     def opti_Gamma(self):
         Gamma = np.zeros((self.n,self.n))
@@ -481,6 +603,7 @@ class FrenetStateSpace:
         self.tab_P0 = []
         self.tab_mu0 = []
 
+
     def tab_increment(self, rel_error=None, val_expected_loglikelihood=None):
         if rel_error is not None:
             self.tab_rel_error.append(rel_error)
@@ -516,6 +639,52 @@ class FrenetStateSpace:
         fil = open(filename,"xb")
         pickle.dump(dic,fil)
         fil.close()
+
+   # def __compute_SSE(self, coefs, mat_weights):
+    #     err = np.reshape((np.reshape(self.basis_matrix @ coefs, (-1,self.n-1)) - self.r_tilde), (self.N*(self.n-1),))
+    #     SSE = np.diag(np.reshape(err @ mat_weights, (-1,self.n-1)).T @ (np.reshape(self.basis_matrix @ coefs, (-1,self.n-1)) - self.r_tilde))
+    #     # print('part 1 SSE', SSE)
+    #     # SSE = SSE + np.sum(np.reshape(np.diag(mat_weights @ block_diag(*self.cov_r_tilde)), (-1,self.n-1)), axis=0)
+    #     # print('part 2 SSE', SSE)
+    #     return SSE
+
+
+    # def compute_sampling_variance(self):
+    #     SSE = self.__compute_SSE(self.coefs, self.mat_weights)
+    #     self.residuals_error = np.array([SSE[i]/(self.N-self.Bspline_decomp.nb_basis[i]) for i in range(self.n-1)])
+    #     res_mat = block_diag(*np.apply_along_axis(np.diag, 1, np.array([self.residuals_error for i in range(self.N)])))
+    #     S = np.linalg.inv(self.basis_matrix.T @ self.mat_weights @ self.basis_matrix + self.regularization_parameter_matrix @ self.Bspline_decomp.penalty_matrix) @ self.basis_matrix.T @ self.mat_weights
+    #     self.sampling_variance_coeffs = S @ res_mat @ S.T 
+    #     self.sampling_variance_yhat = self.basis_matrix @ self.sampling_variance_coeffs @ self.basis_matrix.T
+
+    #     def confidence_limits(s):
+    #         val = self.theta(s)
+    #         basis_fct_arr = self.Bspline_decomp.basis_fct(s).T 
+    #         if (self.n-1)==1:
+    #             if isinstance(s, int) or isinstance(s, float):
+    #                 error = 0
+    #             elif isinstance(s, np.ndarray):
+    #                 error = np.zeros((len(s)))
+    #             else:
+    #                 raise ValueError('Variable is not a float, a int or a NumPy array.')
+    #             error = 0.95*np.sqrt(np.diag(basis_fct_arr @ self.sampling_variance_coeffs @ basis_fct_arr.T))
+    #         else:
+    #             if isinstance(s, int) or isinstance(s, float):
+    #                 error = np.zeros((self.n-1))
+    #             elif isinstance(s, np.ndarray):
+    #                 error = np.zeros((self.n-1, len(s)))
+    #             else:
+    #                 raise ValueError('Variable is not a float, a int or a NumPy array.')
+    #             for i in range(self.n-1):
+    #                 error[i] = 0.95*np.sqrt(np.diag(basis_fct_arr[i] @ self.sampling_variance_coeffs @ basis_fct_arr[i].T))
+    #         upper_limit = val + error.T
+    #         lower_limit = val - error.T
+    #         return lower_limit, upper_limit
+    #     self.confidence_limits = confidence_limits
+
+
+
+
 
 
 

@@ -144,7 +144,7 @@ def solve_FrenetSerret_SDE_cov_matrix(theta, Sigma, L, t_eval, P0):
     dim_g = P0.shape[0]
     F =  lambda s: -SE3.Ad(np.array([theta(s)[1], 0*s, theta(s)[0], 1+0*s, 0*s, 0*s]))
     ode_func = lambda t,p: (np.matmul(F(t),p.reshape(dim_g, dim_g)) + np.matmul(p.reshape(dim_g, dim_g),F(t).T) + L @ Sigma(t) @ L.T).flatten()
-    sol = solve_ivp(ode_func, t_span=(t_eval[0], t_eval[-1]), y0=P0.flatten(), t_eval=t_eval) #, method='Radau')
+    sol = solve_ivp(ode_func, t_span=(t_eval[0], t_eval[-1]), y0=P0.flatten(), t_eval=t_eval, method='Radau')
     P = sol.y.reshape(dim_g, dim_g, len(t_eval))
     P = np.moveaxis(P, 2, 0)
     return P 
