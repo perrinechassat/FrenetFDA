@@ -16,7 +16,92 @@ from simulations_tools import *
 from tqdm import tqdm
 
 
-def simu_test_criterion(sigma, theta, mu0, P0, Gamma, N, arc_length, grid_lambda, noise_init_theta, tol_EM, max_iter_EM, nb_basis):
+# def simu_test_criterion(sigma, theta, mu0, P0, Gamma, N, arc_length, grid_lambda, noise_init_theta, tol_EM, max_iter_EM, nb_basis):
+    
+#     Sigma = lambda s: sigma**2*np.array([[1 + 0*s, 0*s],[0*s, 1 + 0*s]])
+#     xi0 = np.random.multivariate_normal(np.zeros(6), P0)
+#     Z0 = mu0 @ SE3.exp(-xi0)
+#     mat_L = np.zeros((6,2))
+#     mat_L[0,1], mat_L[2,0] = 1, 1
+#     Z = solve_FrenetSerret_SDE_SE3(theta, Sigma, mat_L, arc_length, Z0=Z0)
+#     Q = Z[:,:3,:3]
+#     X = Z[:,:3,3]
+#     Y = X + np.random.multivariate_normal(np.zeros(3), Gamma, size=(len(X)))
+
+#     theta_noisy_val = theta(arc_length) + np.random.multivariate_normal(np.zeros(2), noise_init_theta**2*np.eye(2), size=len(arc_length))
+#     BasisThetaNoisy = VectorBSplineSmoothing(2, 15)
+#     BasisThetaNoisy.fit(arc_length, theta_noisy_val, regularization_parameter=0.0000001)
+#     theta_init = BasisThetaNoisy.evaluate
+    
+#     sigma_init = 0.03
+#     Sigma_hat = lambda s: sigma_init**2*np.array([[1 + 0*s, 0*s],[0*s, 1 + 0*s]])
+#     P0_hat = sigma_init**2*np.eye(6)
+
+#     # EM criterion GCV
+#     try:
+#         ####     Run the EM    ####
+#         FS_statespace_GCV = FrenetStateSpace(arc_length, Y)
+#         FS_statespace_GCV.expectation_maximization(tol_EM, max_iter_EM, nb_basis=nb_basis, regularization_parameter_list=grid_lambda, 
+#                                                    init_params = {"Gamma":Gamma, "coefs":BasisThetaNoisy.coefs, "mu0":mu0, "Sigma":Sigma_hat, "P0":P0_hat}, 
+#                                                    method='autre', model_Sigma='scalar', score_lambda='GCV')
+#     except:
+#         FS_statespace_GCV = [theta_init]
+
+#     # EM criterion V2
+#     try:
+#         ####     Run the EM    ####
+#         FS_statespace_V = FrenetStateSpace(arc_length, Y)
+#         FS_statespace_V.expectation_maximization(tol_EM, max_iter_EM, nb_basis=nb_basis, regularization_parameter_list=grid_lambda, 
+#                                                    init_params = {"Gamma":Gamma, "coefs":BasisThetaNoisy.coefs, "mu0":mu0, "Sigma":Sigma_hat, "P0":P0_hat}, 
+#                                                    method='autre', model_Sigma='scalar', score_lambda='V2')
+#     except:
+#         FS_statespace_V = [theta_init]
+
+#     # # EM criterion U
+#     # try:
+#     #     ####     Run the EM    ####
+#     #     FS_statespace_U = FrenetStateSpace(arc_length, Y)
+#     #     FS_statespace_U.expectation_maximization(tol_EM, max_iter_EM, nb_basis=nb_basis, regularization_parameter_list=grid_lambda, 
+#     #                                                init_params = {"Gamma":Gamma, "coefs":BasisThetaNoisy.coefs, "mu0":mu0, "Sigma":Sigma_hat, "P0":P0_hat}, 
+#     #                                                method='autre', model_Sigma='scalar', score_lambda='U2')
+#     # except:
+#     #     FS_statespace_U = [theta_init]
+
+#     # EM criterion MSE_YX
+#     try:
+#         ####     Run the EM    ####
+#         FS_statespace_MSE_YX = FrenetStateSpace(arc_length, Y)
+#         FS_statespace_MSE_YX.expectation_maximization(tol_EM, max_iter_EM, nb_basis=nb_basis, regularization_parameter_list=grid_lambda, 
+#                                                    init_params = {"Gamma":Gamma, "coefs":BasisThetaNoisy.coefs, "mu0":mu0, "Sigma":Sigma_hat, "P0":P0_hat}, 
+#                                                    method='autre', model_Sigma='scalar', score_lambda='MSE_YX')
+#     except:
+#         FS_statespace_MSE_YX = [theta_init]
+
+#     # EM criterion MSE_YmuX
+#     try:
+#         ####     Run the EM    ####
+#         FS_statespace_MSE_YmuX = FrenetStateSpace(arc_length, Y)
+#         FS_statespace_MSE_YmuX.expectation_maximization(tol_EM, max_iter_EM, nb_basis=nb_basis, regularization_parameter_list=grid_lambda, 
+#                                                    init_params = {"Gamma":Gamma, "coefs":BasisThetaNoisy.coefs, "mu0":mu0, "Sigma":Sigma_hat, "P0":P0_hat}, 
+#                                                    method='autre', model_Sigma='scalar', score_lambda='MSE_YmuX')
+#     except:
+#         FS_statespace_MSE_YmuX = [theta_init]
+
+#     # EM true MSE
+#     try:
+#         ####     Run the EM    ####
+#         FS_statespace_true_MSE = FrenetStateSpace(arc_length, Y)
+#         FS_statespace_true_MSE.expectation_maximization(tol_EM, max_iter_EM, nb_basis=nb_basis, regularization_parameter_list=grid_lambda, 
+#                                                    init_params = {"Gamma":Gamma, "coefs":BasisThetaNoisy.coefs, "mu0":mu0, "Sigma":Sigma_hat, "P0":P0_hat}, 
+#                                                    method='autre', model_Sigma='scalar', score_lambda='true_MSE', true_theta=theta)
+#     except:
+#         FS_statespace_true_MSE = [theta_init]
+
+#     return FS_statespace_GCV, FS_statespace_V, FS_statespace_MSE_YX, FS_statespace_MSE_YmuX, FS_statespace_true_MSE
+    
+
+
+def simu_test_criterion(sigma, theta, mu0, P0, Gamma, N, arc_length, grid_lambda, noise_init_theta, tol_EM, max_iter_EM, nb_basis, score_type):
     
     Sigma = lambda s: sigma**2*np.array([[1 + 0*s, 0*s],[0*s, 1 + 0*s]])
     xi0 = np.random.multivariate_normal(np.zeros(6), P0)
@@ -37,68 +122,23 @@ def simu_test_criterion(sigma, theta, mu0, P0, Gamma, N, arc_length, grid_lambda
     Sigma_hat = lambda s: sigma_init**2*np.array([[1 + 0*s, 0*s],[0*s, 1 + 0*s]])
     P0_hat = sigma_init**2*np.eye(6)
 
-    # EM criterion GCV
+    # EM criterion 
     try:
         ####     Run the EM    ####
-        FS_statespace_GCV = FrenetStateSpace(arc_length, Y)
-        FS_statespace_GCV.expectation_maximization(tol_EM, max_iter_EM, nb_basis=nb_basis, regularization_parameter_list=grid_lambda, 
+        FS_statespace = FrenetStateSpace(arc_length, Y)
+        if score_type=='true_MSE':
+            FS_statespace.expectation_maximization(tol_EM, max_iter_EM, nb_basis=nb_basis, regularization_parameter_list=grid_lambda, 
                                                    init_params = {"Gamma":Gamma, "coefs":BasisThetaNoisy.coefs, "mu0":mu0, "Sigma":Sigma_hat, "P0":P0_hat}, 
-                                                   method='autre', model_Sigma='scalar', score_lambda='GCV')
-    except:
-        FS_statespace_GCV = [theta_init]
-
-    # EM criterion V2
-    try:
-        ####     Run the EM    ####
-        FS_statespace_V = FrenetStateSpace(arc_length, Y)
-        FS_statespace_V.expectation_maximization(tol_EM, max_iter_EM, nb_basis=nb_basis, regularization_parameter_list=grid_lambda, 
+                                                   method='autre', model_Sigma='scalar', score_lambda=score_type, true_theta=theta)
+        else:
+            FS_statespace.expectation_maximization(tol_EM, max_iter_EM, nb_basis=nb_basis, regularization_parameter_list=grid_lambda, 
                                                    init_params = {"Gamma":Gamma, "coefs":BasisThetaNoisy.coefs, "mu0":mu0, "Sigma":Sigma_hat, "P0":P0_hat}, 
-                                                   method='autre', model_Sigma='scalar', score_lambda='V2')
+                                                   method='autre', model_Sigma='scalar', score_lambda=score_type)
     except:
-        FS_statespace_V = [theta_init]
+        FS_statespace = [theta_init]
 
-    # EM criterion U
-    try:
-        ####     Run the EM    ####
-        FS_statespace_U = FrenetStateSpace(arc_length, Y)
-        FS_statespace_U.expectation_maximization(tol_EM, max_iter_EM, nb_basis=nb_basis, regularization_parameter_list=grid_lambda, 
-                                                   init_params = {"Gamma":Gamma, "coefs":BasisThetaNoisy.coefs, "mu0":mu0, "Sigma":Sigma_hat, "P0":P0_hat}, 
-                                                   method='autre', model_Sigma='scalar', score_lambda='U2')
-    except:
-        FS_statespace_U = [theta_init]
+    return FS_statespace
 
-    # EM criterion MSE_YX
-    try:
-        ####     Run the EM    ####
-        FS_statespace_MSE_YX = FrenetStateSpace(arc_length, Y)
-        FS_statespace_MSE_YX.expectation_maximization(tol_EM, max_iter_EM, nb_basis=nb_basis, regularization_parameter_list=grid_lambda, 
-                                                   init_params = {"Gamma":Gamma, "coefs":BasisThetaNoisy.coefs, "mu0":mu0, "Sigma":Sigma_hat, "P0":P0_hat}, 
-                                                   method='autre', model_Sigma='scalar', score_lambda='MSE_YX')
-    except:
-        FS_statespace_MSE_YX = [theta_init]
-
-    # EM criterion MSE_YmuX
-    try:
-        ####     Run the EM    ####
-        FS_statespace_MSE_YmuX = FrenetStateSpace(arc_length, Y)
-        FS_statespace_MSE_YmuX.expectation_maximization(tol_EM, max_iter_EM, nb_basis=nb_basis, regularization_parameter_list=grid_lambda, 
-                                                   init_params = {"Gamma":Gamma, "coefs":BasisThetaNoisy.coefs, "mu0":mu0, "Sigma":Sigma_hat, "P0":P0_hat}, 
-                                                   method='autre', model_Sigma='scalar', score_lambda='MSE_YmuX')
-    except:
-        FS_statespace_MSE_YmuX = [theta_init]
-
-    # EM true MSE
-    try:
-        ####     Run the EM    ####
-        FS_statespace_true_MSE = FrenetStateSpace(arc_length, Y)
-        FS_statespace_true_MSE.expectation_maximization(tol_EM, max_iter_EM, nb_basis=nb_basis, regularization_parameter_list=grid_lambda, 
-                                                   init_params = {"Gamma":Gamma, "coefs":BasisThetaNoisy.coefs, "mu0":mu0, "Sigma":Sigma_hat, "P0":P0_hat}, 
-                                                   method='autre', model_Sigma='scalar', score_lambda='true_MSE', true_theta=theta)
-    except:
-        FS_statespace_true_MSE = [theta_init]
-
-    return FS_statespace_GCV, FS_statespace_V, FS_statespace_U, FS_statespace_MSE_YX, FS_statespace_MSE_YmuX, FS_statespace_true_MSE
-    
 
 
 """ MODEL for simulations """
@@ -136,10 +176,10 @@ final_directory = os.path.join(current_directory, directory)
 if not os.path.exists(final_directory):
    os.makedirs(final_directory)
 
-grid_lambda = np.logspace(-15, -3, 20)
+grid_lambda = np.logspace(-8, -3, 6)
 noise_init_theta = 1
 tol_EM = 0.01
-max_iter_EM = 300
+max_iter_EM = 200
 nb_basis = 15
 
 
@@ -163,14 +203,19 @@ time_init = time.time()
 
 sigma = 0
 
+print('     Start GCV: ')
+
+score_type = 'GCV'
+time_init_score = time.time()
+
 with tqdm(total=n_MC) as pbar:
-   res = Parallel(n_jobs=50)(delayed(simu_test_criterion)(sigma, theta, mu0, P0, Gamma, N, arc_length, grid_lambda, noise_init_theta, tol_EM, max_iter_EM, nb_basis) for k in range(n_MC))
+   res = Parallel(n_jobs=50)(delayed(simu_test_criterion)(sigma, theta, mu0, P0, Gamma, N, arc_length, grid_lambda, noise_init_theta, tol_EM, max_iter_EM, nb_basis, score_type) for k in range(n_MC))
    pbar.update()
 
-time_end = time.time()
-duration = time_end - time_init
+time_end_score = time.time()
+duration_score = time_end_score - time_init_score
 
-filename = filename_base + "simu_1"
+filename = filename_base + "simu_1_GCV"
 
 dic = {"results":res, "sigma": sigma}
 
@@ -180,6 +225,116 @@ if os.path.isfile(filename):
 fil = open(filename,"xb")
 pickle.dump(dic,fil)
 fil.close()
+
+print('     End GCV. ')
+
+
+print('     Start V: ')
+
+score_type = 'V2'
+time_init_score = time.time()
+
+with tqdm(total=n_MC) as pbar:
+   res = Parallel(n_jobs=50)(delayed(simu_test_criterion)(sigma, theta, mu0, P0, Gamma, N, arc_length, grid_lambda, noise_init_theta, tol_EM, max_iter_EM, nb_basis, score_type) for k in range(n_MC))
+   pbar.update()
+
+time_end_score = time.time()
+duration_score = time_end_score - time_init_score
+
+filename = filename_base + "simu_1_V"
+
+dic = {"results":res, "sigma": sigma}
+
+if os.path.isfile(filename):
+   print("Le fichier ", filename, " existe déjà.")
+   filename = filename + '_bis'
+fil = open(filename,"xb")
+pickle.dump(dic,fil)
+fil.close()
+
+print('     End V. ')
+
+
+print('     Start MSE_YX: ')
+
+score_type = 'MSE_YX'
+time_init_score = time.time()
+
+with tqdm(total=n_MC) as pbar:
+   res = Parallel(n_jobs=50)(delayed(simu_test_criterion)(sigma, theta, mu0, P0, Gamma, N, arc_length, grid_lambda, noise_init_theta, tol_EM, max_iter_EM, nb_basis, score_type) for k in range(n_MC))
+   pbar.update()
+
+time_end_score = time.time()
+duration_score = time_end_score - time_init_score
+
+filename = filename_base + "simu_1_MSE_YX"
+
+dic = {"results":res, "sigma": sigma}
+
+if os.path.isfile(filename):
+   print("Le fichier ", filename, " existe déjà.")
+   filename = filename + '_bis'
+fil = open(filename,"xb")
+pickle.dump(dic,fil)
+fil.close()
+
+print('     End MSE_YX. ')
+
+
+print('     Start MSE_YmuX: ')
+
+score_type = 'MSE_YmuX'
+time_init_score = time.time()
+
+with tqdm(total=n_MC) as pbar:
+   res = Parallel(n_jobs=50)(delayed(simu_test_criterion)(sigma, theta, mu0, P0, Gamma, N, arc_length, grid_lambda, noise_init_theta, tol_EM, max_iter_EM, nb_basis, score_type) for k in range(n_MC))
+   pbar.update()
+
+time_end_score = time.time()
+duration_score = time_end_score - time_init_score
+
+filename = filename_base + "simu_1_MSE_YmuX"
+
+dic = {"results":res, "sigma": sigma}
+
+if os.path.isfile(filename):
+   print("Le fichier ", filename, " existe déjà.")
+   filename = filename + '_bis'
+fil = open(filename,"xb")
+pickle.dump(dic,fil)
+fil.close()
+
+print('     End MSE_YmuX. ')
+
+
+print('     Start true_MSE: ')
+
+score_type = 'true_MSE'
+time_init_score = time.time()
+
+with tqdm(total=n_MC) as pbar:
+   res = Parallel(n_jobs=50)(delayed(simu_test_criterion)(sigma, theta, mu0, P0, Gamma, N, arc_length, grid_lambda, noise_init_theta, tol_EM, max_iter_EM, nb_basis, score_type) for k in range(n_MC))
+   pbar.update()
+
+time_end_score = time.time()
+duration_score = time_end_score - time_init_score
+
+filename = filename_base + "simu_1_true_MSE"
+
+dic = {"results":res, "sigma": sigma}
+
+if os.path.isfile(filename):
+   print("Le fichier ", filename, " existe déjà.")
+   filename = filename + '_bis'
+fil = open(filename,"xb")
+pickle.dump(dic,fil)
+fil.close()
+
+print('     End true_MSE. ')
+
+
+time_end = time.time()
+duration = time_end - time_init
 
 print('End of simulation n°1: time spent', duration, 'seconds. \n')
 
@@ -195,14 +350,19 @@ time_init = time.time()
 
 sigma = 0.001
 
+print('     Start GCV: ')
+
+score_type = 'GCV'
+time_init_score = time.time()
+
 with tqdm(total=n_MC) as pbar:
-   res = Parallel(n_jobs=50)(delayed(simu_test_criterion)(sigma, theta, mu0, P0, Gamma, N, arc_length, grid_lambda, noise_init_theta, tol_EM, max_iter_EM, nb_basis) for k in range(n_MC))
+   res = Parallel(n_jobs=50)(delayed(simu_test_criterion)(sigma, theta, mu0, P0, Gamma, N, arc_length, grid_lambda, noise_init_theta, tol_EM, max_iter_EM, nb_basis, score_type) for k in range(n_MC))
    pbar.update()
 
-time_end = time.time()
-duration = time_end - time_init
+time_end_score = time.time()
+duration_score = time_end_score - time_init_score
 
-filename = filename_base + "simu_2"
+filename = filename_base + "simu_2_GCV"
 
 dic = {"results":res, "sigma": sigma}
 
@@ -212,6 +372,115 @@ if os.path.isfile(filename):
 fil = open(filename,"xb")
 pickle.dump(dic,fil)
 fil.close()
+
+print('     End GCV. ')
+
+
+print('     Start V: ')
+
+score_type = 'V2'
+time_init_score = time.time()
+
+with tqdm(total=n_MC) as pbar:
+   res = Parallel(n_jobs=50)(delayed(simu_test_criterion)(sigma, theta, mu0, P0, Gamma, N, arc_length, grid_lambda, noise_init_theta, tol_EM, max_iter_EM, nb_basis, score_type) for k in range(n_MC))
+   pbar.update()
+
+time_end_score = time.time()
+duration_score = time_end_score - time_init_score
+
+filename = filename_base + "simu_2_V"
+
+dic = {"results":res, "sigma": sigma}
+
+if os.path.isfile(filename):
+   print("Le fichier ", filename, " existe déjà.")
+   filename = filename + '_bis'
+fil = open(filename,"xb")
+pickle.dump(dic,fil)
+fil.close()
+
+print('     End V. ')
+
+
+print('     Start MSE_YX: ')
+
+score_type = 'MSE_YX'
+time_init_score = time.time()
+
+with tqdm(total=n_MC) as pbar:
+   res = Parallel(n_jobs=50)(delayed(simu_test_criterion)(sigma, theta, mu0, P0, Gamma, N, arc_length, grid_lambda, noise_init_theta, tol_EM, max_iter_EM, nb_basis, score_type) for k in range(n_MC))
+   pbar.update()
+
+time_end_score = time.time()
+duration_score = time_end_score - time_init_score
+
+filename = filename_base + "simu_2_MSE_YX"
+
+dic = {"results":res, "sigma": sigma}
+
+if os.path.isfile(filename):
+   print("Le fichier ", filename, " existe déjà.")
+   filename = filename + '_bis'
+fil = open(filename,"xb")
+pickle.dump(dic,fil)
+fil.close()
+
+print('     End MSE_YX. ')
+
+
+print('     Start MSE_YmuX: ')
+
+score_type = 'MSE_YmuX'
+time_init_score = time.time()
+
+with tqdm(total=n_MC) as pbar:
+   res = Parallel(n_jobs=50)(delayed(simu_test_criterion)(sigma, theta, mu0, P0, Gamma, N, arc_length, grid_lambda, noise_init_theta, tol_EM, max_iter_EM, nb_basis, score_type) for k in range(n_MC))
+   pbar.update()
+
+time_end_score = time.time()
+duration_score = time_end_score - time_init_score
+
+filename = filename_base + "simu_2_MSE_YmuX"
+
+dic = {"results":res, "sigma": sigma}
+
+if os.path.isfile(filename):
+   print("Le fichier ", filename, " existe déjà.")
+   filename = filename + '_bis'
+fil = open(filename,"xb")
+pickle.dump(dic,fil)
+fil.close()
+
+print('     End MSE_YmuX. ')
+
+
+print('     Start true_MSE: ')
+
+score_type = 'true_MSE'
+time_init_score = time.time()
+
+with tqdm(total=n_MC) as pbar:
+   res = Parallel(n_jobs=50)(delayed(simu_test_criterion)(sigma, theta, mu0, P0, Gamma, N, arc_length, grid_lambda, noise_init_theta, tol_EM, max_iter_EM, nb_basis, score_type) for k in range(n_MC))
+   pbar.update()
+
+time_end_score = time.time()
+duration_score = time_end_score - time_init_score
+
+filename = filename_base + "simu_2_true_MSE"
+
+dic = {"results":res, "sigma": sigma}
+
+if os.path.isfile(filename):
+   print("Le fichier ", filename, " existe déjà.")
+   filename = filename + '_bis'
+fil = open(filename,"xb")
+pickle.dump(dic,fil)
+fil.close()
+
+print('     End true_MSE. ')
+
+time_end = time.time()
+duration = time_end - time_init
 
 print('End of simulation n°2: time spent', duration, 'seconds. \n')
 
@@ -226,14 +495,19 @@ time_init = time.time()
 
 sigma = 0.01
 
+print('     Start GCV: ')
+
+score_type = 'GCV'
+time_init_score = time.time()
+
 with tqdm(total=n_MC) as pbar:
-   res = Parallel(n_jobs=50)(delayed(simu_test_criterion)(sigma, theta, mu0, P0, Gamma, N, arc_length, grid_lambda, noise_init_theta, tol_EM, max_iter_EM, nb_basis) for k in range(n_MC))
+   res = Parallel(n_jobs=50)(delayed(simu_test_criterion)(sigma, theta, mu0, P0, Gamma, N, arc_length, grid_lambda, noise_init_theta, tol_EM, max_iter_EM, nb_basis, score_type) for k in range(n_MC))
    pbar.update()
 
-time_end = time.time()
-duration = time_end - time_init
+time_end_score = time.time()
+duration_score = time_end_score - time_init_score
 
-filename = filename_base + "simu_3"
+filename = filename_base + "simu_3_GCV"
 
 dic = {"results":res, "sigma": sigma}
 
@@ -243,6 +517,116 @@ if os.path.isfile(filename):
 fil = open(filename,"xb")
 pickle.dump(dic,fil)
 fil.close()
+
+print('     End GCV. ')
+
+
+print('     Start V: ')
+
+score_type = 'V2'
+time_init_score = time.time()
+
+with tqdm(total=n_MC) as pbar:
+   res = Parallel(n_jobs=50)(delayed(simu_test_criterion)(sigma, theta, mu0, P0, Gamma, N, arc_length, grid_lambda, noise_init_theta, tol_EM, max_iter_EM, nb_basis, score_type) for k in range(n_MC))
+   pbar.update()
+
+time_end_score = time.time()
+duration_score = time_end_score - time_init_score
+
+filename = filename_base + "simu_3_V"
+
+dic = {"results":res, "sigma": sigma}
+
+if os.path.isfile(filename):
+   print("Le fichier ", filename, " existe déjà.")
+   filename = filename + '_bis'
+fil = open(filename,"xb")
+pickle.dump(dic,fil)
+fil.close()
+
+print('     End V. ')
+
+
+print('     Start MSE_YX: ')
+
+score_type = 'MSE_YX'
+time_init_score = time.time()
+
+with tqdm(total=n_MC) as pbar:
+   res = Parallel(n_jobs=50)(delayed(simu_test_criterion)(sigma, theta, mu0, P0, Gamma, N, arc_length, grid_lambda, noise_init_theta, tol_EM, max_iter_EM, nb_basis, score_type) for k in range(n_MC))
+   pbar.update()
+
+time_end_score = time.time()
+duration_score = time_end_score - time_init_score
+
+filename = filename_base + "simu_3_MSE_YX"
+
+dic = {"results":res, "sigma": sigma}
+
+if os.path.isfile(filename):
+   print("Le fichier ", filename, " existe déjà.")
+   filename = filename + '_bis'
+fil = open(filename,"xb")
+pickle.dump(dic,fil)
+fil.close()
+
+print('     End MSE_YX. ')
+
+
+print('     Start MSE_YmuX: ')
+
+score_type = 'MSE_YmuX'
+time_init_score = time.time()
+
+with tqdm(total=n_MC) as pbar:
+   res = Parallel(n_jobs=50)(delayed(simu_test_criterion)(sigma, theta, mu0, P0, Gamma, N, arc_length, grid_lambda, noise_init_theta, tol_EM, max_iter_EM, nb_basis, score_type) for k in range(n_MC))
+   pbar.update()
+
+time_end_score = time.time()
+duration_score = time_end_score - time_init_score
+
+filename = filename_base + "simu_3_MSE_YmuX"
+
+dic = {"results":res, "sigma": sigma}
+
+if os.path.isfile(filename):
+   print("Le fichier ", filename, " existe déjà.")
+   filename = filename + '_bis'
+fil = open(filename,"xb")
+pickle.dump(dic,fil)
+fil.close()
+
+print('     End MSE_YmuX. ')
+
+
+print('     Start true_MSE: ')
+
+score_type = 'true_MSE'
+time_init_score = time.time()
+
+with tqdm(total=n_MC) as pbar:
+   res = Parallel(n_jobs=50)(delayed(simu_test_criterion)(sigma, theta, mu0, P0, Gamma, N, arc_length, grid_lambda, noise_init_theta, tol_EM, max_iter_EM, nb_basis, score_type) for k in range(n_MC))
+   pbar.update()
+
+time_end_score = time.time()
+duration_score = time_end_score - time_init_score
+
+filename = filename_base + "simu_3_true_MSE"
+
+dic = {"results":res, "sigma": sigma}
+
+if os.path.isfile(filename):
+   print("Le fichier ", filename, " existe déjà.")
+   filename = filename + '_bis'
+fil = open(filename,"xb")
+pickle.dump(dic,fil)
+fil.close()
+
+print('     End true_MSE. ')
+
+time_end = time.time()
+duration = time_end - time_init
+
 
 print('End of simulation n°3: time spent', duration, 'seconds. \n')
 
@@ -257,14 +641,19 @@ time_init = time.time()
 
 sigma = 0.1
 
+print('     Start GCV: ')
+
+score_type = 'GCV'
+time_init_score = time.time()
+
 with tqdm(total=n_MC) as pbar:
-   res = Parallel(n_jobs=50)(delayed(simu_test_criterion)(sigma, theta, mu0, P0, Gamma, N, arc_length, grid_lambda, noise_init_theta, tol_EM, max_iter_EM, nb_basis) for k in range(n_MC))
+   res = Parallel(n_jobs=50)(delayed(simu_test_criterion)(sigma, theta, mu0, P0, Gamma, N, arc_length, grid_lambda, noise_init_theta, tol_EM, max_iter_EM, nb_basis, score_type) for k in range(n_MC))
    pbar.update()
 
-time_end = time.time()
-duration = time_end - time_init
+time_end_score = time.time()
+duration_score = time_end_score - time_init_score
 
-filename = filename_base + "simu_4"
+filename = filename_base + "simu_4_GCV"
 
 dic = {"results":res, "sigma": sigma}
 
@@ -274,5 +663,115 @@ if os.path.isfile(filename):
 fil = open(filename,"xb")
 pickle.dump(dic,fil)
 fil.close()
+
+print('     End GCV. ')
+
+
+print('     Start V: ')
+
+score_type = 'V2'
+time_init_score = time.time()
+
+with tqdm(total=n_MC) as pbar:
+   res = Parallel(n_jobs=50)(delayed(simu_test_criterion)(sigma, theta, mu0, P0, Gamma, N, arc_length, grid_lambda, noise_init_theta, tol_EM, max_iter_EM, nb_basis, score_type) for k in range(n_MC))
+   pbar.update()
+
+time_end_score = time.time()
+duration_score = time_end_score - time_init_score
+
+filename = filename_base + "simu_4_V"
+
+dic = {"results":res, "sigma": sigma}
+
+if os.path.isfile(filename):
+   print("Le fichier ", filename, " existe déjà.")
+   filename = filename + '_bis'
+fil = open(filename,"xb")
+pickle.dump(dic,fil)
+fil.close()
+
+print('     End V. ')
+
+
+print('     Start MSE_YX: ')
+
+score_type = 'MSE_YX'
+time_init_score = time.time()
+
+with tqdm(total=n_MC) as pbar:
+   res = Parallel(n_jobs=50)(delayed(simu_test_criterion)(sigma, theta, mu0, P0, Gamma, N, arc_length, grid_lambda, noise_init_theta, tol_EM, max_iter_EM, nb_basis, score_type) for k in range(n_MC))
+   pbar.update()
+
+time_end_score = time.time()
+duration_score = time_end_score - time_init_score
+
+filename = filename_base + "simu_4_MSE_YX"
+
+dic = {"results":res, "sigma": sigma}
+
+if os.path.isfile(filename):
+   print("Le fichier ", filename, " existe déjà.")
+   filename = filename + '_bis'
+fil = open(filename,"xb")
+pickle.dump(dic,fil)
+fil.close()
+
+print('     End MSE_YX. ')
+
+
+print('     Start MSE_YmuX: ')
+
+score_type = 'MSE_YmuX'
+time_init_score = time.time()
+
+with tqdm(total=n_MC) as pbar:
+   res = Parallel(n_jobs=50)(delayed(simu_test_criterion)(sigma, theta, mu0, P0, Gamma, N, arc_length, grid_lambda, noise_init_theta, tol_EM, max_iter_EM, nb_basis, score_type) for k in range(n_MC))
+   pbar.update()
+
+time_end_score = time.time()
+duration_score = time_end_score - time_init_score
+
+filename = filename_base + "simu_4_MSE_YmuX"
+
+dic = {"results":res, "sigma": sigma}
+
+if os.path.isfile(filename):
+   print("Le fichier ", filename, " existe déjà.")
+   filename = filename + '_bis'
+fil = open(filename,"xb")
+pickle.dump(dic,fil)
+fil.close()
+
+print('     End MSE_YmuX. ')
+
+
+print('     Start true_MSE: ')
+
+score_type = 'true_MSE'
+time_init_score = time.time()
+
+with tqdm(total=n_MC) as pbar:
+   res = Parallel(n_jobs=50)(delayed(simu_test_criterion)(sigma, theta, mu0, P0, Gamma, N, arc_length, grid_lambda, noise_init_theta, tol_EM, max_iter_EM, nb_basis, score_type) for k in range(n_MC))
+   pbar.update()
+
+time_end_score = time.time()
+duration_score = time_end_score - time_init_score
+
+filename = filename_base + "simu_4_true_MSE"
+
+dic = {"results":res, "sigma": sigma}
+
+if os.path.isfile(filename):
+   print("Le fichier ", filename, " existe déjà.")
+   filename = filename + '_bis'
+fil = open(filename,"xb")
+pickle.dump(dic,fil)
+fil.close()
+
+print('     End true_MSE. ')
+
+time_end = time.time()
+duration = time_end - time_init
+
 
 print('End of simulation n°4: time spent', duration, 'seconds. \n')
