@@ -183,452 +183,310 @@ max_iter_EM = 200
 nb_basis = 15
 
 
-filename = filename_base + "model"
-dic = {"nb_iterations_simu": n_MC, "P0": P0, "mu0": mu0, "theta":theta, "Gamma":Gamma, "grid_lambda":grid_lambda, "max_iter":max_iter_EM, "tol":tol_EM, "N":N, 
-       "arc_length": arc_length, "nb_basis":nb_basis}
-if os.path.isfile(filename):
-   print("Le fichier ", filename, " existe déjà.")
-   filename = filename + '_bis'
-fil = open(filename,"xb")
-pickle.dump(dic,fil)
-fil.close()
+# filename = filename_base + "model"
+# dic = {"nb_iterations_simu": n_MC, "P0": P0, "mu0": mu0, "theta":theta, "Gamma":Gamma, "grid_lambda":grid_lambda, "max_iter":max_iter_EM, "tol":tol_EM, "N":N, 
+#        "arc_length": arc_length, "nb_basis":nb_basis}
+# if os.path.isfile(filename):
+#    print("Le fichier ", filename, " existe déjà.")
+#    filename = filename + '_bis'
+# fil = open(filename,"xb")
+# pickle.dump(dic,fil)
+# fil.close()
 
 
-""" Simulation 1 : sigma = 0 """
+# """ Simulation 1 : sigma = 0 """
 
-print('--------------------- Simulation n°1: sigma = 0 ---------------------')
+# print('--------------------- Simulation n°1: sigma = 0 ---------------------')
 
-time_init = time.time()
+# time_init = time.time()
 
 
-sigma = 0
+# sigma = 0
 
-print('     Start GCV: ')
+# print('     Start GCV: ')
 
-score_type = 'GCV'
-time_init_score = time.time()
+# score_type = 'GCV'
+# time_init_score = time.time()
 
-with tqdm(total=n_MC) as pbar:
-   res = Parallel(n_jobs=50)(delayed(simu_test_criterion)(sigma, theta, mu0, P0, Gamma, N, arc_length, grid_lambda, noise_init_theta, tol_EM, max_iter_EM, nb_basis, score_type) for k in range(n_MC))
-   pbar.update()
+# with tqdm(total=n_MC) as pbar:
+#    res = Parallel(n_jobs=50)(delayed(simu_test_criterion)(sigma, theta, mu0, P0, Gamma, N, arc_length, grid_lambda, noise_init_theta, tol_EM, max_iter_EM, nb_basis, score_type) for k in range(n_MC))
+#    pbar.update()
 
-time_end_score = time.time()
-duration_score = time_end_score - time_init_score
+# time_end_score = time.time()
+# duration_score = time_end_score - time_init_score
 
-filename = filename_base + "simu_1_GCV"
+# filename = filename_base + "simu_1_GCV"
 
-dic = {"results":res, "sigma": sigma}
+# dic = {"results":res, "sigma": sigma}
 
-if os.path.isfile(filename):
-   print("Le fichier ", filename, " existe déjà.")
-   filename = filename + '_bis'
-fil = open(filename,"xb")
-pickle.dump(dic,fil)
-fil.close()
+# if os.path.isfile(filename):
+#    print("Le fichier ", filename, " existe déjà.")
+#    filename = filename + '_bis'
+# fil = open(filename,"xb")
+# pickle.dump(dic,fil)
+# fil.close()
 
-print('     End GCV. ')
+# print('     End GCV. ')
 
 
-print('     Start V: ')
+# print('     Start V: ')
 
-score_type = 'V2'
-time_init_score = time.time()
+# score_type = 'V2'
+# time_init_score = time.time()
 
-with tqdm(total=n_MC) as pbar:
-   res = Parallel(n_jobs=50)(delayed(simu_test_criterion)(sigma, theta, mu0, P0, Gamma, N, arc_length, grid_lambda, noise_init_theta, tol_EM, max_iter_EM, nb_basis, score_type) for k in range(n_MC))
-   pbar.update()
+# with tqdm(total=n_MC) as pbar:
+#    res = Parallel(n_jobs=50)(delayed(simu_test_criterion)(sigma, theta, mu0, P0, Gamma, N, arc_length, grid_lambda, noise_init_theta, tol_EM, max_iter_EM, nb_basis, score_type) for k in range(n_MC))
+#    pbar.update()
 
-time_end_score = time.time()
-duration_score = time_end_score - time_init_score
+# time_end_score = time.time()
+# duration_score = time_end_score - time_init_score
 
-filename = filename_base + "simu_1_V"
+# filename = filename_base + "simu_1_V"
 
-dic = {"results":res, "sigma": sigma}
+# dic = {"results":res, "sigma": sigma}
 
-if os.path.isfile(filename):
-   print("Le fichier ", filename, " existe déjà.")
-   filename = filename + '_bis'
-fil = open(filename,"xb")
-pickle.dump(dic,fil)
-fil.close()
+# if os.path.isfile(filename):
+#    print("Le fichier ", filename, " existe déjà.")
+#    filename = filename + '_bis'
+# fil = open(filename,"xb")
+# pickle.dump(dic,fil)
+# fil.close()
 
-print('     End V. ')
+# print('     End V. ')
 
 
-print('     Start MSE_YX: ')
+# print('     Start MSE_YX: ')
 
-score_type = 'MSE_YX'
-time_init_score = time.time()
+# score_type = 'MSE_YX'
+# time_init_score = time.time()
 
-with tqdm(total=n_MC) as pbar:
-   res = Parallel(n_jobs=50)(delayed(simu_test_criterion)(sigma, theta, mu0, P0, Gamma, N, arc_length, grid_lambda, noise_init_theta, tol_EM, max_iter_EM, nb_basis, score_type) for k in range(n_MC))
-   pbar.update()
+# with tqdm(total=n_MC) as pbar:
+#    res = Parallel(n_jobs=50)(delayed(simu_test_criterion)(sigma, theta, mu0, P0, Gamma, N, arc_length, grid_lambda, noise_init_theta, tol_EM, max_iter_EM, nb_basis, score_type) for k in range(n_MC))
+#    pbar.update()
 
-time_end_score = time.time()
-duration_score = time_end_score - time_init_score
+# time_end_score = time.time()
+# duration_score = time_end_score - time_init_score
 
-filename = filename_base + "simu_1_MSE_YX"
+# filename = filename_base + "simu_1_MSE_YX"
 
-dic = {"results":res, "sigma": sigma}
+# dic = {"results":res, "sigma": sigma}
 
-if os.path.isfile(filename):
-   print("Le fichier ", filename, " existe déjà.")
-   filename = filename + '_bis'
-fil = open(filename,"xb")
-pickle.dump(dic,fil)
-fil.close()
+# if os.path.isfile(filename):
+#    print("Le fichier ", filename, " existe déjà.")
+#    filename = filename + '_bis'
+# fil = open(filename,"xb")
+# pickle.dump(dic,fil)
+# fil.close()
 
-print('     End MSE_YX. ')
+# print('     End MSE_YX. ')
 
 
-print('     Start MSE_YmuX: ')
+# print('     Start MSE_YmuX: ')
 
-score_type = 'MSE_YmuX'
-time_init_score = time.time()
+# score_type = 'MSE_YmuX'
+# time_init_score = time.time()
 
-with tqdm(total=n_MC) as pbar:
-   res = Parallel(n_jobs=50)(delayed(simu_test_criterion)(sigma, theta, mu0, P0, Gamma, N, arc_length, grid_lambda, noise_init_theta, tol_EM, max_iter_EM, nb_basis, score_type) for k in range(n_MC))
-   pbar.update()
+# with tqdm(total=n_MC) as pbar:
+#    res = Parallel(n_jobs=50)(delayed(simu_test_criterion)(sigma, theta, mu0, P0, Gamma, N, arc_length, grid_lambda, noise_init_theta, tol_EM, max_iter_EM, nb_basis, score_type) for k in range(n_MC))
+#    pbar.update()
 
-time_end_score = time.time()
-duration_score = time_end_score - time_init_score
+# time_end_score = time.time()
+# duration_score = time_end_score - time_init_score
 
-filename = filename_base + "simu_1_MSE_YmuX"
+# filename = filename_base + "simu_1_MSE_YmuX"
 
-dic = {"results":res, "sigma": sigma}
+# dic = {"results":res, "sigma": sigma}
 
-if os.path.isfile(filename):
-   print("Le fichier ", filename, " existe déjà.")
-   filename = filename + '_bis'
-fil = open(filename,"xb")
-pickle.dump(dic,fil)
-fil.close()
+# if os.path.isfile(filename):
+#    print("Le fichier ", filename, " existe déjà.")
+#    filename = filename + '_bis'
+# fil = open(filename,"xb")
+# pickle.dump(dic,fil)
+# fil.close()
 
-print('     End MSE_YmuX. ')
+# print('     End MSE_YmuX. ')
 
 
-print('     Start true_MSE: ')
+# print('     Start true_MSE: ')
 
-score_type = 'true_MSE'
-time_init_score = time.time()
+# score_type = 'true_MSE'
+# time_init_score = time.time()
 
-with tqdm(total=n_MC) as pbar:
-   res = Parallel(n_jobs=50)(delayed(simu_test_criterion)(sigma, theta, mu0, P0, Gamma, N, arc_length, grid_lambda, noise_init_theta, tol_EM, max_iter_EM, nb_basis, score_type) for k in range(n_MC))
-   pbar.update()
+# with tqdm(total=n_MC) as pbar:
+#    res = Parallel(n_jobs=50)(delayed(simu_test_criterion)(sigma, theta, mu0, P0, Gamma, N, arc_length, grid_lambda, noise_init_theta, tol_EM, max_iter_EM, nb_basis, score_type) for k in range(n_MC))
+#    pbar.update()
 
-time_end_score = time.time()
-duration_score = time_end_score - time_init_score
+# time_end_score = time.time()
+# duration_score = time_end_score - time_init_score
 
-filename = filename_base + "simu_1_true_MSE"
+# filename = filename_base + "simu_1_true_MSE"
 
-dic = {"results":res, "sigma": sigma}
+# dic = {"results":res, "sigma": sigma}
 
-if os.path.isfile(filename):
-   print("Le fichier ", filename, " existe déjà.")
-   filename = filename + '_bis'
-fil = open(filename,"xb")
-pickle.dump(dic,fil)
-fil.close()
+# if os.path.isfile(filename):
+#    print("Le fichier ", filename, " existe déjà.")
+#    filename = filename + '_bis'
+# fil = open(filename,"xb")
+# pickle.dump(dic,fil)
+# fil.close()
 
-print('     End true_MSE. ')
+# print('     End true_MSE. ')
 
 
-time_end = time.time()
-duration = time_end - time_init
+# time_end = time.time()
+# duration = time_end - time_init
 
-print('End of simulation n°1: time spent', duration, 'seconds. \n')
+# print('End of simulation n°1: time spent', duration, 'seconds. \n')
 
 
 
 
-""" Simulation 2 : sigma = 0.001 """
+# """ Simulation 2 : sigma = 0.001 """
 
-print('--------------------- Simulation n°2: sigma = 0.001 ---------------------')
+# print('--------------------- Simulation n°2: sigma = 0.001 ---------------------')
 
-time_init = time.time()
+# time_init = time.time()
 
 
-sigma = 0.001
+# sigma = 0.001
 
-print('     Start GCV: ')
+# print('     Start GCV: ')
 
-score_type = 'GCV'
-time_init_score = time.time()
+# score_type = 'GCV'
+# time_init_score = time.time()
 
-with tqdm(total=n_MC) as pbar:
-   res = Parallel(n_jobs=50)(delayed(simu_test_criterion)(sigma, theta, mu0, P0, Gamma, N, arc_length, grid_lambda, noise_init_theta, tol_EM, max_iter_EM, nb_basis, score_type) for k in range(n_MC))
-   pbar.update()
+# with tqdm(total=n_MC) as pbar:
+#    res = Parallel(n_jobs=50)(delayed(simu_test_criterion)(sigma, theta, mu0, P0, Gamma, N, arc_length, grid_lambda, noise_init_theta, tol_EM, max_iter_EM, nb_basis, score_type) for k in range(n_MC))
+#    pbar.update()
 
-time_end_score = time.time()
-duration_score = time_end_score - time_init_score
+# time_end_score = time.time()
+# duration_score = time_end_score - time_init_score
 
-filename = filename_base + "simu_2_GCV"
+# filename = filename_base + "simu_2_GCV"
 
-dic = {"results":res, "sigma": sigma}
+# dic = {"results":res, "sigma": sigma}
 
-if os.path.isfile(filename):
-   print("Le fichier ", filename, " existe déjà.")
-   filename = filename + '_bis'
-fil = open(filename,"xb")
-pickle.dump(dic,fil)
-fil.close()
+# if os.path.isfile(filename):
+#    print("Le fichier ", filename, " existe déjà.")
+#    filename = filename + '_bis'
+# fil = open(filename,"xb")
+# pickle.dump(dic,fil)
+# fil.close()
 
-print('     End GCV. ')
+# print('     End GCV. ')
 
 
-print('     Start V: ')
+# print('     Start V: ')
 
-score_type = 'V2'
-time_init_score = time.time()
+# score_type = 'V2'
+# time_init_score = time.time()
 
-with tqdm(total=n_MC) as pbar:
-   res = Parallel(n_jobs=50)(delayed(simu_test_criterion)(sigma, theta, mu0, P0, Gamma, N, arc_length, grid_lambda, noise_init_theta, tol_EM, max_iter_EM, nb_basis, score_type) for k in range(n_MC))
-   pbar.update()
+# with tqdm(total=n_MC) as pbar:
+#    res = Parallel(n_jobs=50)(delayed(simu_test_criterion)(sigma, theta, mu0, P0, Gamma, N, arc_length, grid_lambda, noise_init_theta, tol_EM, max_iter_EM, nb_basis, score_type) for k in range(n_MC))
+#    pbar.update()
 
-time_end_score = time.time()
-duration_score = time_end_score - time_init_score
+# time_end_score = time.time()
+# duration_score = time_end_score - time_init_score
 
-filename = filename_base + "simu_2_V"
+# filename = filename_base + "simu_2_V"
 
-dic = {"results":res, "sigma": sigma}
+# dic = {"results":res, "sigma": sigma}
 
-if os.path.isfile(filename):
-   print("Le fichier ", filename, " existe déjà.")
-   filename = filename + '_bis'
-fil = open(filename,"xb")
-pickle.dump(dic,fil)
-fil.close()
+# if os.path.isfile(filename):
+#    print("Le fichier ", filename, " existe déjà.")
+#    filename = filename + '_bis'
+# fil = open(filename,"xb")
+# pickle.dump(dic,fil)
+# fil.close()
 
-print('     End V. ')
+# print('     End V. ')
 
 
-print('     Start MSE_YX: ')
+# print('     Start MSE_YX: ')
 
-score_type = 'MSE_YX'
-time_init_score = time.time()
+# score_type = 'MSE_YX'
+# time_init_score = time.time()
 
-with tqdm(total=n_MC) as pbar:
-   res = Parallel(n_jobs=50)(delayed(simu_test_criterion)(sigma, theta, mu0, P0, Gamma, N, arc_length, grid_lambda, noise_init_theta, tol_EM, max_iter_EM, nb_basis, score_type) for k in range(n_MC))
-   pbar.update()
+# with tqdm(total=n_MC) as pbar:
+#    res = Parallel(n_jobs=50)(delayed(simu_test_criterion)(sigma, theta, mu0, P0, Gamma, N, arc_length, grid_lambda, noise_init_theta, tol_EM, max_iter_EM, nb_basis, score_type) for k in range(n_MC))
+#    pbar.update()
 
-time_end_score = time.time()
-duration_score = time_end_score - time_init_score
+# time_end_score = time.time()
+# duration_score = time_end_score - time_init_score
 
-filename = filename_base + "simu_2_MSE_YX"
+# filename = filename_base + "simu_2_MSE_YX"
 
-dic = {"results":res, "sigma": sigma}
+# dic = {"results":res, "sigma": sigma}
 
-if os.path.isfile(filename):
-   print("Le fichier ", filename, " existe déjà.")
-   filename = filename + '_bis'
-fil = open(filename,"xb")
-pickle.dump(dic,fil)
-fil.close()
+# if os.path.isfile(filename):
+#    print("Le fichier ", filename, " existe déjà.")
+#    filename = filename + '_bis'
+# fil = open(filename,"xb")
+# pickle.dump(dic,fil)
+# fil.close()
 
-print('     End MSE_YX. ')
+# print('     End MSE_YX. ')
 
 
-print('     Start MSE_YmuX: ')
+# print('     Start MSE_YmuX: ')
 
-score_type = 'MSE_YmuX'
-time_init_score = time.time()
+# score_type = 'MSE_YmuX'
+# time_init_score = time.time()
 
-with tqdm(total=n_MC) as pbar:
-   res = Parallel(n_jobs=50)(delayed(simu_test_criterion)(sigma, theta, mu0, P0, Gamma, N, arc_length, grid_lambda, noise_init_theta, tol_EM, max_iter_EM, nb_basis, score_type) for k in range(n_MC))
-   pbar.update()
+# with tqdm(total=n_MC) as pbar:
+#    res = Parallel(n_jobs=50)(delayed(simu_test_criterion)(sigma, theta, mu0, P0, Gamma, N, arc_length, grid_lambda, noise_init_theta, tol_EM, max_iter_EM, nb_basis, score_type) for k in range(n_MC))
+#    pbar.update()
 
-time_end_score = time.time()
-duration_score = time_end_score - time_init_score
+# time_end_score = time.time()
+# duration_score = time_end_score - time_init_score
 
-filename = filename_base + "simu_2_MSE_YmuX"
+# filename = filename_base + "simu_2_MSE_YmuX"
 
-dic = {"results":res, "sigma": sigma}
+# dic = {"results":res, "sigma": sigma}
 
-if os.path.isfile(filename):
-   print("Le fichier ", filename, " existe déjà.")
-   filename = filename + '_bis'
-fil = open(filename,"xb")
-pickle.dump(dic,fil)
-fil.close()
+# if os.path.isfile(filename):
+#    print("Le fichier ", filename, " existe déjà.")
+#    filename = filename + '_bis'
+# fil = open(filename,"xb")
+# pickle.dump(dic,fil)
+# fil.close()
 
-print('     End MSE_YmuX. ')
+# print('     End MSE_YmuX. ')
 
 
-print('     Start true_MSE: ')
+# print('     Start true_MSE: ')
 
-score_type = 'true_MSE'
-time_init_score = time.time()
+# score_type = 'true_MSE'
+# time_init_score = time.time()
 
-with tqdm(total=n_MC) as pbar:
-   res = Parallel(n_jobs=50)(delayed(simu_test_criterion)(sigma, theta, mu0, P0, Gamma, N, arc_length, grid_lambda, noise_init_theta, tol_EM, max_iter_EM, nb_basis, score_type) for k in range(n_MC))
-   pbar.update()
+# with tqdm(total=n_MC) as pbar:
+#    res = Parallel(n_jobs=50)(delayed(simu_test_criterion)(sigma, theta, mu0, P0, Gamma, N, arc_length, grid_lambda, noise_init_theta, tol_EM, max_iter_EM, nb_basis, score_type) for k in range(n_MC))
+#    pbar.update()
 
-time_end_score = time.time()
-duration_score = time_end_score - time_init_score
+# time_end_score = time.time()
+# duration_score = time_end_score - time_init_score
 
-filename = filename_base + "simu_2_true_MSE"
+# filename = filename_base + "simu_2_true_MSE"
 
-dic = {"results":res, "sigma": sigma}
+# dic = {"results":res, "sigma": sigma}
 
-if os.path.isfile(filename):
-   print("Le fichier ", filename, " existe déjà.")
-   filename = filename + '_bis'
-fil = open(filename,"xb")
-pickle.dump(dic,fil)
-fil.close()
+# if os.path.isfile(filename):
+#    print("Le fichier ", filename, " existe déjà.")
+#    filename = filename + '_bis'
+# fil = open(filename,"xb")
+# pickle.dump(dic,fil)
+# fil.close()
 
-print('     End true_MSE. ')
+# print('     End true_MSE. ')
 
-time_end = time.time()
-duration = time_end - time_init
+# time_end = time.time()
+# duration = time_end - time_init
 
-print('End of simulation n°2: time spent', duration, 'seconds. \n')
+# print('End of simulation n°2: time spent', duration, 'seconds. \n')
 
 
 
-""" Simulation 3 : sigma = 0.01 """
 
-print('--------------------- Simulation n°3: sigma = 0.01 ---------------------')
-
-time_init = time.time()
-
-
-sigma = 0.01
-
-print('     Start GCV: ')
-
-score_type = 'GCV'
-time_init_score = time.time()
-
-with tqdm(total=n_MC) as pbar:
-   res = Parallel(n_jobs=50)(delayed(simu_test_criterion)(sigma, theta, mu0, P0, Gamma, N, arc_length, grid_lambda, noise_init_theta, tol_EM, max_iter_EM, nb_basis, score_type) for k in range(n_MC))
-   pbar.update()
-
-time_end_score = time.time()
-duration_score = time_end_score - time_init_score
-
-filename = filename_base + "simu_3_GCV"
-
-dic = {"results":res, "sigma": sigma}
-
-if os.path.isfile(filename):
-   print("Le fichier ", filename, " existe déjà.")
-   filename = filename + '_bis'
-fil = open(filename,"xb")
-pickle.dump(dic,fil)
-fil.close()
-
-print('     End GCV. ')
-
-
-print('     Start V: ')
-
-score_type = 'V2'
-time_init_score = time.time()
-
-with tqdm(total=n_MC) as pbar:
-   res = Parallel(n_jobs=50)(delayed(simu_test_criterion)(sigma, theta, mu0, P0, Gamma, N, arc_length, grid_lambda, noise_init_theta, tol_EM, max_iter_EM, nb_basis, score_type) for k in range(n_MC))
-   pbar.update()
-
-time_end_score = time.time()
-duration_score = time_end_score - time_init_score
-
-filename = filename_base + "simu_3_V"
-
-dic = {"results":res, "sigma": sigma}
-
-if os.path.isfile(filename):
-   print("Le fichier ", filename, " existe déjà.")
-   filename = filename + '_bis'
-fil = open(filename,"xb")
-pickle.dump(dic,fil)
-fil.close()
-
-print('     End V. ')
-
-
-print('     Start MSE_YX: ')
-
-score_type = 'MSE_YX'
-time_init_score = time.time()
-
-with tqdm(total=n_MC) as pbar:
-   res = Parallel(n_jobs=50)(delayed(simu_test_criterion)(sigma, theta, mu0, P0, Gamma, N, arc_length, grid_lambda, noise_init_theta, tol_EM, max_iter_EM, nb_basis, score_type) for k in range(n_MC))
-   pbar.update()
-
-time_end_score = time.time()
-duration_score = time_end_score - time_init_score
-
-filename = filename_base + "simu_3_MSE_YX"
-
-dic = {"results":res, "sigma": sigma}
-
-if os.path.isfile(filename):
-   print("Le fichier ", filename, " existe déjà.")
-   filename = filename + '_bis'
-fil = open(filename,"xb")
-pickle.dump(dic,fil)
-fil.close()
-
-print('     End MSE_YX. ')
-
-
-print('     Start MSE_YmuX: ')
-
-score_type = 'MSE_YmuX'
-time_init_score = time.time()
-
-with tqdm(total=n_MC) as pbar:
-   res = Parallel(n_jobs=50)(delayed(simu_test_criterion)(sigma, theta, mu0, P0, Gamma, N, arc_length, grid_lambda, noise_init_theta, tol_EM, max_iter_EM, nb_basis, score_type) for k in range(n_MC))
-   pbar.update()
-
-time_end_score = time.time()
-duration_score = time_end_score - time_init_score
-
-filename = filename_base + "simu_3_MSE_YmuX"
-
-dic = {"results":res, "sigma": sigma}
-
-if os.path.isfile(filename):
-   print("Le fichier ", filename, " existe déjà.")
-   filename = filename + '_bis'
-fil = open(filename,"xb")
-pickle.dump(dic,fil)
-fil.close()
-
-print('     End MSE_YmuX. ')
-
-
-print('     Start true_MSE: ')
-
-score_type = 'true_MSE'
-time_init_score = time.time()
-
-with tqdm(total=n_MC) as pbar:
-   res = Parallel(n_jobs=50)(delayed(simu_test_criterion)(sigma, theta, mu0, P0, Gamma, N, arc_length, grid_lambda, noise_init_theta, tol_EM, max_iter_EM, nb_basis, score_type) for k in range(n_MC))
-   pbar.update()
-
-time_end_score = time.time()
-duration_score = time_end_score - time_init_score
-
-filename = filename_base + "simu_3_true_MSE"
-
-dic = {"results":res, "sigma": sigma}
-
-if os.path.isfile(filename):
-   print("Le fichier ", filename, " existe déjà.")
-   filename = filename + '_bis'
-fil = open(filename,"xb")
-pickle.dump(dic,fil)
-fil.close()
-
-print('     End true_MSE. ')
-
-time_end = time.time()
-duration = time_end - time_init
-
-
-print('End of simulation n°3: time spent', duration, 'seconds. \n')
 
 
 
@@ -775,3 +633,149 @@ duration = time_end - time_init
 
 
 print('End of simulation n°4: time spent', duration, 'seconds. \n')
+
+
+
+""" Simulation 3 : sigma = 0.01 """
+
+print('--------------------- Simulation n°3: sigma = 0.01 ---------------------')
+
+time_init = time.time()
+
+
+sigma = 0.01
+
+print('     Start GCV: ')
+
+score_type = 'GCV'
+time_init_score = time.time()
+
+with tqdm(total=n_MC) as pbar:
+   res = Parallel(n_jobs=50)(delayed(simu_test_criterion)(sigma, theta, mu0, P0, Gamma, N, arc_length, grid_lambda, noise_init_theta, tol_EM, max_iter_EM, nb_basis, score_type) for k in range(n_MC))
+   pbar.update()
+
+time_end_score = time.time()
+duration_score = time_end_score - time_init_score
+
+filename = filename_base + "simu_3_GCV"
+
+dic = {"results":res, "sigma": sigma}
+
+if os.path.isfile(filename):
+   print("Le fichier ", filename, " existe déjà.")
+   filename = filename + '_bis'
+fil = open(filename,"xb")
+pickle.dump(dic,fil)
+fil.close()
+
+print('     End GCV. ')
+
+
+print('     Start V: ')
+
+score_type = 'V2'
+time_init_score = time.time()
+
+with tqdm(total=n_MC) as pbar:
+   res = Parallel(n_jobs=50)(delayed(simu_test_criterion)(sigma, theta, mu0, P0, Gamma, N, arc_length, grid_lambda, noise_init_theta, tol_EM, max_iter_EM, nb_basis, score_type) for k in range(n_MC))
+   pbar.update()
+
+time_end_score = time.time()
+duration_score = time_end_score - time_init_score
+
+filename = filename_base + "simu_3_V"
+
+dic = {"results":res, "sigma": sigma}
+
+if os.path.isfile(filename):
+   print("Le fichier ", filename, " existe déjà.")
+   filename = filename + '_bis'
+fil = open(filename,"xb")
+pickle.dump(dic,fil)
+fil.close()
+
+print('     End V. ')
+
+
+print('     Start MSE_YX: ')
+
+score_type = 'MSE_YX'
+time_init_score = time.time()
+
+with tqdm(total=n_MC) as pbar:
+   res = Parallel(n_jobs=50)(delayed(simu_test_criterion)(sigma, theta, mu0, P0, Gamma, N, arc_length, grid_lambda, noise_init_theta, tol_EM, max_iter_EM, nb_basis, score_type) for k in range(n_MC))
+   pbar.update()
+
+time_end_score = time.time()
+duration_score = time_end_score - time_init_score
+
+filename = filename_base + "simu_3_MSE_YX"
+
+dic = {"results":res, "sigma": sigma}
+
+if os.path.isfile(filename):
+   print("Le fichier ", filename, " existe déjà.")
+   filename = filename + '_bis'
+fil = open(filename,"xb")
+pickle.dump(dic,fil)
+fil.close()
+
+print('     End MSE_YX. ')
+
+
+print('     Start MSE_YmuX: ')
+
+score_type = 'MSE_YmuX'
+time_init_score = time.time()
+
+with tqdm(total=n_MC) as pbar:
+   res = Parallel(n_jobs=50)(delayed(simu_test_criterion)(sigma, theta, mu0, P0, Gamma, N, arc_length, grid_lambda, noise_init_theta, tol_EM, max_iter_EM, nb_basis, score_type) for k in range(n_MC))
+   pbar.update()
+
+time_end_score = time.time()
+duration_score = time_end_score - time_init_score
+
+filename = filename_base + "simu_3_MSE_YmuX"
+
+dic = {"results":res, "sigma": sigma}
+
+if os.path.isfile(filename):
+   print("Le fichier ", filename, " existe déjà.")
+   filename = filename + '_bis'
+fil = open(filename,"xb")
+pickle.dump(dic,fil)
+fil.close()
+
+print('     End MSE_YmuX. ')
+
+
+print('     Start true_MSE: ')
+
+score_type = 'true_MSE'
+time_init_score = time.time()
+
+with tqdm(total=n_MC) as pbar:
+   res = Parallel(n_jobs=50)(delayed(simu_test_criterion)(sigma, theta, mu0, P0, Gamma, N, arc_length, grid_lambda, noise_init_theta, tol_EM, max_iter_EM, nb_basis, score_type) for k in range(n_MC))
+   pbar.update()
+
+time_end_score = time.time()
+duration_score = time_end_score - time_init_score
+
+filename = filename_base + "simu_3_true_MSE"
+
+dic = {"results":res, "sigma": sigma}
+
+if os.path.isfile(filename):
+   print("Le fichier ", filename, " existe déjà.")
+   filename = filename + '_bis'
+fil = open(filename,"xb")
+pickle.dump(dic,fil)
+fil.close()
+
+print('     End true_MSE. ')
+
+time_end = time.time()
+duration = time_end - time_init
+
+
+print('End of simulation n°3: time spent', duration, 'seconds. \n')
