@@ -4,6 +4,8 @@ from scipy.linalg import expm, block_diag
 from FrenetFDA.utils.Lie_group.SE3_utils import SE3
 from FrenetFDA.utils.Lie_group.SO3_utils import SO3
 import time as ttime 
+# from numba import njit
+
 
 class IEKFilterSmootherFrenetState():
 
@@ -40,15 +42,15 @@ class IEKFilterSmootherFrenetState():
         self.dim_g = int((1/2)*n*(n+1)) # dimension of the Lie Algebra se(n)
         self.Sigma = Sigma # fct of matrix (n-1 x n-1)
         self.Gamma = Gamma 
-        self.xi = np.zeros((self.dim_g))
+        # self.xi = np.zeros((self.dim_g))
         self.P0 = np.zeros((self.dim_g,self.dim_g)) if P0 is None else P0
         self.P = self.P0
         self.C = np.eye(self.dim_g)
         self.Q = np.eye(self.n) if Z0 is None else Z0[:self.n,:self.n]
         self.X = np.zeros((self.n)) if Z0 is None else Z0[:self.n,self.n]
         self.Z = np.vstack((np.hstack((self.Q,self.X[:,np.newaxis])),np.hstack((np.zeros((self.n)), np.array((1)))))) if Z0 is None else Z0
-        self.U = np.eye(self.dim_g)
-        self.list_U = [self.U]
+        # self.U = np.eye(self.dim_g)
+        # self.list_U = [self.U]
         self.K_pts = K_pts
 
         self.F = lambda s: -SE3.Ad(np.array([theta(s)[1], 0*s, theta(s)[0], 1+0*s, 0*s, 0*s]))
@@ -77,13 +79,13 @@ class IEKFilterSmootherFrenetState():
         self.Z = np.vstack((np.hstack((self.Q,self.X[:,np.newaxis])),np.hstack((np.zeros((self.n)), np.array((1))))))
 
 
-    def __propagation_xi(self, t_span):
-        """
+    # def __propagation_xi(self, t_span):
+    #     """
         
-        """
-        ode_func = lambda t,x: np.matmul(self.F(t),x)
-        sol = solve_ivp(ode_func, t_span=t_span, y0=self.xi, t_eval=np.array([t_span[-1]])) #, method='Radau')
-        self.xi = sol.y[:,0]
+    #     """
+    #     ode_func = lambda t,x: np.matmul(self.F(t),x)
+    #     sol = solve_ivp(ode_func, t_span=t_span, y0=self.xi, t_eval=np.array([t_span[-1]])) #, method='Radau')
+    #     self.xi = sol.y[:,0]
 
     def __propagation_P(self, t_span):
         """
@@ -102,19 +104,19 @@ class IEKFilterSmootherFrenetState():
         self.C = sol.y[:,0].reshape(self.dim_g, self.dim_g)
 
 
-    def __propagation_U(self, t_span):
-        """
+    # def __propagation_U(self, t_span):
+    #     """
         
-        """
-        x_eval = np.linspace(t_span[0],t_span[-1],self.K_pts)
-        u_eval = x_eval[1:] - x_eval[:-1]
-        v_eval = (x_eval[1:] + x_eval[:-1])/2
-        ode_func = lambda t,p: (np.matmul(self.F(t),p.reshape(self.dim_g, self.dim_g)) + np.matmul(p.reshape(self.dim_g, self.dim_g),self.F(t).T) + self.L @ self.Sigma(t) @ self.L.T).flatten()
-        sol = solve_ivp(ode_func, t_span=t_span, y0=self.P.flatten(), t_eval=v_eval) #, method='Radau')
-        self.list_P = sol.y[:,:].reshape(self.dim_g, self.dim_g, self.K_pts-1)
-        for i in range(self.K_pts-1):
-            self.U = expm(u_eval[i]*(self.F(v_eval[i]) + self.L @ self.Sigma(v_eval[i]) @ self.L.T @np.linalg.inv(self.list_P[:,:,i])))@self.U
-            self.list_U.append(self.U)
+    #     """
+    #     x_eval = np.linspace(t_span[0],t_span[-1],self.K_pts)
+    #     u_eval = x_eval[1:] - x_eval[:-1]
+    #     v_eval = (x_eval[1:] + x_eval[:-1])/2
+    #     ode_func = lambda t,p: (np.matmul(self.F(t),p.reshape(self.dim_g, self.dim_g)) + np.matmul(p.reshape(self.dim_g, self.dim_g),self.F(t).T) + self.L @ self.Sigma(t) @ self.L.T).flatten()
+    #     sol = solve_ivp(ode_func, t_span=t_span, y0=self.P.flatten(), t_eval=v_eval) #, method='Radau')
+    #     self.list_P = sol.y[:,:].reshape(self.dim_g, self.dim_g, self.K_pts-1)
+    #     for i in range(self.K_pts-1):
+    #         self.U = expm(u_eval[i]*(self.F(v_eval[i]) + self.L @ self.Sigma(v_eval[i]) @ self.L.T @np.linalg.inv(self.list_P[:,:,i])))@self.U
+    #         self.list_U.append(self.U)
 
 
     def __predict(self, ti, tf):
@@ -124,13 +126,13 @@ class IEKFilterSmootherFrenetState():
         if self.n == 3:
             t_span = np.array([ti, tf])
             self.__propagation_Z(t_span)
-            self.__propagation_xi(t_span)
+            # self.__propagation_xi(t_span)
             self.__propagation_C(t_span)
-            self.__propagation_U(t_span)
+            # self.__propagation_U(t_span)
             self.__propagation_P(t_span)
         else:
             raise NotImplementedError("Propagation step not implemented for n != 3.")
-
+        
 
     def __update(self, y):
         """
@@ -145,7 +147,7 @@ class IEKFilterSmootherFrenetState():
         self.P = (I - self.K @ self.H) @ self.P
         self.P = (self.P+self.P.T)/2
         eps = self.K @ (self.Q).T @ (y - self.X)
-        self.xi = self.xi - self.K @ self.H @ self.xi + eps
+        # self.xi = self.xi - self.K @ self.H @ self.xi + eps
         self.Z = self.Z @ SE3.exp(eps[:self.dim_g])
         self.Q = self.Z[:self.n,:self.n]
         self.X = self.Z[:self.n,self.n]
@@ -161,14 +163,14 @@ class IEKFilterSmootherFrenetState():
         """
         self.N = len(grid)
         self.grid = grid
-        pred_Z, pred_xi, pred_P, pred_C = [], [], [], []
-        track_Z, track_Q, track_X, track_xi, track_P = [self.Z], [self.Q], [self.X], [self.xi], [self.P]
+        pred_Z, pred_P, pred_C = [], [], []
+        track_Z, track_Q, track_X, track_P = [self.Z], [self.Q], [self.X], [self.P]
 
         for si, sf, y in zip(grid[:-1], grid[1:], Y):
             ''' Propagation step '''
             self.__predict(si, sf)
             pred_Z.append(self.Z)
-            pred_xi.append(self.xi)
+            # pred_xi.append(self.xi)
             pred_P.append(self.P)
             pred_C.append(self.C)
             ''' Update step '''
@@ -176,23 +178,23 @@ class IEKFilterSmootherFrenetState():
             track_Z.append(self.Z)
             track_Q.append(self.Q)
             track_X.append(self.X)
-            track_xi.append(self.xi)
+            # track_xi.append(self.xi)
             track_P.append(self.P)
 
         self.pred_Z = pred_Z
-        self.pred_xi = pred_xi
+        # self.pred_xi = pred_xi
         self.pred_P = pred_P
         self.pred_C = pred_C
         self.track_Z = track_Z
         self.track_Q = np.array(track_Q)
         self.track_X = np.array(track_X)
-        self.track_xi = np.array(track_xi)
+        # self.track_xi = np.array(track_xi)
         self.track_P = track_P
-        self.list_U = np.array(self.list_U)
+        # self.list_U = np.array(self.list_U)
 
         return
-
-
+    
+    
     def smoothing(self, grid, Y):
         """
         

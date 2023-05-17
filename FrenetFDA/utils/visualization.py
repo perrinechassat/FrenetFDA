@@ -84,7 +84,7 @@ def plot_3D(features, names, save=False, filename='', mode='lines'):
                 z=feat[:,2],
                 name=names[i],
                 mode=mode,
-                line=dict(width=3,color=color_list[i])
+                line=dict(width=3)
             )
         )
     fig.update_layout(legend=dict(orientation="h",yanchor="top",y=1.2,xanchor="right", x=1),

@@ -181,11 +181,11 @@ class MLE:
 class FrenetStateSpace:
 
 
-    def __init__(self, grid_obs, Y_obs, dim=3):
+    def __init__(self, grid_obs, Y_obs, dim=3, bornes_theta=None):
         self.n = dim
         self.dim_g = int((1/2)*dim*(dim+1)) # dimension of the Lie Algebra se(n)
         self.Y = Y_obs[1:] #array of shape (N,n,)
-        self.grid = grid_obs
+        self.grid = grid_obs 
         self.domain_range = (grid_obs[0], grid_obs[-1])
         self.N = len(self.Y)
         self.rho = np.array([1,0,0])
@@ -683,7 +683,50 @@ class FrenetStateSpace:
     #     self.confidence_limits = confidence_limits
 
 
+        # def __compute_coefs_CV(self, r_tilde_train, mat_weights_train, basis_matrix_train, reg_param_mat):
+    #     left = basis_matrix_train.T @ mat_weights_train @ basis_matrix_train + reg_param_mat @ self.Bspline_decomp.penalty_matrix    
+    #     right = basis_matrix_train.T @ mat_weights_train @ np.reshape(r_tilde_train, (self.N*(self.n-1),))
+    #     coefs_tem = np.linalg.solve(left, right)
+    #     coefs_tem = np.reshape(coefs_tem,(-1,2))
+    #     new_coefs = np.reshape(coefs_tem, (-1,))
+    #     return new_coefs
+    
 
+    # def opti_lambda_CV_MSE(self, tol, max_iter, reg_param_list, model_Sigma, score, n_splits):
+    #     K = len(reg_param_list)
+    #     score_lambda_matrix = np.zeros((K,K))
+    #     for i in range(K):
+    #         for j in range(K):
+    #             reg_param = np.array([reg_param_list[i], reg_param_list[j]])
+    #             lbda, reg_param_mat = self.Bspline_decomp.check_regularization_parameter(reg_param)
+    #             n_splits = 5
+    #             kf = KFold(n_splits=n_splits, shuffle=True)
+    #             for train_index, test_index in kf.split(self.v):
+    #                 r_train = self.r_tilde[train_index]
+    #                 r_test = self.r_tilde[test_index]
+    #                 grid_train = self.v[train_index]
+    #                 grid_test = self.v[test_index]
+    #                 basis_matrix_train = self.Bspline_decomp.basis(np.expand_dims(grid_train, 1),).reshape((self.Bspline_decomp.basis.n_basis, -1)).T
+    #                 mat_weights_train = np.eye(basis_matrix_train.shape[0])
+    #                 coefs_train = self.__compute_coefs_CV(r_train, mat_weights_train, basis_matrix_train, reg_param_mat)
+                    
+    #                 L_tilde, L_tilde_inv = self.__compute_L_tilde(coefs_train)
+    #                 mat_weights_train, weights = self.__compute_weights(self.Sigma, L_tilde_inv)
+    #                 old_theta = np.reshape(self.basis_matrix @ coefs_train, (-1,self.n-1))
+    #                 rel_error = 2*tol 
+    #                 k = 0 
+    #                 while rel_error > tol and k < max_iter:
+    #                     coefs_opt = self.__compute_coefs_CV(r_train, mat_weights_train, basis_matrix_train, reg_param_mat)
+    #                     L_tilde, L_tilde_inv = self.__compute_L_tilde(coefs_opt)
+    #                     Sigma_opt, expect_MSE, err_obs = self.__opti_Sigma(coefs_opt, model_Sigma, L_tilde_inv)
+    #                     mat_weights_train, weights = self.__compute_weights(Sigma_opt, L_tilde_inv)
+
+    #                     new_theta = np.reshape(self.basis_matrix @ coefs_opt, (-1,self.n-1))
+    #                     rel_error = np.linalg.norm(old_theta - new_theta)/np.linalg.norm(old_theta)
+    #                     if self.verbose:
+    #                         print('iteration for optimization of coefs and Sigma:', k, ', relative error:', rel_error)
+    #                     old_theta = new_theta
+    #                     k += 1
 
 
 
