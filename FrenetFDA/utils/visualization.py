@@ -35,7 +35,7 @@ def plot_array_2D(x, array_y, name_ind, legend={"index":False}, mode='lines'):
     fig = go.Figure(layout=layout)
     N = len(array_y)
     for i in range(N):
-        fig.add_trace(go.Scatter(x=x, y=array_y[i], mode=mode, name=name_ind+str(i), line=dict(width=1, color=color_list[(i-9)%9])))
+        fig.add_trace(go.Scatter(x=x, y=array_y[i], mode=mode, name=name_ind+str(i), line=dict(width=1)))
     if legend['index']==True:
         fig.update_layout(
         title=legend["title"],
@@ -49,7 +49,7 @@ def plot_array_2D_names(x, array_y, names, legend={"index":False}, mode='lines')
     fig = go.Figure(layout=layout)
     N = len(array_y)
     for i in range(N):
-        fig.add_trace(go.Scatter(x=x, y=array_y[i], mode=mode, name=names[i], line=dict(width=1, color=color_list[(i-9)%9])))
+        fig.add_trace(go.Scatter(x=x, y=array_y[i], mode=mode, name=names[i], line=dict(width=1)))
     if legend['index']==True:
         fig.update_layout(
         title=legend["title"],
@@ -63,7 +63,7 @@ def plot_2array_2D(x, array_y, legend={"index":False}, mode='lines'):
     fig = go.Figure(layout=layout)
     N = len(array_y)
     for i in range(N):
-        fig.add_trace(go.Scatter(x=x[i], y=array_y[i], mode=mode, line=dict(width=1, color=color_list[(i-9)%9])))
+        fig.add_trace(go.Scatter(x=x[i], y=array_y[i], mode=mode, line=dict(width=1)))
     if legend['index']==True:
         fig.update_layout(
         title=legend["title"],
