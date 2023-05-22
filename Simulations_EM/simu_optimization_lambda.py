@@ -328,16 +328,8 @@ def step_simu_opt(Y, FS_state_space_init, score_lambda_matrix, sigma_init, tol_E
 
 
 
-import numpy as np
-import sys
-sys.path.insert(1, '../../../')
-sys.path.insert(1, '../../../FrenetFDA/')
-from FrenetFDA.utils.Frenet_Serret_utils import *
-from FrenetFDA.processing_Euclidean_curve.unified_estimate_Frenet_state_space.EM_Frenet_state_space_CV import FrenetStateSpaceCV_global
-from pickle import *
-import dill as pickle
-
-filename = "model_01/model"
+filename_base = "results/simulation_optimization_lambda/model_01/"
+filename = filename_base + "model"
 fil = open(filename,"rb")
 dic_model = pickle.load(fil)
 fil.close()
@@ -359,7 +351,6 @@ mu_Q, mu_X = mu_Z[:,:3,:3], mu_Z[:,:3,3]
 tol_EM = 0.01
 max_iter_EM = 100
 nb_basis = 15
-filename_base = "results/simulation_optimization_lambda/model_01/"
 
 
 """ Simulation 2 : CV globally MSE_YX """
@@ -370,7 +361,7 @@ time_init = time.time()
 
 score_type = 'MSE_YX'
 
-filename = "model_01/simu_2_global_MSE_YX"
+filename = filename_base + "simu_2_global_MSE_YX"
 fil = open(filename,"rb")
 dic_simu_2 = pickle.load(fil)
 fil.close()
@@ -424,7 +415,7 @@ time_init = time.time()
 
 score_type = 'MSE_YmuX'
 
-filename = "model_01/simu_4_global_MSE_YmuX"
+filename = filename_base + "simu_4_global_MSE_YmuX"
 fil = open(filename,"rb")
 dic_simu_4 = pickle.load(fil)
 fil.close()
