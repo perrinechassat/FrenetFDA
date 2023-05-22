@@ -349,7 +349,7 @@ n_splits_CV = dic_model["n_splits_CV"]
 mu_Z = solve_FrenetSerret_ODE_SE(theta, arc_length, mu0)
 mu_Q, mu_X = mu_Z[:,:3,:3], mu_Z[:,:3,3]
 tol_EM = 0.01
-max_iter_EM = 100
+max_iter_EM = 500
 nb_basis = 15
 
 
@@ -389,7 +389,7 @@ with tqdm(total=N_simu_ok) as pbar:
 time_end = time.time()
 duration = time_end - time_init
 
-filename = filename_base + "simu_2_global_MSE_YX_bis"
+filename = filename_base + "simu_2_global_MSE_YX_bis_500it"
 
 dic = {"results":res, "score_type": score_type}
 
@@ -443,7 +443,7 @@ with tqdm(total=N_simu_ok) as pbar:
 time_end = time.time()
 duration = time_end - time_init
 
-filename = filename_base + "simu_4_global_MSE_YmuX_bis"
+filename = filename_base + "simu_4_global_MSE_YmuX_bis_500it"
 
 dic = {"results":res, "score_type": score_type}
 
