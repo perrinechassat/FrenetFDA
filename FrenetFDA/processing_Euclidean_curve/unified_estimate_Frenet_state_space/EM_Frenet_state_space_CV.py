@@ -372,6 +372,7 @@ class FrenetStateSpaceCV_byit:
         self.tab_Gamma = []
         self.tab_P0 = []
         self.tab_mu0 = []
+        self.tab_regularization_parameter = []
 
 
     def tab_increment(self, rel_error=None, val_expected_loglikelihood=None):
@@ -398,6 +399,8 @@ class FrenetStateSpaceCV_byit:
             self.tab_P0.append(self.P0)
         if hasattr(self, "mu0"):
             self.tab_mu0.append(self.mu0)
+        if hasattr(self, "regularization_parameter"):
+            self.tab_regularization_parameter.append(self.regularization_parameter)
         
 
     def save_tab_results(self, filename):
