@@ -119,48 +119,48 @@ def simu_opti_lambda_globally(theta, mu0, P0, Gamma, N, arc_length, sigma_init, 
     
 
 
-""" MODEL for simulations """
+# """ MODEL for simulations """
 
 
-def theta(s):
-    curv = lambda s : 2*np.cos(2*np.pi*s) + 5
-    tors = lambda s : 2*np.sin(2*np.pi*s) + 1
-    if isinstance(s, int) or isinstance(s, float):
-        return np.array([curv(s), tors(s)])
-    elif isinstance(s, np.ndarray):
-        return np.vstack((curv(s), tors(s))).T
-    else:
-        raise ValueError('Variable is not a float, a int or a NumPy array.')
+# def theta(s):
+#     curv = lambda s : 2*np.cos(2*np.pi*s) + 5
+#     tors = lambda s : 2*np.sin(2*np.pi*s) + 1
+#     if isinstance(s, int) or isinstance(s, float):
+#         return np.array([curv(s), tors(s)])
+#     elif isinstance(s, np.ndarray):
+#         return np.vstack((curv(s), tors(s))).T
+#     else:
+#         raise ValueError('Variable is not a float, a int or a NumPy array.')
 
-N = 200
-grid_time = np.linspace(0,1,N)
-arc_length = grid_time 
-mu0 = np.eye(4)
-mu_Z = solve_FrenetSerret_ODE_SE(theta, arc_length, mu0)
-mu_Q, mu_X = mu_Z[:,:3,:3], mu_Z[:,:3,3]
+# N = 200
+# grid_time = np.linspace(0,1,N)
+# arc_length = grid_time 
+# mu0 = np.eye(4)
+# mu_Z = solve_FrenetSerret_ODE_SE(theta, arc_length, mu0)
+# mu_Q, mu_X = mu_Z[:,:3,:3], mu_Z[:,:3,3]
 
-P0 = 0.01**2*np.eye(6)
+# P0 = 0.01**2*np.eye(6)
 
-gamma = 0.001
-Gamma = gamma**2*np.eye(3)
+# gamma = 0.001
+# Gamma = gamma**2*np.eye(3)
 
-n_MC = 80
+# n_MC = 80
 
-directory = r"results/simulation_optimization_lambda/model_01/"
-filename_base = "results/simulation_optimization_lambda/model_01/"
+# directory = r"results/simulation_optimization_lambda/model_01/"
+# filename_base = "results/simulation_optimization_lambda/model_01/"
 
-current_directory = os.getcwd()
-final_directory = os.path.join(current_directory, directory)
-if not os.path.exists(final_directory):
-   os.makedirs(final_directory)
+# current_directory = os.getcwd()
+# final_directory = os.path.join(current_directory, directory)
+# if not os.path.exists(final_directory):
+#    os.makedirs(final_directory)
 
-grid_lambda = np.logspace(-6, -2, 5)
-noise_init_theta = 1
-tol_EM = 0.001
-max_iter_EM = 100
-nb_basis = 15
-sigma_init = 0.03
-n_splits_CV = 5
+# grid_lambda = np.logspace(-6, -2, 5)
+# noise_init_theta = 1
+# tol_EM = 0.001
+# max_iter_EM = 100
+# nb_basis = 15
+# sigma_init = 0.03
+# n_splits_CV = 5
 
 # filename = filename_base + "model"
 # dic = {"nb_iterations_simu": n_MC, "P0": P0, "mu0": mu0, "theta":theta, "Gamma":Gamma, "grid_lambda":grid_lambda, "max_iter":max_iter_EM, "tol":tol_EM, "N":N, 
@@ -173,34 +173,34 @@ n_splits_CV = 5
 # fil.close()
 
 
-""" Simulation 1 : CV by iteration MSE_YX """
+# """ Simulation 1 : CV by iteration MSE_YX """
 
-print('--------------------- Simulation n°1: Optimization of lambda by iteration with MSE_YX ---------------------')
+# print('--------------------- Simulation n°1: Optimization of lambda by iteration with MSE_YX ---------------------')
 
-time_init = time.time()
+# time_init = time.time()
 
-score_type = 'MSE_YX'
+# score_type = 'MSE_YX'
 
-with tqdm(total=n_MC) as pbar:
-   res = Parallel(n_jobs=n_MC)(delayed(simu_opti_lambda_byit)(theta, mu0, P0, Gamma, N, arc_length, sigma_init, noise_init_theta, tol_EM, max_iter_EM, nb_basis, grid_lambda, score_type, n_splits_CV) for k in range(n_MC))
-   pbar.update()
+# with tqdm(total=n_MC) as pbar:
+#    res = Parallel(n_jobs=n_MC)(delayed(simu_opti_lambda_byit)(theta, mu0, P0, Gamma, N, arc_length, sigma_init, noise_init_theta, tol_EM, max_iter_EM, nb_basis, grid_lambda, score_type, n_splits_CV) for k in range(n_MC))
+#    pbar.update()
 
-time_end = time.time()
-duration = time_end - time_init
+# time_end = time.time()
+# duration = time_end - time_init
 
-filename = filename_base + "simu_1_byit_MSE_YX_bis"
+# filename = filename_base + "simu_1_byit_MSE_YX_bis"
 
-dic = {"results":res, "score_type": score_type}
+# dic = {"results":res, "score_type": score_type}
 
-if os.path.isfile(filename):
-   print("Le fichier ", filename, " existe déjà.")
-   filename = filename + '_bis'
-fil = open(filename,"xb")
-pickle.dump(dic,fil)
-fil.close()
+# if os.path.isfile(filename):
+#    print("Le fichier ", filename, " existe déjà.")
+#    filename = filename + '_bis'
+# fil = open(filename,"xb")
+# pickle.dump(dic,fil)
+# fil.close()
 
 
-print('--------------------- End Simulation n°1 ---------------------')
+# print('--------------------- End Simulation n°1 ---------------------')
 
 
 
@@ -244,34 +244,34 @@ print('--------------------- End Simulation n°1 ---------------------')
 
 
 
-""" Simulation 3 : CV by iteration MSE_YmuX """
+# """ Simulation 3 : CV by iteration MSE_YmuX """
 
-print('--------------------- Simulation n°3: Optimization of lambda by iteration with MSE_YmuX ---------------------')
+# print('--------------------- Simulation n°3: Optimization of lambda by iteration with MSE_YmuX ---------------------')
 
-time_init = time.time()
+# time_init = time.time()
 
-score_type = 'MSE_YmuX'
+# score_type = 'MSE_YmuX'
 
-with tqdm(total=n_MC) as pbar:
-   res = Parallel(n_jobs=n_MC)(delayed(simu_opti_lambda_byit)(theta, mu0, P0, Gamma, N, arc_length, sigma_init, noise_init_theta, tol_EM, max_iter_EM, nb_basis, grid_lambda, score_type, n_splits_CV) for k in range(n_MC))
-   pbar.update()
+# with tqdm(total=n_MC) as pbar:
+#    res = Parallel(n_jobs=n_MC)(delayed(simu_opti_lambda_byit)(theta, mu0, P0, Gamma, N, arc_length, sigma_init, noise_init_theta, tol_EM, max_iter_EM, nb_basis, grid_lambda, score_type, n_splits_CV) for k in range(n_MC))
+#    pbar.update()
 
-time_end = time.time()
-duration = time_end - time_init
+# time_end = time.time()
+# duration = time_end - time_init
 
-filename = filename_base + "simu_3_byit_MSE_YmuX_bis"
+# filename = filename_base + "simu_3_byit_MSE_YmuX_bis"
 
-dic = {"results":res, "score_type": score_type}
+# dic = {"results":res, "score_type": score_type}
 
-if os.path.isfile(filename):
-   print("Le fichier ", filename, " existe déjà.")
-   filename = filename + '_bis'
-fil = open(filename,"xb")
-pickle.dump(dic,fil)
-fil.close()
+# if os.path.isfile(filename):
+#    print("Le fichier ", filename, " existe déjà.")
+#    filename = filename + '_bis'
+# fil = open(filename,"xb")
+# pickle.dump(dic,fil)
+# fil.close()
 
 
-print('--------------------- End Simulation n°3 ---------------------')
+# print('--------------------- End Simulation n°3 ---------------------')
 
 
 
@@ -307,6 +307,22 @@ print('--------------------- End Simulation n°3 ---------------------')
 # print('--------------------- End Simulation n°4 ---------------------')
 
 
+def step_simu_opt_byit(Y, FS_state_space_init, mu0, Gamma, arc_length, sigma_init, tol_EM, max_iter_EM, nb_basis, grid_lambda, score_type, n_splits_CV):
+
+    Sigma_hat = lambda s: sigma_init**2*np.array([[1 + 0*s, 0*s],[0*s, 1 + 0*s]])
+    P0_hat = sigma_init**2*np.eye(6)
+
+    try:
+        ###     Run the EM    ####
+        FS_statespace = FrenetStateSpaceCV_byit(arc_length, Y)
+        FS_statespace.expectation_maximization(tol_EM, max_iter_EM, nb_basis=nb_basis, regularization_parameter_list=grid_lambda, 
+                                                init_params = {"Gamma":Gamma, "coefs":FS_state_space_init.tab_coefs[0], "mu0":mu0, "Sigma":Sigma_hat, "P0":P0_hat}, 
+                                                method='autre', model_Sigma='scalar', score_lambda=score_type, n_splits_CV=n_splits_CV)
+    except:
+        FS_statespace = [FS_state_space_init.tab_coefs[0]]
+    
+    return FS_statespace
+
 
 
 # def step_simu_opt(Y, FS_state_space_init, score_lambda_matrix, sigma_init, tol_EM, max_iter_EM, nb_basis, Gamma, mu0):
@@ -328,29 +344,127 @@ print('--------------------- End Simulation n°3 ---------------------')
 
 
 
-# filename_base = "results/simulation_optimization_lambda/model_01/"
-# filename = filename_base + "model"
-# fil = open(filename,"rb")
-# dic_model = pickle.load(fil)
-# fil.close()
+filename_base = "results/simulation_optimization_lambda/model_01/"
+filename = filename_base + "model"
+fil = open(filename,"rb")
+dic_model = pickle.load(fil)
+fil.close()
 
-# curv = lambda s : 2*np.cos(2*np.pi*s) + 5
-# tors = lambda s : 2*np.sin(2*np.pi*s) + 1
-# N_simu = dic_model["nb_iterations_simu"]
-# P0, mu0 = dic_model["P0"], dic_model["mu0"]
-# theta = dic_model["theta"]
-# Gamma = dic_model["Gamma"]
-# grid_lambda = dic_model["grid_lambda"]
-# max_iter, tol = dic_model["max_iter"], dic_model["tol"]
-# arc_length, nb_basis, N = dic_model["arc_length"], dic_model["nb_basis"], dic_model["N"]
-# sigma_init = dic_model["sigma_init"]
-# n_splits_CV = dic_model["n_splits_CV"]
+curv = lambda s : 2*np.cos(2*np.pi*s) + 5
+tors = lambda s : 2*np.sin(2*np.pi*s) + 1
+N_simu = dic_model["nb_iterations_simu"]
+P0, mu0 = dic_model["P0"], dic_model["mu0"]
+theta = dic_model["theta"]
+Gamma = dic_model["Gamma"]
+grid_lambda = dic_model["grid_lambda"]
+max_iter, tol = dic_model["max_iter"], dic_model["tol"]
+arc_length, nb_basis, N = dic_model["arc_length"], dic_model["nb_basis"], dic_model["N"]
+sigma_init = dic_model["sigma_init"]
+n_splits_CV = dic_model["n_splits_CV"]
 
-# mu_Z = solve_FrenetSerret_ODE_SE(theta, arc_length, mu0)
-# mu_Q, mu_X = mu_Z[:,:3,:3], mu_Z[:,:3,3]
-# tol_EM = 0.01
-# max_iter_EM = 500
-# nb_basis = 15
+mu_Z = solve_FrenetSerret_ODE_SE(theta, arc_length, mu0)
+mu_Q, mu_X = mu_Z[:,:3,:3], mu_Z[:,:3,3]
+tol_EM = 0.001
+max_iter_EM = 100
+nb_basis = 15
+
+""" Simulation 1 : CV by it MSE_YX """
+
+print('--------------------- Simulation n°1: Optimization of lambda globally with MSE_YX ---------------------')
+
+time_init = time.time()
+
+score_type = 'MSE_YX'
+
+filename = filename_base + "simu_2_global_MSE_YX"
+fil = open(filename,"rb")
+dic_simu_2 = pickle.load(fil)
+fil.close()
+
+res_simu = dic_simu_2["results"]
+tab_FS_state_space = []
+tab_Z_init = []
+tab_Y_init = []
+tab_error = []
+for k in range(N_simu):
+    if isinstance(res_simu[k][0], FrenetStateSpaceCV_global):
+        tab_FS_state_space.append(res_simu[k][0])
+        tab_Z_init.append(res_simu[k][1])
+        tab_Y_init.append(res_simu[k][2])
+    else:
+        tab_error.append(res_simu[k])
+N_simu_ok = len(tab_FS_state_space)
+
+with tqdm(total=N_simu_ok) as pbar:
+   res = Parallel(n_jobs=N_simu_ok)(delayed(step_simu_opt_byit)(tab_Y_init[k], tab_FS_state_space[k], mu0, Gamma, arc_length, sigma_init, tol_EM, max_iter_EM, nb_basis, grid_lambda, score_type, n_splits_CV) for k in range(N_simu_ok))
+   pbar.update()
+
+time_end = time.time()
+duration = time_end - time_init
+
+filename = filename_base + "simu_1_byit_MSE_YX_data_simu_2"
+
+dic = {"results":res, "score_type": score_type}
+
+if os.path.isfile(filename):
+   print("Le fichier ", filename, " existe déjà.")
+   filename = filename + '_bis'
+fil = open(filename,"xb")
+pickle.dump(dic,fil)
+fil.close()
+
+
+print('--------------------- End Simulation n°1 ---------------------')
+
+
+
+""" Simulation 3 : CV by it MSE_YmuX """
+
+print('--------------------- Simulation n°3: Optimization of lambda by it with MSE_YmuX ---------------------')
+
+time_init = time.time()
+
+score_type = 'MSE_YX'
+
+filename = filename_base + "simu_4_global_MSE_YmuX"
+fil = open(filename,"rb")
+dic_simu_4 = pickle.load(fil)
+fil.close()
+
+res_simu = dic_simu_4["results"]
+tab_FS_state_space = []
+tab_Z_init = []
+tab_Y_init = []
+tab_error = []
+for k in range(N_simu):
+    if isinstance(res_simu[k][0], FrenetStateSpaceCV_global):
+        tab_FS_state_space.append(res_simu[k][0])
+        tab_Z_init.append(res_simu[k][1])
+        tab_Y_init.append(res_simu[k][2])
+    else:
+        tab_error.append(res_simu[k])
+N_simu_ok = len(tab_FS_state_space)
+
+with tqdm(total=N_simu_ok) as pbar:
+   res = Parallel(n_jobs=N_simu_ok)(delayed(step_simu_opt_byit)(tab_Y_init[k], tab_FS_state_space[k], mu0, Gamma, arc_length, sigma_init, tol_EM, max_iter_EM, nb_basis, grid_lambda, score_type, n_splits_CV) for k in range(N_simu_ok))
+   pbar.update()
+
+time_end = time.time()
+duration = time_end - time_init
+
+filename = filename_base + "simu_3_byit_MSE_YmuX_data_simu_4"
+
+dic = {"results":res, "score_type": score_type}
+
+if os.path.isfile(filename):
+   print("Le fichier ", filename, " existe déjà.")
+   filename = filename + '_bis'
+fil = open(filename,"xb")
+pickle.dump(dic,fil)
+fil.close()
+
+
+print('--------------------- End Simulation n°3 ---------------------')
 
 
 # """ Simulation 2 : CV globally MSE_YX """
