@@ -15,7 +15,8 @@ from skfda.misc.regularization import TikhonovRegularization, compute_penalty_ma
 from skfda.misc.operators import LinearDifferentialOperator
 import time as ttime
 from sklearn.model_selection import KFold
-
+from skopt import gp_minimize
+from skopt.plots import plot_convergence
 
 
 class FrenetStateSpaceCV_byit:
@@ -464,9 +465,18 @@ class FrenetStateSpaceCV_global:
             if self.verbose:
                 print('-------------- Iteration',k+1,'/',max_iter,' --------------')
 
+            # st = ttime.time()
             self.E_step()
+            # ft = ttime.time()
+            # print('time E step:', ft-st)
+            # st = ttime.time()
             self.__approx_distribution_r(method)
+            # ft = ttime.time()
+            # print('time approx step:', ft-st)
+            # st = ttime.time()
             self.M_step(0.001, 5, model_Sigma)
+            # ft = ttime.time()
+            # print('time M step:', ft-st)
 
             new_val_expected_loglikelihood = self.expected_loglikelihood()
             if self.verbose:
@@ -519,7 +529,9 @@ class FrenetStateSpaceCV_global:
 
         # Optimization of theta given lambda
         self.regularization_parameter, self.regularization_parameter_matrix = self.Bspline_decomp.check_regularization_parameter(self.regularization_parameter)
-        self.coefs, self.Sigma, self.mat_weights, self.weights, self.expect_MSE, err_obs, self.L_tilde = self.opti_coefs_and_Sigma(tol, max_iter, self.regularization_parameter_matrix, model_Sigma)
+        self.coefs, self.mat_weights, self.weights, self.L_tilde = self.opti_coefs(tol, max_iter, self.regularization_parameter_matrix)
+        self.sigma_square, self.Sigma, self.expect_MSE = self.opti_Sigma(self.coefs, self.weights, self.regularization_parameter_matrix)
+        # self.coefs, self.Sigma, self.mat_weights, self.weights, self.expect_MSE, err_obs, self.L_tilde = self.opti_coefs_and_Sigma(tol, max_iter, self.regularization_parameter_matrix, model_Sigma)
         # self.plot_theta()
         
 
@@ -576,12 +588,84 @@ class FrenetStateSpaceCV_global:
                 self.cov_r_tilde[i] = (1/self.u[i]**2)*self.L.T @ (self.P[i+1] - self.P_dble[i].T @ Ad.T - Ad @ self.P_dble[i] + Ad @ self.P[i] @ Ad.T) @ self.L
     
 
-    def __compute_weights(self, Sigma, L_tilde_inv):
+    # def __compute_weights(self, Sigma, L_tilde_inv):
+    #     weights = np.zeros((self.N,self.n-1,self.n-1))
+    #     for i in range(self.N):
+    #         weights[i] = self.u[i]*L_tilde_inv[i].T@np.linalg.inv(Sigma(self.v[i]))@L_tilde_inv[i]
+    #     mat_weights = block_diag(*weights)
+    #     return mat_weights, weights
+        
+    
+    # def __opti_coefs(self, mat_weights, reg_param_mat):
+    #     left = self.basis_matrix.T @ mat_weights @ self.basis_matrix + reg_param_mat @ self.Bspline_decomp.penalty_matrix    
+    #     right = self.basis_matrix.T @ mat_weights @ np.reshape(self.r_tilde, (self.N*(self.n-1),))
+    #     coefs_tem = np.linalg.solve(left, right)
+    #     coefs_tem = np.reshape(coefs_tem,(-1,2))
+    #     new_coefs = np.reshape(coefs_tem, (-1,))
+    #     return new_coefs
+    
+
+    # def __compute_L_tilde(self, coefs):
+    #     L_tilde = np.zeros((self.N,self.n-1,self.n-1))
+    #     L_tilde_inv = np.zeros((self.N,self.n-1,self.n-1))
+    #     theta_v = np.reshape(self.basis_matrix @ coefs, (-1,self.n-1))
+    #     for i in range(self.N):
+    #         phi_vi = SE3.Ad_group(SE3.exp(-(self.grid[i+1]-self.v[i])*np.array([theta_v[i,1],0,theta_v[i,0],1,0,0])))
+    #         L_tilde[i] = self.L.T @ phi_vi @ self.L
+    #         L_tilde_inv[i] = np.linalg.inv(L_tilde[i])
+    #     return L_tilde, L_tilde_inv
+
+
+    # def __opti_Sigma(self, coefs, model_Sigma, L_tilde_inv):
+    #     res = np.zeros((self.N, self.n-1, self.n-1))
+    #     err = np.reshape(self.basis_matrix @ coefs, (-1,self.n-1)) - self.r_tilde
+    #     for i in range(self.N):
+    #         res[i] = self.u[i]*L_tilde_inv[i] @ (err[i][:,np.newaxis] @ err[i][np.newaxis,:] + self.cov_r_tilde[i]) @ L_tilde_inv[i]
+    #     if model_Sigma=='vector':
+    #         sigma_square_1 = np.mean(res[:,0,0])
+    #         sigma_square_2 = np.mean(res[:,1,1])
+    #         Sigma = lambda s: np.array([[sigma_square_1,0], [0, sigma_square_2]])
+    #     else:                                                               # Case 'single_constant' by default
+    #         sigma_square = np.mean((res[:,0,0]+res[:,1,1])/2)
+    #         Sigma = lambda s: sigma_square*np.eye(2)
+    #     return Sigma, res, err
+    
+    
+    # def opti_coefs_and_Sigma(self, tol, max_iter, reg_param_mat, model_Sigma):
+    #     L_tilde, L_tilde_inv = self.__compute_L_tilde(self.coefs)
+    #     mat_weights, weights = self.__compute_weights(self.Sigma, L_tilde_inv)
+    #     old_theta = np.reshape(self.basis_matrix @ self.coefs, (-1,self.n-1))
+    #     rel_error = 2*tol 
+    #     k = 0 
+    #     while rel_error > tol and k < max_iter:
+
+    #         coefs_opt = self.__opti_coefs(mat_weights, reg_param_mat)
+    #         L_tilde, L_tilde_inv = self.__compute_L_tilde(coefs_opt)
+    #         Sigma_opt, expect_MSE, err_obs = self.__opti_Sigma(coefs_opt, model_Sigma, L_tilde_inv)
+    #         mat_weights, weights = self.__compute_weights(Sigma_opt, L_tilde_inv)
+
+    #         new_theta = np.reshape(self.basis_matrix @ coefs_opt, (-1,self.n-1))
+    #         rel_error = np.linalg.norm(old_theta - new_theta)/np.linalg.norm(old_theta)
+    #         if self.verbose:
+    #             print('iteration for optimization of coefs and Sigma:', k, ', relative error:', rel_error)
+    #         old_theta = new_theta
+    #         k += 1
+
+    #     return coefs_opt, Sigma_opt, mat_weights, weights, expect_MSE, err_obs, L_tilde
+
+
+    def __compute_weights(self, coefs):
+        L_tilde = np.zeros((self.N,self.n-1,self.n-1))
+        L_tilde_inv = np.zeros((self.N,self.n-1,self.n-1))
+        theta_v = np.reshape(self.basis_matrix @ coefs, (-1,self.n-1))
         weights = np.zeros((self.N,self.n-1,self.n-1))
         for i in range(self.N):
-            weights[i] = self.u[i]*L_tilde_inv[i].T@np.linalg.inv(Sigma(self.v[i]))@L_tilde_inv[i]
+            phi_vi = SE3.Ad_group(SE3.exp(-(self.grid[i+1]-self.v[i])*np.array([theta_v[i,1],0,theta_v[i,0],1,0,0])))
+            L_tilde[i] = self.L.T @ phi_vi @ self.L
+            L_tilde_inv[i] = np.linalg.inv(L_tilde[i])
+            weights[i] = self.u[i]*L_tilde_inv[i].T@L_tilde_inv[i]
         mat_weights = block_diag(*weights)
-        return mat_weights, weights
+        return mat_weights, weights, L_tilde
         
     
     def __opti_coefs(self, mat_weights, reg_param_mat):
@@ -593,45 +677,36 @@ class FrenetStateSpaceCV_global:
         return new_coefs
     
 
-    def __compute_L_tilde(self, coefs):
-        L_tilde = np.zeros((self.N,self.n-1,self.n-1))
-        L_tilde_inv = np.zeros((self.N,self.n-1,self.n-1))
-        theta_v = np.reshape(self.basis_matrix @ coefs, (-1,self.n-1))
-        for i in range(self.N):
-            phi_vi = SE3.Ad_group(SE3.exp(-(self.grid[i+1]-self.v[i])*np.array([theta_v[i,1],0,theta_v[i,0],1,0,0])))
-            L_tilde[i] = self.L.T @ phi_vi @ self.L
-            L_tilde_inv[i] = np.linalg.inv(L_tilde[i])
-        return L_tilde, L_tilde_inv
+    # def __compute_L_tilde(self, coefs):
+    #     L_tilde = np.zeros((self.N,self.n-1,self.n-1))
+    #     L_tilde_inv = np.zeros((self.N,self.n-1,self.n-1))
+    #     theta_v = np.reshape(self.basis_matrix @ coefs, (-1,self.n-1))
+    #     for i in range(self.N):
+    #         phi_vi = SE3.Ad_group(SE3.exp(-(self.grid[i+1]-self.v[i])*np.array([theta_v[i,1],0,theta_v[i,0],1,0,0])))
+    #         L_tilde[i] = self.L.T @ phi_vi @ self.L
+    #         L_tilde_inv[i] = np.linalg.inv(L_tilde[i])
+    #     return L_tilde, L_tilde_inv
 
 
-    def __opti_Sigma(self, coefs, model_Sigma, L_tilde_inv):
+    def opti_Sigma(self, coefs, weights, reg_param_mat):
         res = np.zeros((self.N, self.n-1, self.n-1))
         err = np.reshape(self.basis_matrix @ coefs, (-1,self.n-1)) - self.r_tilde
         for i in range(self.N):
-            res[i] = self.u[i]*L_tilde_inv[i] @ (err[i][:,np.newaxis] @ err[i][np.newaxis,:] + self.cov_r_tilde[i]) @ L_tilde_inv[i]
-        if model_Sigma=='vector':
-            sigma_square_1 = np.mean(res[:,0,0])
-            sigma_square_2 = np.mean(res[:,1,1])
-            Sigma = lambda s: np.array([[sigma_square_1,0], [0, sigma_square_2]])
-        else:                                                               # Case 'single_constant' by default
-            sigma_square = np.mean((res[:,0,0]+res[:,1,1])/2)
-            Sigma = lambda s: sigma_square*np.eye(2)
-        return Sigma, res, err
+            res[i] = weights[i] @ (err[i][:,np.newaxis] @ err[i][np.newaxis,:] + self.cov_r_tilde[i]) 
+        sigma_square = (1/(2*self.N))*(np.trace(np.sum(res, axis=0)) + coefs.T @ reg_param_mat @ self.Bspline_decomp.penalty_matrix @ coefs)
+        Sigma = lambda s: sigma_square*np.eye(2)
+        return sigma_square, Sigma, res
     
     
-    def opti_coefs_and_Sigma(self, tol, max_iter, reg_param_mat, model_Sigma):
-        L_tilde, L_tilde_inv = self.__compute_L_tilde(self.coefs)
-        mat_weights, weights = self.__compute_weights(self.Sigma, L_tilde_inv)
+    def opti_coefs(self, tol, max_iter, reg_param_mat):
+        mat_weights, weights, L_tilde = self.__compute_weights(self.coefs)
         old_theta = np.reshape(self.basis_matrix @ self.coefs, (-1,self.n-1))
         rel_error = 2*tol 
         k = 0 
         while rel_error > tol and k < max_iter:
 
             coefs_opt = self.__opti_coefs(mat_weights, reg_param_mat)
-            L_tilde, L_tilde_inv = self.__compute_L_tilde(coefs_opt)
-            Sigma_opt, expect_MSE, err_obs = self.__opti_Sigma(coefs_opt, model_Sigma, L_tilde_inv)
-            mat_weights, weights = self.__compute_weights(Sigma_opt, L_tilde_inv)
-
+            mat_weights, weights, L_tilde = self.__compute_weights(coefs_opt)
             new_theta = np.reshape(self.basis_matrix @ coefs_opt, (-1,self.n-1))
             rel_error = np.linalg.norm(old_theta - new_theta)/np.linalg.norm(old_theta)
             if self.verbose:
@@ -639,7 +714,7 @@ class FrenetStateSpaceCV_global:
             old_theta = new_theta
             k += 1
 
-        return coefs_opt, Sigma_opt, mat_weights, weights, expect_MSE, err_obs, L_tilde
+        return coefs_opt, mat_weights, weights, L_tilde
     
 
     def opti_Gamma(self):
@@ -649,20 +724,41 @@ class FrenetStateSpaceCV_global:
         self.Gamma = Gamma/self.N
 
 
+    # def expected_loglikelihood(self):
+    #     val = (6/2)*self.N*np.log(2*np.pi)
+    #     # P0 / mu0
+    #     val += (1/2)*np.log(np.linalg.det(self.P0)) 
+    #     # Gamma
+    #     val += (1/2)*self.N*np.log(np.linalg.det(self.Gamma)) 
+    #     # Theta / Sigma
+    #     for i in range(self.N):
+    #         val += (1/2)*np.log(np.linalg.det( self.u[i]*self.L_tilde[i] @ self.Sigma(self.v[i]) @ self.L_tilde[i].T )) # Sigma deja dans W_tilde
+    #         val += (1/2)*np.trace(np.linalg.inv(self.Sigma(self.v[i]))@self.expect_MSE[i]) 
+    #         # val += (1/2)*np.log(np.linalg.det(self.W_tilde[i])) # Sigma deja dans W_tilde
+    #         # val += (1/2)*np.trace(np.linalg.inv(self.Sigma(self.v[i]))@self.residuals[i]) 
+    #     # Penalization
+    #     val += self.coefs.T @ self.regularization_parameter_matrix @ self.Bspline_decomp.penalty_matrix @ self.coefs        
+    #     return -val
+
+
     def expected_loglikelihood(self):
-        val = (6/2)*self.N*np.log(2*np.pi)
         # P0 / mu0
-        val += (1/2)*np.log(np.linalg.det(self.P0)) 
+        val = np.log(np.linalg.det(self.P0)) 
         # Gamma
-        val += (1/2)*self.N*np.log(np.linalg.det(self.Gamma)) 
+        val += self.N*np.log(np.linalg.det(self.Gamma)) 
         # Theta / Sigma
+        val += 2*self.N*np.log(self.sigma_square)
+        # print('val l1:', val)
         for i in range(self.N):
-            val += (1/2)*np.log(np.linalg.det( self.u[i]*self.L_tilde[i] @ self.Sigma(self.v[i]) @ self.L_tilde[i].T )) # Sigma deja dans W_tilde
-            val += (1/2)*np.trace(np.linalg.inv(self.Sigma(self.v[i]))@self.expect_MSE[i]) 
+            val += np.log(np.linalg.det( self.u[i]*self.L_tilde[i] @ self.L_tilde[i].T )) # Sigma deja dans W_tilde
+            # val += (1/self.sigma_square)*np.trace(self.expect_MSE[i]) 
+
             # val += (1/2)*np.log(np.linalg.det(self.W_tilde[i])) # Sigma deja dans W_tilde
             # val += (1/2)*np.trace(np.linalg.inv(self.Sigma(self.v[i]))@self.residuals[i]) 
         # Penalization
-        val += self.coefs.T @ self.regularization_parameter_matrix @ self.Bspline_decomp.penalty_matrix @ self.coefs        
+        # print('val l2:', val)
+        # val += (1/self.sigma_square)*self.coefs.T @ self.regularization_parameter_matrix @ self.Bspline_decomp.penalty_matrix @ self.coefs     
+        # print('val l3:', val)   
         return -val
 
 
@@ -715,3 +811,62 @@ class FrenetStateSpaceCV_global:
         fil = open(filename,"xb")
         pickle.dump(dic,fil)
         fil.close()
+
+
+
+
+
+def bayesian_CV_optimization_regularization_parameter(n_CV, n_call_bayopt, lambda_bounds, grid_obs, Y_obs, tol, max_iter, nb_basis, init_params = None, order=4, method='approx', verbose=False):
+
+    ## CV optimization of lambda
+    
+    def func(x):
+        score_lambda = np.zeros(n_CV)
+        kf = KFold(n_splits=n_CV, shuffle=True)
+        ind_CV = 0
+
+        for train_index, test_index in kf.split(grid_obs[1:]):
+            # print('     --> Start CV step n°', ind_CV+1)
+            Y_train = Y_obs[train_index]
+            Y_test = Y_obs[test_index]
+            grid_train = np.concatenate((np.array([grid_obs[0]]), grid_obs[1:][train_index]))
+            grid_test = np.concatenate((np.array([grid_obs[0]]), grid_obs[1:][test_index]))
+            
+            FS_statespace = FrenetStateSpaceCV_global(grid_train, Y_train, bornes_theta=np.array([0,1]))
+            FS_statespace.expectation_maximization(tol, max_iter, nb_basis=nb_basis, regularization_parameter=x, init_params=init_params, method=method, order=order, verbose=verbose)
+            
+            Z_reconst = solve_FrenetSerret_ODE_SE(FS_statespace.theta, grid_test, Z0=FS_statespace.mu0)
+            X_reconst_test = Z_reconst[1:,:3,3]
+            score_lambda[ind_CV] = np.linalg.norm(X_reconst_test - Y_test)**2
+            
+            ind_CV += 1
+
+        # print(score_lambda)
+        print('val x:', x, 'score:', np.mean(score_lambda))
+        return np.mean(score_lambda)
+
+    # Do a bayesian optimisation and return the optimal parameter (lambda_kappa, lambda_tau)
+    
+    res = gp_minimize(func,               # the function to minimize
+                    lambda_bounds,        # the bounds on each dimension of x
+                    acq_func="EI",        # the acquisition function
+                    n_calls=n_call_bayopt,       # the number of evaluations of f
+                    n_random_starts=2,    # the number of random initialization points
+                    random_state=1,       # the random seed
+                    n_jobs=1,            # use all the cores for parallel calculation
+                    verbose=True)
+    lbda_opt = res.x
+    print(res.x_iters)
+    print(res.func_vals)
+    lbda_opt = np.array([lbda_opt[0], lbda_opt[1]])
+    print('the optimal hyperparameters selected are: ', lbda_opt)
+
+    FS_statespace = FrenetStateSpaceCV_global(grid_obs, Y_obs[1:], bornes_theta=np.array([0,1]))
+    FS_statespace.expectation_maximization(tol, max_iter, nb_basis=nb_basis, regularization_parameter=lbda_opt, init_params=init_params, method=method, order=order, verbose=verbose)
+
+    return FS_statespace
+
+        
+
+
+          
