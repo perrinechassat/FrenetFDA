@@ -45,7 +45,7 @@ def theta(s):
 
 P0 = 0.01**2*np.eye(6)
 mu0 = np.eye(4) 
-arc_length_fct = lambda s: s
+arc_length_fct = lambda s: (np.exp(2*s) - 1)/(np.exp(2) - 1)
 n_MC = 80
 noise_init_theta = 1
 tol_EM = 0.1
@@ -58,8 +58,8 @@ bounds_lambda = ((1e-09, 1e-06), (1e-09, 1e-06))
 sigma_init = 0.05
 
 
-directory = r"results/influence_sample_size_noise/model_02/"
-filename_base = "results/influence_sample_size_noise/model_02/"
+directory = r"results/influence_sample_size_noise/model_03/"
+filename_base = "results/influence_sample_size_noise/model_03/"
 
 current_directory = os.getcwd()
 final_directory = os.path.join(current_directory, directory)
@@ -79,56 +79,19 @@ fil.close()
 
 
 
-# """ _______________________ Simulation 3: N = 100, \gamma = 0.001 _______________________ """
+""" _______________________ Simulation 1: N = 100, \gamma = 0.001 _______________________ """
 
-# print('--------------------- Simulation n°3: N = 100, \gamma = 0.001 ---------------------')
-
-# time_init = time.time()
-
-# N = 100
-# gamma = 0.001
-# grid_time = np.linspace(0,1,N)
-# arc_length = grid_time 
-# Gamma = gamma**2*np.eye(3)
-# mu_Z = solve_FrenetSerret_ODE_SE(theta, arc_length, mu0)
-
-
-# with tqdm(total=n_MC) as pbar:
-#    res = Parallel(n_jobs=n_MC)(delayed(influence_N_Gamma)(theta, arc_length, N, Gamma, mu0, P0, nb_basis, sigma_init, noise_init_theta, grid_bandwidth, max_iter_EM, tol_EM, bounds_lambda, n_call_bayopt, n_splits_CV) for k in range(n_MC))
-#    pbar.update()
-
-# time_end = time.time()
-# duration = time_end - time_init
-
-# filename = filename_base + "simu_3"
-
-# dic = {"results":res, "mu_Z": mu_Z, "N":N, "gamma":gamma, "duration":duration}
-
-# if os.path.isfile(filename):
-#    print("Le fichier ", filename, " existe déjà.")
-#    filename = filename + '_bis'
-# fil = open(filename,"xb")
-# pickle.dump(dic,fil)
-# fil.close()
-
-
-# print('--------------------- End Simulation n°3 ---------------------')
-
-
-
-
-""" _______________________ Simulation 4: N = 100, \gamma = 0.005 _______________________ """
-
-print('--------------------- Simulation n°4: N = 100, \gamma = 0.005 ---------------------')
+print('--------------------- Simulation n°1: N = 100, \gamma = 0.001 ---------------------')
 
 time_init = time.time()
 
 N = 100
-gamma = 0.005
+gamma = 0.001
 grid_time = np.linspace(0,1,N)
-arc_length = grid_time 
+arc_length = arc_length_fct(grid_time) 
 Gamma = gamma**2*np.eye(3)
 mu_Z = solve_FrenetSerret_ODE_SE(theta, arc_length, mu0)
+
 
 with tqdm(total=n_MC) as pbar:
    res = Parallel(n_jobs=n_MC)(delayed(influence_N_Gamma)(theta, arc_length, N, Gamma, mu0, P0, nb_basis, sigma_init, noise_init_theta, grid_bandwidth, max_iter_EM, tol_EM, bounds_lambda, n_call_bayopt, n_splits_CV) for k in range(n_MC))
@@ -137,7 +100,7 @@ with tqdm(total=n_MC) as pbar:
 time_end = time.time()
 duration = time_end - time_init
 
-filename = filename_base + "simu_4"
+filename = filename_base + "simu_1"
 
 dic = {"results":res, "mu_Z": mu_Z, "N":N, "gamma":gamma, "duration":duration}
 
@@ -148,7 +111,44 @@ fil = open(filename,"xb")
 pickle.dump(dic,fil)
 fil.close()
 
-print('--------------------- End Simulation n°4 ---------------------')
+
+print('--------------------- End Simulation n°1 ---------------------')
+
+
+
+
+""" _______________________ Simulation 2: N = 100, \gamma = 0.005 _______________________ """
+
+print('--------------------- Simulation n°2: N = 100, \gamma = 0.005 ---------------------')
+
+time_init = time.time()
+
+N = 100
+gamma = 0.005
+grid_time = np.linspace(0,1,N)
+arc_length = arc_length_fct(grid_time) 
+Gamma = gamma**2*np.eye(3)
+mu_Z = solve_FrenetSerret_ODE_SE(theta, arc_length, mu0)
+
+with tqdm(total=n_MC) as pbar:
+   res = Parallel(n_jobs=n_MC)(delayed(influence_N_Gamma)(theta, arc_length, N, Gamma, mu0, P0, nb_basis, sigma_init, noise_init_theta, grid_bandwidth, max_iter_EM, tol_EM, bounds_lambda, n_call_bayopt, n_splits_CV) for k in range(n_MC))
+   pbar.update()
+
+time_end = time.time()
+duration = time_end - time_init
+
+filename = filename_base + "simu_2"
+
+dic = {"results":res, "mu_Z": mu_Z, "N":N, "gamma":gamma, "duration":duration}
+
+if os.path.isfile(filename):
+   print("Le fichier ", filename, " existe déjà.")
+   filename = filename + '_bis'
+fil = open(filename,"xb")
+pickle.dump(dic,fil)
+fil.close()
+
+print('--------------------- End Simulation n°2 ---------------------')
 
 
 
@@ -193,37 +193,37 @@ print('--------------------- End Simulation n°4 ---------------------')
 
 """ _______________________ Simulation 2: N = 200, \gamma = 0.005 _______________________ """
 
-print('--------------------- Simulation n°2: N = 200, \gamma = 0.005 ---------------------')
+# print('--------------------- Simulation n°2: N = 200, \gamma = 0.005 ---------------------')
 
-time_init = time.time()
+# time_init = time.time()
 
-N = 200
-gamma = 0.005
-grid_time = np.linspace(0,1,N)
-arc_length = grid_time 
-Gamma = gamma**2*np.eye(3)
-mu_Z = solve_FrenetSerret_ODE_SE(theta, arc_length, mu0)
+# N = 200
+# gamma = 0.005
+# grid_time = np.linspace(0,1,N)
+# arc_length = grid_time 
+# Gamma = gamma**2*np.eye(3)
+# mu_Z = solve_FrenetSerret_ODE_SE(theta, arc_length, mu0)
 
 
-with tqdm(total=n_MC) as pbar:
-   res = Parallel(n_jobs=n_MC)(delayed(influence_N_Gamma)(theta, arc_length, N, Gamma, mu0, P0, nb_basis, sigma_init, noise_init_theta, grid_bandwidth, max_iter_EM, tol_EM, bounds_lambda, n_call_bayopt, n_splits_CV) for k in range(n_MC))
-   pbar.update()
+# with tqdm(total=n_MC) as pbar:
+#    res = Parallel(n_jobs=n_MC)(delayed(influence_N_Gamma)(theta, arc_length, N, Gamma, mu0, P0, nb_basis, sigma_init, noise_init_theta, grid_bandwidth, max_iter_EM, tol_EM, bounds_lambda, n_call_bayopt, n_splits_CV) for k in range(n_MC))
+#    pbar.update()
 
-time_end = time.time()
-duration = time_end - time_init
+# time_end = time.time()
+# duration = time_end - time_init
 
-filename = filename_base + "simu_2"
+# filename = filename_base + "simu_2"
 
-dic = {"results":res, "mu_Z": mu_Z, "N":N, "gamma":gamma, "duration":duration}
+# dic = {"results":res, "mu_Z": mu_Z, "N":N, "gamma":gamma, "duration":duration}
 
-if os.path.isfile(filename):
-   print("Le fichier ", filename, " existe déjà.")
-   filename = filename + '_bis'
-fil = open(filename,"xb")
-pickle.dump(dic,fil)
-fil.close()
+# if os.path.isfile(filename):
+#    print("Le fichier ", filename, " existe déjà.")
+#    filename = filename + '_bis'
+# fil = open(filename,"xb")
+# pickle.dump(dic,fil)
+# fil.close()
 
-print('--------------------- End Simulation n°2 ---------------------')
+# print('--------------------- End Simulation n°2 ---------------------')
 
 
 

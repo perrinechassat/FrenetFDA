@@ -32,6 +32,7 @@ class MLE:
         L[0,1], L[2,0] = 1, 1
         self.L = L
     
+
     def opti_other_param(self):
         self.mu0 = self.Z[0]
         self.P0 = np.zeros((6,6))
@@ -41,6 +42,7 @@ class MLE:
         self.Gamma = Gamma/self.N
         return self.mu0, self.P0, self.Gamma
     
+
     def def_model_theta(self, nb_basis):
         self.nb_basis = nb_basis
         self.Bspline_decomp = VectorBSplineSmoothing(2, nb_basis, domain_range=(self.grid[0], self.grid[-1]), order=4, penalization=True)
@@ -137,6 +139,7 @@ class MLE:
             return np.squeeze((self.Bspline_decomp.basis_fct(s).T @ self.coefs).T)
         else:
             raise ValueError('Variable is not a float, a int or a NumPy array.')
+    
     
     def compute_reconst_criterion(self):
         Sigma_opt = lambda s: self.sigma_square*np.array([[1 +0*s, 0*s], [0*s, 1+0*s]])
