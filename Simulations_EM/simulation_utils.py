@@ -13,7 +13,43 @@ import os.path
 import os
 import dill as pickle
 from tqdm import tqdm
+from sklearn.gaussian_process.kernels import Matern
 
+
+def init_from_true_param_sde(theta, arc_length, N, Gamma, mu0, P0, nb_basis, noise_init_theta, grid_bandwidth, kernel):
+    
+    ## Definition of the states
+    xi0 = np.random.multivariate_normal(np.zeros(6), P0)
+    Z0 = mu0 @ SE3.exp(-xi0)
+
+    v_grid = (arc_length[1:]+arc_length[:-1])/2
+    V = np.expand_dims(v_grid, 1)
+    noise_kappa = np.random.multivariate_normal(mean=np.zeros(N-1), cov=kernel(V,V))
+    noise_tau = np.random.multivariate_normal(mean=np.zeros(N-1), cov=kernel(V,V))
+    noise_theta = np.stack((noise_kappa, noise_tau), axis=1)
+    L = np.array([[0,1],[0,0],[1,0],[0,0],[0,0],[0,0]])
+    Z = np.zeros((N, 4, 4))
+    Z[0] = Z0
+    for i in range(1,N):
+        delta_t = arc_length[i]-arc_length[i-1]
+        pts = (arc_length[i]+arc_length[i-1])/2
+        Z[i] = Z[i-1]@SE3.exp(delta_t*np.array([theta(pts)[1], 0, theta(pts)[0], 1, 0, 0]) + np.sqrt(delta_t)*L @ np.array([noise_kappa[i-1], noise_tau[i-1]]))
+
+    X = Z[:,:3,3]
+    Y = X + np.random.multivariate_normal(np.zeros(3), Gamma, size=N)
+
+    ## Initialization of the parameters
+    theta_noisy_val = theta(arc_length) + np.random.multivariate_normal(np.zeros(2), noise_init_theta**2*np.eye(2), size=len(arc_length))
+    BasisThetaNoisy = VectorBSplineSmoothing(2, nb_basis)
+    BasisThetaNoisy.fit(arc_length, theta_noisy_val, regularization_parameter=0.0000001)
+
+    mu0_hat = mu0@SE3.exp(np.random.multivariate_normal(np.zeros(6), 0.001**2*np.eye(6)))
+    grid_time = np.linspace(0,1,N)
+    derivatives, h_opt = compute_derivatives(Y, grid_time, deg=3, h=None, CV_optimization_h={"flag":True, "h_grid":grid_bandwidth, "K":10})
+    grid_arc_s, L, arc_s, arc_s_dot = compute_arc_length(Y, grid_time, smooth=True, smoothing_param=h_opt)
+    Gamma_hat = ((Y - derivatives[0]).T @ (Y - derivatives[0]))/N
+
+    return Z, Y, BasisThetaNoisy.coefs, grid_arc_s, Gamma_hat, mu0_hat, noise_theta
 
 
 
