@@ -86,13 +86,13 @@ fil.close()
 
 
 
-""" _______________________ Simulation 1: nu=0.001 _______________________ """
+""" _______________________ Simulation 1: nu=0.0001 _______________________ """
 
-print('--------------------- Simulation n°1: nu=0.001 ---------------------')
+print('--------------------- Simulation n°1: nu=0.0001 ---------------------')
 
 time_init = time.time()
 
-kernel = Matern(length_scale=0.1, nu=0.001)
+kernel = Matern(length_scale=0.1, nu=0.0001)
 
 with tqdm(total=n_MC) as pbar:
    res = Parallel(n_jobs=n_MC)(delayed(simu_from_sde)(theta, arc_length, N, Gamma, mu0, P0, nb_basis, sigma_init, noise_init_theta, grid_bandwidth, max_iter_EM, tol_EM, bounds_lambda, n_call_bayopt, n_splits_CV, kernel) for k in range(n_MC))
@@ -118,31 +118,31 @@ print('--------------------- End Simulation n°1 ---------------------')
 
 
 
-""" _______________________ Simulation 2: nu=0.0001 _______________________ """
+# """ _______________________ Simulation 2: nu=0.001 _______________________ """
 
-print('--------------------- Simulation n°2: nu=0.0001 ---------------------')
+# print('--------------------- Simulation n°2: nu=0.001 ---------------------')
 
-time_init = time.time()
+# time_init = time.time()
 
-kernel = Matern(length_scale=0.1, nu=0.0001)
+# kernel = Matern(length_scale=0.1, nu=0.001)
 
-with tqdm(total=n_MC) as pbar:
-   res = Parallel(n_jobs=n_MC)(delayed(simu_from_sde)(theta, arc_length, N, Gamma, mu0, P0, nb_basis, sigma_init, noise_init_theta, grid_bandwidth, max_iter_EM, tol_EM, bounds_lambda, n_call_bayopt, n_splits_CV, kernel) for k in range(n_MC))
-   pbar.update()
+# with tqdm(total=n_MC) as pbar:
+#    res = Parallel(n_jobs=n_MC)(delayed(simu_from_sde)(theta, arc_length, N, Gamma, mu0, P0, nb_basis, sigma_init, noise_init_theta, grid_bandwidth, max_iter_EM, tol_EM, bounds_lambda, n_call_bayopt, n_splits_CV, kernel) for k in range(n_MC))
+#    pbar.update()
 
-time_end = time.time()
-duration = time_end - time_init
+# time_end = time.time()
+# duration = time_end - time_init
 
-filename = filename_base + "simu_2"
+# filename = filename_base + "simu_2"
 
-dic = {"results":res, "kernel":kernel, "duration":duration}
+# dic = {"results":res, "kernel":kernel, "duration":duration}
 
-if os.path.isfile(filename):
-   print("Le fichier ", filename, " existe déjà.")
-   filename = filename + '_bis'
-fil = open(filename,"xb")
-pickle.dump(dic,fil)
-fil.close()
+# if os.path.isfile(filename):
+#    print("Le fichier ", filename, " existe déjà.")
+#    filename = filename + '_bis'
+# fil = open(filename,"xb")
+# pickle.dump(dic,fil)
+# fil.close()
 
 
-print('--------------------- End Simulation n°2 ---------------------')
+# print('--------------------- End Simulation n°2 ---------------------')
