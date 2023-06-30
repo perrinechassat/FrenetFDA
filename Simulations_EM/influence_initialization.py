@@ -94,13 +94,13 @@ tol_EM = 0.1
 max_iter_EM = 200
 nb_basis = 15
 n_splits_CV_EM = 5
-grid_bandwidth = np.array([0.05, 0.1, 0.12, 0.15, 0.17, 0.2, 0.25])
+grid_bandwidth = np.array([0.1, 0.12, 0.15, 0.17, 0.2, 0.25, 0.3])
 n_call_bayopt_EM = 20
 bounds_lambda_EM = ((1e-09, 1e-05), (1e-09, 1e-05))
 sigma_init = 0.05
 
 bounds_lambda_init = np.array([[1e-09, 1e-03], [1e-09, 1e-03]])
-bounds_h_init = np.array([0.05, 0.25])
+bounds_h_init = np.array([0.1, 0.3])
 n_call_bayopt_init = 100
 
 directory = r"results/influence_initialization/model_01/"
