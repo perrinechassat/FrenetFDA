@@ -162,7 +162,7 @@ def init_extrins(theta, arc_length, N, Gamma, mu0, P0, nb_basis, grid_bandwidth,
     ## Init theta
     extrins_model_theta = ExtrinsicFormulas(Y, grid_time, grid_arc_s, deg_polynomial=3)
     # h_opt, nb_basis_opt, regularization_parameter_opt, CV_error_tab = extrins_model_theta.grid_search_optimization_hyperparameters(grid_bandwidth, np.array([nb_basis]), grid_reg_param, method='2', n_splits=10)
-    h_opt, lbda_opt = extrins_model_theta.bayesian_optimization_hyperparameters(n_call_bayopt=n_call_bayopt, lambda_bounds=bounds_lbda, h_bounds=bounds_h, nb_bais=nb_basis, n_splits=10)
+    h_opt, lbda_opt = extrins_model_theta.bayesian_optimization_hyperparameters(n_call_bayopt=n_call_bayopt, lambda_bounds=bounds_lbda, h_bounds=bounds_h, nb_basis=nb_basis, n_splits=10)
     Basis_theta_hat = extrins_model_theta.Bspline_smooth_estimates(h_opt, nb_basis, regularization_parameter=lbda_opt)
 
     return Y, Z, Z_hat, Basis_theta_hat.coefs, grid_arc_s, Gamma_hat, mu0_hat
@@ -192,7 +192,7 @@ def init_GS_LeastSquare(theta, arc_length, N, Gamma, mu0, P0, nb_basis, grid_ban
    
     ## Init theta
     local_approx_ode = LocalApproxFrenetODE(grid_arc_s, Z=Z_hat)
-    h_opt, lbda_opt = local_approx_ode.bayesian_optimization_hyperparameters(n_call_bayopt=n_call_bayopt, lambda_bounds=bounds_lbda, h_bounds=bounds_h, nb_bais=nb_basis, n_splits=10)
+    h_opt, lbda_opt = local_approx_ode.bayesian_optimization_hyperparameters(n_call_bayopt=n_call_bayopt, lambda_bounds=bounds_lbda, h_bounds=bounds_h, nb_basis=nb_basis, n_splits=10)
     Basis_theta_hat = local_approx_ode.Bspline_smooth_estimates(h_opt, nb_basis, regularization_parameter=lbda_opt)
     # h_opt, nb_basis_opt, regularization_parameter_opt, CV_error_tab = local_approx_ode.grid_search_optimization_hyperparameters(bandwidth_list=grid_bandwidth, nb_basis_list=np.array([nb_basis]), regularization_parameter_list=grid_reg_param, method='2', parallel=False)
     # Basis_theta_hat = local_approx_ode.Bspline_smooth_estimates(h_opt, nb_basis, regularization_parameter=regularization_parameter_opt)
@@ -226,7 +226,7 @@ def init_CLP_LeastSquare(theta, arc_length, N, Gamma, mu0, P0, nb_basis, grid_ba
     local_approx_ode = LocalApproxFrenetODE(grid_arc_s, Z=Z_hat)
     # h_opt, nb_basis_opt, regularization_parameter_opt, CV_error_tab = local_approx_ode.grid_search_optimization_hyperparameters(bandwidth_list=grid_bandwidth, nb_basis_list=np.array([nb_basis]), regularization_parameter_list=grid_reg_param, method='2', parallel=False)
     # Basis_theta_hat = local_approx_ode.Bspline_smooth_estimates(h_opt, nb_basis, regularization_parameter=regularization_parameter_opt)
-    h_opt, lbda_opt = local_approx_ode.bayesian_optimization_hyperparameters(n_call_bayopt=n_call_bayopt, lambda_bounds=bounds_lbda, h_bounds=bounds_h, nb_bais=nb_basis, n_splits=10)
+    h_opt, lbda_opt = local_approx_ode.bayesian_optimization_hyperparameters(n_call_bayopt=n_call_bayopt, lambda_bounds=bounds_lbda, h_bounds=bounds_h, nb_basis=nb_basis, n_splits=10)
     Basis_theta_hat = local_approx_ode.Bspline_smooth_estimates(h_opt, nb_basis, regularization_parameter=lbda_opt)
 
     return Y, Z, Z_hat, Basis_theta_hat.coefs, grid_arc_s, Gamma_hat, mu0_hat
