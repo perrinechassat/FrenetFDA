@@ -132,7 +132,7 @@ print('--------------------- Simulation n°1: LP + Extrins ---------------------
 time_init = time.time()
 
 with tqdm(total=n_MC) as pbar:
-   res = Parallel(n_jobs=n_MC)(delayed(EM_init_extrins)(theta, arc_length_fct, N, Gamma, mu0, P0, nb_basis, sigma_init, grid_bandwidth, max_iter_EM, tol_EM, bounds_lambda_EM, n_call_bayopt_EM, n_splits_CV_EM, bounds_h_init, bounds_lambda_init, n_call_bayopt_init) for k in range(n_MC))
+   res = Parallel(n_jobs=-1)(delayed(EM_init_extrins)(theta, arc_length_fct, N, Gamma, mu0, P0, nb_basis, sigma_init, grid_bandwidth, max_iter_EM, tol_EM, bounds_lambda_EM, n_call_bayopt_EM, n_splits_CV_EM, bounds_h_init, bounds_lambda_init, n_call_bayopt_init) for k in range(n_MC))
    pbar.update()
 
 time_end = time.time()
@@ -163,7 +163,7 @@ time_init = time.time()
 
 
 with tqdm(total=n_MC) as pbar:
-   res = Parallel(n_jobs=n_MC)(delayed(EM_init_GS_LS)(theta, arc_length_fct, N, Gamma, mu0, P0, nb_basis, sigma_init, grid_bandwidth, max_iter_EM, tol_EM, bounds_lambda_EM, n_call_bayopt_EM, n_splits_CV_EM, bounds_h_init, bounds_lambda_init, n_call_bayopt_init) for k in range(n_MC))
+   res = Parallel(n_jobs=-1)(delayed(EM_init_GS_LS)(theta, arc_length_fct, N, Gamma, mu0, P0, nb_basis, sigma_init, grid_bandwidth, max_iter_EM, tol_EM, bounds_lambda_EM, n_call_bayopt_EM, n_splits_CV_EM, bounds_h_init, bounds_lambda_init, n_call_bayopt_init) for k in range(n_MC))
    pbar.update()
 
 time_end = time.time()
@@ -194,7 +194,7 @@ time_init = time.time()
 
 
 with tqdm(total=n_MC) as pbar:
-   res = Parallel(n_jobs=n_MC)(delayed(EM_init_CLP_LS)(theta, arc_length_fct, N, Gamma, mu0, P0, nb_basis, sigma_init, grid_bandwidth, max_iter_EM, tol_EM, bounds_lambda_EM, n_call_bayopt_EM, n_splits_CV_EM, bounds_h_init, bounds_lambda_init, n_call_bayopt_init) for k in range(n_MC))
+   res = Parallel(n_jobs=-1)(delayed(EM_init_CLP_LS)(theta, arc_length_fct, N, Gamma, mu0, P0, nb_basis, sigma_init, grid_bandwidth, max_iter_EM, tol_EM, bounds_lambda_EM, n_call_bayopt_EM, n_splits_CV_EM, bounds_h_init, bounds_lambda_init, n_call_bayopt_init) for k in range(n_MC))
    pbar.update()
 
 time_end = time.time()
