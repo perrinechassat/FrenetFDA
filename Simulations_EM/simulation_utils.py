@@ -7,6 +7,7 @@ from FrenetFDA.processing_Euclidean_curve.unified_estimate_Frenet_state_space.ie
 from FrenetFDA.processing_Euclidean_curve.preprocessing import *
 from FrenetFDA.processing_Euclidean_curve.estimate_Frenet_path import GramSchmidtOrthogonalization, ConstrainedLocalPolynomialRegression
 from FrenetFDA.processing_Euclidean_curve.estimate_Frenet_curvatures import ExtrinsicFormulas
+from FrenetFDA.processing_Frenet_path.estimate_Frenet_curvatures import ApproxFrenetODE, LocalApproxFrenetODE
 from pickle import *
 import time 
 import os.path
@@ -135,5 +136,99 @@ def simulation_step(Y, grid_arc_length, init_coefs, init_Gamma, init_mu0, init_P
 
 
 
+
+
+def init_extrins(theta, arc_length, N, Gamma, mu0, P0, nb_basis, grid_bandwidth, bounds_h, bounds_lbda, n_call_bayopt):
+
+    ## Definition of the states
+    xi0 = np.random.multivariate_normal(np.zeros(6), P0)
+    Z0 = mu0 @ SE3.exp(-xi0)
+    Z = solve_FrenetSerret_ODE_SE(theta, arc_length, Z0=Z0)
+    X = Z[:,:3,3]
+    Y = X + np.random.multivariate_normal(np.zeros(3), Gamma, size=N)
+
+    ## Init Gamma and s(t)
+    grid_time = np.linspace(0,1,N)
+    derivatives, h_opt = compute_derivatives(Y, grid_time, deg=3, h=None, CV_optimization_h={"flag":True, "h_grid":grid_bandwidth, "K":10})
+    grid_arc_s, L, arc_s, arc_s_dot = compute_arc_length(Y, grid_time, smooth=True, smoothing_param=h_opt)
+    Gamma_hat = ((Y - derivatives[0]).T @ (Y - derivatives[0]))/N
+
+    ## Init Z 
+    GS_orthog = GramSchmidtOrthogonalization(Y, grid_arc_s, deg=3)
+    h_opt, err_h = GS_orthog.grid_search_CV_optimization_bandwidth(bandwidth_grid=grid_bandwidth, K_split=10)
+    Z_hat, Q_hat, X_hat = GS_orthog.fit(h_opt) 
+    mu0_hat = Z_hat[0]
+   
+    ## Init theta
+    extrins_model_theta = ExtrinsicFormulas(Y, grid_time, grid_arc_s, deg_polynomial=3)
+    # h_opt, nb_basis_opt, regularization_parameter_opt, CV_error_tab = extrins_model_theta.grid_search_optimization_hyperparameters(grid_bandwidth, np.array([nb_basis]), grid_reg_param, method='2', n_splits=10)
+    h_opt, lbda_opt = extrins_model_theta.bayesian_optimization_hyperparameters(n_call_bayopt=n_call_bayopt, lambda_bounds=bounds_lbda, h_bounds=bounds_h, nb_bais=nb_basis, n_splits=10)
+    Basis_theta_hat = extrins_model_theta.Bspline_smooth_estimates(h_opt, nb_basis, regularization_parameter=lbda_opt)
+
+    return Y, Z, Z_hat, Basis_theta_hat.coefs, grid_arc_s, Gamma_hat, mu0_hat
+
+
+
+def init_GS_LeastSquare(theta, arc_length, N, Gamma, mu0, P0, nb_basis, grid_bandwidth, bounds_h, bounds_lbda, n_call_bayopt):
+
+    ## Definition of the states
+    xi0 = np.random.multivariate_normal(np.zeros(6), P0)
+    Z0 = mu0 @ SE3.exp(-xi0)
+    Z = solve_FrenetSerret_ODE_SE(theta, arc_length, Z0=Z0)
+    X = Z[:,:3,3]
+    Y = X + np.random.multivariate_normal(np.zeros(3), Gamma, size=N)
+
+    ## Init Gamma and s(t)
+    grid_time = np.linspace(0,1,N)
+    derivatives, h_opt = compute_derivatives(Y, grid_time, deg=3, h=None, CV_optimization_h={"flag":True, "h_grid":grid_bandwidth, "K":10})
+    grid_arc_s, L, arc_s, arc_s_dot = compute_arc_length(Y, grid_time, smooth=True, smoothing_param=h_opt)
+    Gamma_hat = ((Y - derivatives[0]).T @ (Y - derivatives[0]))/N
+
+    ## Init Z 
+    GS_orthog = GramSchmidtOrthogonalization(Y, grid_arc_s, deg=3)
+    h_opt, err_h = GS_orthog.grid_search_CV_optimization_bandwidth(bandwidth_grid=grid_bandwidth, K_split=10)
+    Z_hat, Q_hat, X_hat = GS_orthog.fit(h_opt) 
+    mu0_hat = Z_hat[0]
+   
+    ## Init theta
+    local_approx_ode = LocalApproxFrenetODE(grid_arc_s, Z=Z_hat)
+    h_opt, lbda_opt = local_approx_ode.bayesian_optimization_hyperparameters(n_call_bayopt=n_call_bayopt, lambda_bounds=bounds_lbda, h_bounds=bounds_h, nb_bais=nb_basis, n_splits=10)
+    Basis_theta_hat = local_approx_ode.Bspline_smooth_estimates(h_opt, nb_basis, regularization_parameter=lbda_opt)
+    # h_opt, nb_basis_opt, regularization_parameter_opt, CV_error_tab = local_approx_ode.grid_search_optimization_hyperparameters(bandwidth_list=grid_bandwidth, nb_basis_list=np.array([nb_basis]), regularization_parameter_list=grid_reg_param, method='2', parallel=False)
+    # Basis_theta_hat = local_approx_ode.Bspline_smooth_estimates(h_opt, nb_basis, regularization_parameter=regularization_parameter_opt)
+
+    return Y, Z, Z_hat, Basis_theta_hat.coefs, grid_arc_s, Gamma_hat, mu0_hat
+
+
+
+def init_CLP_LeastSquare(theta, arc_length, N, Gamma, mu0, P0, nb_basis, grid_bandwidth, bounds_h, bounds_lbda, n_call_bayopt):
+
+    ## Definition of the states
+    xi0 = np.random.multivariate_normal(np.zeros(6), P0)
+    Z0 = mu0 @ SE3.exp(-xi0)
+    Z = solve_FrenetSerret_ODE_SE(theta, arc_length, Z0=Z0)
+    X = Z[:,:3,3]
+    Y = X + np.random.multivariate_normal(np.zeros(3), Gamma, size=N)
+
+    ## Init Gamma and s(t)
+    grid_time = np.linspace(0,1,N)
+    derivatives, h_opt = compute_derivatives(Y, grid_time, deg=3, h=None, CV_optimization_h={"flag":True, "h_grid":grid_bandwidth, "K":10})
+    grid_arc_s, L, arc_s, arc_s_dot = compute_arc_length(Y, grid_time, smooth=True, smoothing_param=h_opt)
+    Gamma_hat = ((Y - derivatives[0]).T @ (Y - derivatives[0]))/N
+
+    ## Init Z 
+    CLP_reg = ConstrainedLocalPolynomialRegression(Y, grid_arc_s, adaptative=False, deg_polynomial=3)
+    h_opt, err_h = CLP_reg.grid_search_CV_optimization_bandwidth(bandwidth_grid=grid_bandwidth, K_split=10)
+    Z_hat, Q_hat, X_hat = CLP_reg.fit(h_opt)
+    mu0_hat = Z_hat[0]
+
+    ## Init theta
+    local_approx_ode = LocalApproxFrenetODE(grid_arc_s, Z=Z_hat)
+    # h_opt, nb_basis_opt, regularization_parameter_opt, CV_error_tab = local_approx_ode.grid_search_optimization_hyperparameters(bandwidth_list=grid_bandwidth, nb_basis_list=np.array([nb_basis]), regularization_parameter_list=grid_reg_param, method='2', parallel=False)
+    # Basis_theta_hat = local_approx_ode.Bspline_smooth_estimates(h_opt, nb_basis, regularization_parameter=regularization_parameter_opt)
+    h_opt, lbda_opt = local_approx_ode.bayesian_optimization_hyperparameters(n_call_bayopt=n_call_bayopt, lambda_bounds=bounds_lbda, h_bounds=bounds_h, nb_bais=nb_basis, n_splits=10)
+    Basis_theta_hat = local_approx_ode.Bspline_smooth_estimates(h_opt, nb_basis, regularization_parameter=lbda_opt)
+
+    return Y, Z, Z_hat, Basis_theta_hat.coefs, grid_arc_s, Gamma_hat, mu0_hat
 
 

@@ -8,6 +8,7 @@ from scipy.integrate import cumtrapz
 from sklearn.model_selection import KFold
 from joblib import Parallel, delayed
 import time as ttime
+from skopt import gp_minimize
 
 
 
@@ -239,8 +240,52 @@ class ExtrinsicFormulas:
             return h_opt, nb_basis_opt, regularization_parameter_opt, CV_error_tab
         
 
-    def bayesian_optimization_hyperparameters(self):
-        """
-            Not implemented yet.
-        """
-        pass
+
+    def bayesian_optimization_hyperparameters(self, n_call_bayopt, lambda_bounds, h_bounds, nb_basis, order=4, n_splits=10, verbose=True):
+
+        # ## CV optimization of lambda
+        Bspline_repres = VectorBSplineSmoothing(self.dim-1, nb_basis, domain_range=(self.grid_arc_s[0], self.grid_arc_s[-1]), order=order, penalization=True)
+                    
+        def func(x):
+            score = np.zeros(n_splits)
+            kf = KFold(n_splits=n_splits, shuffle=True)
+            grid_split = self.time[1:-1]
+            ind_CV = 0
+
+            for train_index, test_index in kf.split(grid_split):
+                train_index = train_index+1
+                test_index = test_index+1
+                train_index = np.concatenate((np.array([0]), train_index, np.array([len(self.time[1:-1])+1])))
+                Y_train = self.Y[train_index]
+                Y_test = self.Y[test_index]
+                raw_theta_train = self.__raw_estimates(self.time[train_index], Y_train, x[0])
+                lbda = np.array([x[1],x[2]])
+                Bspline_repres.fit(self.grid_arc_s[train_index], raw_theta_train, regularization_parameter=lbda)
+                try:
+                    Z_test_pred = solve_FrenetSerret_ODE_SE(Bspline_repres.evaluate, self.grid_arc_s[test_index], method='Linearized')
+                except:
+                    Z_test_pred = solve_FrenetSerret_ODE_SE(Bspline_repres.evaluate, self.grid_arc_s[test_index], method='Radau')
+                
+                X_test_pred = Z_test_pred[:,:self.dim,self.dim]
+                score[ind_CV] = Euclidean_dist_cent_rot(Y_test, X_test_pred)
+                ind_CV += 1 
+
+            return np.mean(score)
+
+        # Do a bayesian optimisation and return the optimal parameter (lambda_kappa, lambda_tau)
+        
+        bounds = np.array([[h_bounds[0], h_bounds[1]], [lambda_bounds[0,0], lambda_bounds[0,1]], [lambda_bounds[1,0], lambda_bounds[1,1]]])
+        res_bayopt = gp_minimize(func,                  # the function to minimize
+                                bounds,                 # the bounds on each dimension of x
+                                acq_func="EI",          # the acquisition function
+                                n_calls=n_call_bayopt,  # the number of evaluations of f
+                                n_random_starts=2,      # the number of random initialization points
+                                random_state=1,         # the random seed
+                                n_jobs=1,               # use all the cores for parallel calculation
+                                verbose=verbose)
+        param_opt = res_bayopt.x
+        h_opt = param_opt[0]
+        lbda_opt = np.array([param_opt[1], param_opt[2]])
+
+        return h_opt, lbda_opt
+    

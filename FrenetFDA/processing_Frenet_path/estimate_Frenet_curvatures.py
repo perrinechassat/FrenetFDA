@@ -352,10 +352,60 @@ class LocalApproxFrenetODE:
             return h_opt, nb_basis_opt, regularization_parameter_opt, CV_error_tab
 
     
+    def bayesian_optimization_hyperparameters(self, n_call_bayopt, lambda_bounds, h_bounds, nb_basis, order=4, n_splits=10, verbose=True):
 
-    # def bayesian_optimization_hyperparameters(self):
-    #     pass
+        # ## CV optimization of lambda
+        Bspline_repres = VectorBSplineSmoothing(self.dim_theta, nb_basis, domain_range=(self.grid[0], self.grid[-1]), order=order, penalization=True)
 
+        def func(x):
+            print(x)
+            score = np.zeros(n_splits)
+            kf = KFold(n_splits=n_splits, shuffle=True)
+            grid_split = self.grid[1:-1]
+            ind_CV = 0
+
+            for train_index, test_index in kf.split(grid_split):
+                train_index = train_index+1
+                test_index = test_index+1
+                train_index = np.concatenate((np.array([0]), train_index, np.array([len(self.grid[1:-1])+1])))
+                grid_train = self.grid[train_index]
+                Q_train = self.Q[train_index]
+                Q_test = self.Q[test_index]
+                grid_theta_train, raw_theta_train, weight_theta_train = self.__raw_estimates(x[0], grid_train, Q_train)
+                lbda = np.array([x[1],x[2]])
+                Bspline_repres.fit(grid_theta_train, raw_theta_train, weights=weight_theta_train, regularization_parameter=lbda)
+                if self.Z is None:
+                    Q_test_pred = solve_FrenetSerret_ODE_SO(Bspline_repres.evaluate, self.grid, self.Q[0])
+                    dist = np.mean(SO3.geodesic_distance(Q_test, Q_test_pred[test_index]))
+                else:
+                    try:
+                        Z_test_pred = solve_FrenetSerret_ODE_SE(Bspline_repres.evaluate, self.grid, self.Z[0])
+                    except:
+                        Z_test_pred = solve_FrenetSerret_ODE_SE(Bspline_repres.evaluate, self.grid, self.Z[0], method='Radau')
+
+                    dist = np.mean(SE3.geodesic_distance(self.Z[test_index], Z_test_pred[test_index]))
+
+                score[ind_CV] = dist
+                ind_CV += 1 
+
+            return np.mean(score)
+
+        # Do a bayesian optimisation and return the optimal parameter (lambda_kappa, lambda_tau)
+        
+        bounds = np.array([[h_bounds[0], h_bounds[1]], [lambda_bounds[0,0], lambda_bounds[0,1]], [lambda_bounds[1,0], lambda_bounds[1,1]]])
+        res_bayopt = gp_minimize(func,               # the function to minimize
+                        bounds,        # the bounds on each dimension of x
+                        acq_func="EI",        # the acquisition function
+                        n_calls=n_call_bayopt,       # the number of evaluations of f
+                        n_random_starts=2,    # the number of random initialization points
+                        random_state=1,       # the random seed
+                        n_jobs=1,            # use all the cores for parallel calculation
+                        verbose=verbose)
+        param_opt = res_bayopt.x
+        h_opt = param_opt[0]
+        lbda_opt = np.array([param_opt[1], param_opt[2]])
+
+        return h_opt, lbda_opt
     
     
 

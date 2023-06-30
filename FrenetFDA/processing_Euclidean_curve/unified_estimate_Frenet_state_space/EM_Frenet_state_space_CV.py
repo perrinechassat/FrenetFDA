@@ -659,7 +659,7 @@ class FrenetStateSpaceCV_global:
             new_val_expected_loglikelihood = self.expected_loglikelihood()
             if self.verbose:
                 print('value of expected_loglikelihood: ', new_val_expected_loglikelihood)
-            rel_error = np.abs(val_expected_loglikelihood - new_val_expected_loglikelihood)
+            rel_error = new_val_expected_loglikelihood - val_expected_loglikelihood 
             if self.verbose:
                 print('relative error: ', rel_error)
             self.tab_increment(rel_error, new_val_expected_loglikelihood)
