@@ -407,8 +407,62 @@ class LocalApproxFrenetODE:
 
         return h_opt, lbda_opt
     
+
+
     
 
+
+class TwoStepEstimator:
+
+    def __init__(self, grid, Q=None, Z=None, adaptive=False):  
+        if Q is None and Z is None:
+            raise Exception("Either Q or Z must be passed as input.") 
+        elif Z is None:
+            self.N, self.dim, _ = Q.shape
+            if len(grid)!=self.N:
+                raise Exception("Invalide dimension of Q and grid.")
+            self.grid = grid
+            self.Q = Q 
+            self.Z = None
+        else:
+            self.N, dim, _ = Z.shape
+            if len(grid)!=self.N:
+                raise Exception("Invalide dimension of Q and grid.")
+            self.grid = grid
+            self.dim = dim-1
+            self.Q = Z[:,:self.dim,:self.dim]
+            self.Z = Z
+        self.dim_theta = len(np.diag(np.eye(self.dim), k=1))
+        self.adaptive_ind = adaptive 
+
+
+    # def fit(self, h, lbda, nb_basis, type_smoother='karcher_mean', epsilon=1e-03, max_iter=30):
+
+    #     LS_theta = LocalApproxFrenetODE(self.grid, Q=self.Q)
+    #     basis_theta0 = LS_theta.Bspline_smooth_estimates(h, nb_basis, order=4, regularization_parameter=lbda)
+    #     theta  = basis_theta0.evaluate(self.grid)
+    #     Dtheta = theta
+    #     k=0
+    #     while np.linalg.norm(Dtheta)>=epsilon*np.linalg.norm(theta) and k<max_iter:
+
+    #         theta_old = theta
+
+    #         if type_smoother=='karcher_mean':
+    #             Q_smooth = 
+    #         elif type_smoother=='tracking':
+    #             Q_smooth = 
+    #         else:
+    #             raise Exception("Error in type smoother: karcher_mean or tracking")
+            
+    #         LS_theta = LocalApproxFrenetODE(self.grid, Q=Q_smooth)
+    #         basis_theta = LS_theta.Bspline_smooth_estimates(h, nb_basis, order=4, regularization_parameter=lbda)
+    #         theta  = basis_theta.evaluate(self.grid)
+    #         Dtheta = theta - theta_old
+    #         k += 1  
+
+    #     return basis_theta, Q_smooth, k
+
+    
 
 
     

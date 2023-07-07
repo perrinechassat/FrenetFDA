@@ -5,6 +5,7 @@ import sys
 stderr = sys.stderr
 sys.stderr = open(os.devnull, 'w')
 from geomstats.geometry.special_euclidean import SpecialEuclidean
+from geomstats.learning.frechet_mean import FrechetMean
 sys.stderr = stderr
 
 class SE3:
@@ -193,6 +194,20 @@ class SE3:
 
     @classmethod
     def geodesic_distance(self, Z1, Z2):
-        SE3 = SpecialEuclidean(3)
-        gdist = SE3.metric.dist(Z1, Z2)
+        se3 = SpecialEuclidean(3)
+        gdist = se3.metric.dist(Z1, Z2)
         return gdist
+    
+    @classmethod
+    def frechet_mean(self, arr_Z, weights=None):
+        """ pointwise distance 
+        """
+        se3 = SpecialEuclidean(3)
+        mean = FrechetMean(metric=se3.metric)
+        mean.fit(arr_Z, weights=weights)
+        return mean.estimate_
+    
+    @classmethod
+    def random_point_uniform(self, n_samples, bound=1):
+        se3 = SpecialEuclidean(3)
+        return se3.random_point(n_samples, bound=bound)

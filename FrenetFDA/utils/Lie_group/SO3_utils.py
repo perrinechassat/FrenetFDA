@@ -4,6 +4,8 @@ import sys
 stderr = sys.stderr
 sys.stderr = open(os.devnull, 'w')
 from geomstats.geometry.special_orthogonal import SpecialOrthogonal
+from geomstats.learning.frechet_mean import FrechetMean
+from geomstats.geometry.matrices import Matrices
 sys.stderr = stderr
 
 class SO3:
@@ -273,9 +275,20 @@ class SO3:
         return gdist
     
     @classmethod
+    def frechet_mean(self, arr_R, weights=None):
+        """ pointwise distance 
+        """
+        so3 = SpecialOrthogonal(3)
+        mean = FrechetMean(metric=so3.metric)
+        mean.fit(arr_R, weights=weights)
+        return mean.estimate_
+
+
+    @classmethod
     def random_point_uniform(self, n_samples, bound=1):
-        SO3 = SpecialOrthogonal(3)
-        return SO3.random_point(n_samples, bound=bound)
+        so3 = SpecialOrthogonal(3)
+        return so3.random_point(n_samples, bound=bound)
+
 
     @classmethod
     def random_point_fisher(self, n_samples, K, mean_directions=None):
