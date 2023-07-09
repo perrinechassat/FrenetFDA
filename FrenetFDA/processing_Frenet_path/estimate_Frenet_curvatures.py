@@ -3,6 +3,7 @@ from FrenetFDA.utils.smoothing_utils import compute_weight_neighbors_local_smoot
 from FrenetFDA.utils.Frenet_Serret_utils import solve_FrenetSerret_ODE_SE, solve_FrenetSerret_ODE_SO
 from FrenetFDA.utils.Lie_group.SO3_utils import SO3
 from FrenetFDA.utils.Lie_group.SE3_utils import SE3
+from FrenetFDA.processing_Frenet_path.smoothing import KarcherMeanSmoother, TrackingSmootherLinear
 from skopt import gp_minimize
 from joblib import Parallel, delayed
 from sklearn.model_selection import KFold
@@ -412,7 +413,7 @@ class LocalApproxFrenetODE:
     
 
 
-class TwoStepEstimator:
+class TwoStepEstimatorKarcherMean:
 
     def __init__(self, grid, Q=None, Z=None, adaptive=False):  
         if Q is None and Z is None:
@@ -436,33 +437,226 @@ class TwoStepEstimator:
         self.adaptive_ind = adaptive 
 
 
-    # def fit(self, h, lbda, nb_basis, type_smoother='karcher_mean', epsilon=1e-03, max_iter=30):
+    def fit(self, h, lbda, nb_basis, epsilon=1e-03, max_iter=30):
 
-    #     LS_theta = LocalApproxFrenetODE(self.grid, Q=self.Q)
-    #     basis_theta0 = LS_theta.Bspline_smooth_estimates(h, nb_basis, order=4, regularization_parameter=lbda)
-    #     theta  = basis_theta0.evaluate(self.grid)
-    #     Dtheta = theta
-    #     k=0
-    #     while np.linalg.norm(Dtheta)>=epsilon*np.linalg.norm(theta) and k<max_iter:
+        LS_theta = LocalApproxFrenetODE(self.grid, Q=self.Q)
+        Q_smooth = self.Q
+        basis_theta = LS_theta.Bspline_smooth_estimates(h, nb_basis, order=4, regularization_parameter=lbda)
+        theta  = basis_theta.evaluate(self.grid)
+        Dtheta = theta
+        k=0
+        while np.linalg.norm(Dtheta)>=epsilon*np.linalg.norm(theta) and k<max_iter:
 
-    #         theta_old = theta
+            theta_old = theta
+            Smoother = KarcherMeanSmoother(self.grid, Q=Q_smooth)
+            Q_smooth = Smoother.fit(h, basis_theta.evaluate)
+            LS_theta = LocalApproxFrenetODE(self.grid, Q=Q_smooth)
+            basis_theta = LS_theta.Bspline_smooth_estimates(h, nb_basis, order=4, regularization_parameter=lbda)
+            theta  = basis_theta.evaluate(self.grid)
+            Dtheta = theta - theta_old
+            k += 1  
 
-    #         if type_smoother=='karcher_mean':
-    #             Q_smooth = 
-    #         elif type_smoother=='tracking':
-    #             Q_smooth = 
-    #         else:
-    #             raise Exception("Error in type smoother: karcher_mean or tracking")
-            
-    #         LS_theta = LocalApproxFrenetODE(self.grid, Q=Q_smooth)
-    #         basis_theta = LS_theta.Bspline_smooth_estimates(h, nb_basis, order=4, regularization_parameter=lbda)
-    #         theta  = basis_theta.evaluate(self.grid)
-    #         Dtheta = theta - theta_old
-    #         k += 1  
-
-    #     return basis_theta, Q_smooth, k
-
+        return basis_theta, Q_smooth, k 
     
+
+    def __fit(self, grid, Q, h, lbda, nb_basis, epsilon=1e-03, max_iter=30):
+
+        LS_theta = LocalApproxFrenetODE(grid, Q=Q)
+        Q_smooth = Q
+        basis_theta = LS_theta.Bspline_smooth_estimates(h, nb_basis, order=4, regularization_parameter=lbda)
+        theta  = basis_theta.evaluate(grid)
+        Dtheta = theta
+        k=0
+        while np.linalg.norm(Dtheta)>=epsilon*np.linalg.norm(theta) and k<max_iter:
+
+            theta_old = theta
+            Smoother = KarcherMeanSmoother(grid, Q=Q_smooth)
+            Q_smooth = Smoother.fit(h, basis_theta.evaluate)
+            LS_theta = LocalApproxFrenetODE(grid, Q=Q_smooth)
+            basis_theta = LS_theta.Bspline_smooth_estimates(h, nb_basis, order=4, regularization_parameter=lbda)
+            theta  = basis_theta.evaluate(grid)
+            Dtheta = theta - theta_old
+            k += 1  
+
+        return basis_theta, Q_smooth, k 
+
+
+    def bayesian_optimization_hyperparameters(self, n_call_bayopt, lambda_bounds, h_bounds, nb_basis, order=4, epsilon=1e-03, max_iter=30, n_splits=10, verbose=True):
+
+        def func(x):
+            print(x)
+            score = np.zeros(n_splits)
+            kf = KFold(n_splits=n_splits, shuffle=True)
+            grid_split = self.grid[1:-1]
+            ind_CV = 0
+
+            for train_index, test_index in kf.split(grid_split):
+                train_index = train_index+1
+                test_index = test_index+1
+                train_index = np.concatenate((np.array([0]), train_index, np.array([len(self.grid[1:-1])+1])))
+                grid_train = self.grid[train_index]
+                Q_train = self.Q[train_index]
+                Q_test = self.Q[test_index]
+                lbda = np.array([x[1],x[2]])
+                basis_theta, Q_smooth, k = self.__fit(grid_train, Q_train, x[0], lbda, nb_basis, epsilon=epsilon, max_iter=max_iter)
+                if self.Z is None:
+                    Q_test_pred = solve_FrenetSerret_ODE_SO(basis_theta.evaluate, self.grid, self.Q[0])
+                    dist = np.mean(SO3.geodesic_distance(Q_test, Q_test_pred[test_index]))
+                else:
+                    try:
+                        Z_test_pred = solve_FrenetSerret_ODE_SE(basis_theta.evaluate, self.grid, self.Z[0])
+                    except:
+                        Z_test_pred = solve_FrenetSerret_ODE_SE(basis_theta.evaluate, self.grid, self.Z[0], method='Radau')
+
+                    dist = np.mean(SE3.geodesic_distance(self.Z[test_index], Z_test_pred[test_index]))
+
+                score[ind_CV] = dist
+                ind_CV += 1 
+
+            return np.mean(score)
+
+        # Do a bayesian optimisation and return the optimal parameter (lambda_kappa, lambda_tau)
+        
+        bounds = np.array([[h_bounds[0], h_bounds[1]], [lambda_bounds[0,0], lambda_bounds[0,1]], [lambda_bounds[1,0], lambda_bounds[1,1]]])
+        res_bayopt = gp_minimize(func,               # the function to minimize
+                        bounds,        # the bounds on each dimension of x
+                        acq_func="EI",        # the acquisition function
+                        n_calls=n_call_bayopt,       # the number of evaluations of f
+                        n_random_starts=2,    # the number of random initialization points
+                        random_state=1,       # the random seed
+                        n_jobs=1,            # use all the cores for parallel calculation
+                        verbose=verbose)
+        param_opt = res_bayopt.x
+        h_opt = param_opt[0]
+        lbda_opt = np.array([param_opt[1], param_opt[2]])
+
+        return h_opt, lbda_opt
+    
+
+
+
+class TwoStepEstimatorTracking:
+
+    def __init__(self, grid, Q=None, Z=None, adaptive=False):  
+        if Q is None and Z is None:
+            raise Exception("Either Q or Z must be passed as input.") 
+        elif Z is None:
+            self.N, self.dim, _ = Q.shape
+            if len(grid)!=self.N:
+                raise Exception("Invalide dimension of Q and grid.")
+            self.grid = grid
+            self.Q = Q 
+            self.Z = None
+        else:
+            self.N, dim, _ = Z.shape
+            if len(grid)!=self.N:
+                raise Exception("Invalide dimension of Q and grid.")
+            self.grid = grid
+            self.dim = dim-1
+            self.Q = Z[:,:self.dim,:self.dim]
+            self.Z = Z
+        self.dim_theta = len(np.diag(np.eye(self.dim), k=1))
+        self.adaptive_ind = adaptive 
+
+
+    def fit(self, lbda_track, h, lbda, nb_basis, epsilon=1e-03, max_iter=30):
+
+        LS_theta = LocalApproxFrenetODE(self.grid, Q=self.Q)
+        Q_smooth = self.Q
+        basis_theta = LS_theta.Bspline_smooth_estimates(h, nb_basis, order=4, regularization_parameter=lbda)
+        theta  = basis_theta.evaluate(self.grid)
+        Dtheta = theta
+        k=0
+        while np.linalg.norm(Dtheta)>=epsilon*np.linalg.norm(theta) and k<max_iter:
+
+            theta_old = theta
+            Smoother = TrackingSmootherLinear(self.grid, Q=Q_smooth)
+            Q_smooth = Smoother.fit(lbda_track, basis_theta.evaluate)
+            LS_theta = LocalApproxFrenetODE(self.grid, Q=Q_smooth)
+            basis_theta = LS_theta.Bspline_smooth_estimates(h, nb_basis, order=4, regularization_parameter=lbda)
+            theta  = basis_theta.evaluate(self.grid)
+            Dtheta = theta - theta_old
+            k += 1  
+
+        return basis_theta, Q_smooth, k 
+    
+    
+    def __fit(self, grid, Q, lbda_track, h, lbda, nb_basis, epsilon=1e-03, max_iter=30):
+
+        LS_theta = LocalApproxFrenetODE(grid, Q=Q)
+        Q_smooth = Q
+        basis_theta = LS_theta.Bspline_smooth_estimates(h, nb_basis, order=4, regularization_parameter=lbda)
+        theta  = basis_theta.evaluate(grid)
+        Dtheta = theta
+        k=0
+        while np.linalg.norm(Dtheta)>=epsilon*np.linalg.norm(theta) and k<max_iter:
+
+            theta_old = theta
+            Smoother = TrackingSmootherLinear(grid, Q=Q_smooth)
+            Q_smooth = Smoother.fit(lbda_track, basis_theta.evaluate)
+            LS_theta = LocalApproxFrenetODE(grid, Q=Q_smooth)
+            basis_theta = LS_theta.Bspline_smooth_estimates(h, nb_basis, order=4, regularization_parameter=lbda)
+            theta  = basis_theta.evaluate(grid)
+            Dtheta = theta - theta_old
+            k += 1  
+
+        return basis_theta, Q_smooth, k 
+
+
+    # def bayesian_optimization_hyperparameters(self, n_call_bayopt, lambda_bounds, h_bounds, nb_basis, order=4, n_splits=10, verbose=True):
+
+    #     # ## CV optimization of lambda
+    #     Bspline_repres = VectorBSplineSmoothing(self.dim_theta, nb_basis, domain_range=(self.grid[0], self.grid[-1]), order=order, penalization=True)
+
+    #     def func(x):
+    #         print(x)
+    #         score = np.zeros(n_splits)
+    #         kf = KFold(n_splits=n_splits, shuffle=True)
+    #         grid_split = self.grid[1:-1]
+    #         ind_CV = 0
+
+    #         for train_index, test_index in kf.split(grid_split):
+    #             train_index = train_index+1
+    #             test_index = test_index+1
+    #             train_index = np.concatenate((np.array([0]), train_index, np.array([len(self.grid[1:-1])+1])))
+    #             grid_train = self.grid[train_index]
+    #             Q_train = self.Q[train_index]
+    #             Q_test = self.Q[test_index]
+    #             grid_theta_train, raw_theta_train, weight_theta_train = self.__raw_estimates(x[0], grid_train, Q_train)
+    #             lbda = np.array([x[1],x[2]])
+    #             Bspline_repres.fit(grid_theta_train, raw_theta_train, weights=weight_theta_train, regularization_parameter=lbda)
+    #             if self.Z is None:
+    #                 Q_test_pred = solve_FrenetSerret_ODE_SO(Bspline_repres.evaluate, self.grid, self.Q[0])
+    #                 dist = np.mean(SO3.geodesic_distance(Q_test, Q_test_pred[test_index]))
+    #             else:
+    #                 try:
+    #                     Z_test_pred = solve_FrenetSerret_ODE_SE(Bspline_repres.evaluate, self.grid, self.Z[0])
+    #                 except:
+    #                     Z_test_pred = solve_FrenetSerret_ODE_SE(Bspline_repres.evaluate, self.grid, self.Z[0], method='Radau')
+
+    #                 dist = np.mean(SE3.geodesic_distance(self.Z[test_index], Z_test_pred[test_index]))
+
+    #             score[ind_CV] = dist
+    #             ind_CV += 1 
+
+    #         return np.mean(score)
+
+    #     # Do a bayesian optimisation and return the optimal parameter (lambda_kappa, lambda_tau)
+        
+    #     bounds = np.array([[h_bounds[0], h_bounds[1]], [lambda_bounds[0,0], lambda_bounds[0,1]], [lambda_bounds[1,0], lambda_bounds[1,1]]])
+    #     res_bayopt = gp_minimize(func,               # the function to minimize
+    #                     bounds,        # the bounds on each dimension of x
+    #                     acq_func="EI",        # the acquisition function
+    #                     n_calls=n_call_bayopt,       # the number of evaluations of f
+    #                     n_random_starts=2,    # the number of random initialization points
+    #                     random_state=1,       # the random seed
+    #                     n_jobs=1,            # use all the cores for parallel calculation
+    #                     verbose=verbose)
+    #     param_opt = res_bayopt.x
+    #     h_opt = param_opt[0]
+    #     lbda_opt = np.array([param_opt[1], param_opt[2]])
+
+    #     return h_opt, lbda_opt
 
 
     

@@ -134,6 +134,36 @@ class LocalPolynomialSmoothing:
                 h_opt = bandwidth_grid[np.where(err_h==np.min(err_h))][0]
             # print('Optimal smoothing parameter h find by cross-validation:', h_opt)
             return h_opt, err_h
+        
+
+    def bayesian_optimization_hyperparameters(self,  data, grid_in, grid_out, n_call_bayopt, h_bounds, n_splits=10, verbose=True):
+
+        def func(x):
+            score = np.zeros(n_splits)
+            kf = KFold(n_splits=n_splits, shuffle=True)
+            ind_CV = 0
+
+            for train_index, test_index in kf.split(grid_in):
+                t_train, t_test = grid_in[train_index], grid_in[test_index]
+                data_train, data_test = data[train_index,:], data[test_index,:]
+                derivatives = self.fit(data_train, t_train, t_test, x[0])
+                diff = derivatives[0] - data_test
+                score[ind_CV] = np.linalg.norm(diff)**2
+                ind_CV += 1 
+
+            return np.mean(score)
+
+        # Do a bayesian optimisation and return the optimal parameter (lambda_kappa, lambda_tau)
+        res_bayopt = gp_minimize(func,                  # the function to minimize
+                                [h_bounds],                 # the bounds on each dimension of x
+                                acq_func="EI",          # the acquisition function
+                                n_calls=n_call_bayopt,  # the number of evaluations of f
+                                n_random_starts=2,      # the number of random initialization points
+                                random_state=1,         # the random seed
+                                n_jobs=1,               # use all the cores for parallel calculation
+                                verbose=verbose)
+        h_opt = res_bayopt.x[0]
+        return h_opt
 
 
 # def local_polynomial_smoothing(deg, data, grid_in, grid_out, h=None, CV_optimization_h={"flag":False, "h_grid":np.array([]), "K":5}):

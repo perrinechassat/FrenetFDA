@@ -43,7 +43,7 @@ def compute_arc_length(Y, time, scale=True, smooth=True, smoothing_param=None, C
     
 
 
-def compute_derivatives(Y, time, deg, h=None, CV_optimization_h={"flag":False, "h_grid":np.array([]), "K":10}):
+def compute_derivatives(Y, time, deg, h=None, CV_optimization_h={"flag":False, "h_grid":np.array([]), "K":10, "method":'bayesian', "n_call":10, "verbose":True}):
 
     N, dim = Y.shape
     if dim < 2:
@@ -59,10 +59,16 @@ def compute_derivatives(Y, time, deg, h=None, CV_optimization_h={"flag":False, "
             if len(CV_optimization_h["h_grid"])==0:
                 raise Exception("You must give a grid for search of optimal h")
             else:
-                h_grid = CV_optimization_h["h_grid"]
-                LP = LocalPolynomialSmoothing(deg)
-                h_opt, err_h = LP.grid_search_CV_optimization_bandwidth(Y, time, time, h_grid, K_split=CV_optimization_h["K"])
-                derivatives = LP.fit(Y, time, time, h_opt)
+                if CV_optimization_h["method"]=='gridsearch':
+                    h_grid = CV_optimization_h["h_grid"]
+                    LP = LocalPolynomialSmoothing(deg)
+                    h_opt, err_h = LP.grid_search_CV_optimization_bandwidth(Y, time, time, h_grid, K_split=CV_optimization_h["K"])
+                    derivatives = LP.fit(Y, time, time, h_opt)
+                else:
+                    h_bounds = np.array([CV_optimization_h["h_grid"][0], CV_optimization_h["h_grid"][-1]])
+                    LP = LocalPolynomialSmoothing(deg)
+                    h_opt = LP.bayesian_optimization_hyperparameters(Y, time, time, CV_optimization_h["n_call"], h_bounds, n_splits=CV_optimization_h["K"], verbose=CV_optimization_h["verbose"])
+                    derivatives = LP.fit(Y, time, time, h_opt)
     else:   
         h_opt = h
         derivatives = LocalPolynomialSmoothing(deg).fit(Y, time, time, h)

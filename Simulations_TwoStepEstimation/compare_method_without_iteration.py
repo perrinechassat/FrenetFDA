@@ -17,7 +17,7 @@ from tqdm import tqdm
 
 
 
-def compare_method_without_iteration(theta, arc_length_fct, N, Gamma, mu0, P0, nb_basis, grid_bandwidth, bounds_h, bounds_lbda, n_call_bayopt):
+def compare_method_without_iteration(theta, arc_length_fct, N, Gamma, mu0, P0, nb_basis, bounds_h, bounds_lbda, n_call_bayopt):
 
     grid_time = np.linspace(0,1,N)
     arc_length = arc_length_fct(grid_time, np.random.normal(0,1))
@@ -30,17 +30,17 @@ def compare_method_without_iteration(theta, arc_length_fct, N, Gamma, mu0, P0, n
     Y = X + np.random.multivariate_normal(np.zeros(3), Gamma, size=N)
 
     ## Init Gamma and s(t)
-    derivatives, h_opt = compute_derivatives(Y, grid_time, deg=3, h=None, CV_optimization_h={"flag":True, "h_grid":grid_bandwidth, "K":10})
+    derivatives, h_opt = compute_derivatives(Y, grid_time, deg=3, h=None, CV_optimization_h={"flag":True, "h_grid":np.array([bounds_h[0], bounds_h[-1]]), "K":10, "method":'bayesian', "n_call":30, "verbose":False})
     grid_arc_s, L, arc_s, arc_s_dot = compute_arc_length(Y, grid_time, smooth=True, smoothing_param=h_opt)
 
     ## Z GramSchmidt
     GS_orthog = GramSchmidtOrthogonalization(Y, grid_arc_s, deg=3)
-    h_opt, err_h = GS_orthog.grid_search_CV_optimization_bandwidth(bandwidth_grid=grid_bandwidth, K_split=10)
+    h_opt = GS_orthog.bayesian_optimization_hyperparameters(n_call_bayopt, h_bounds=bounds_h, verbose=False)
     Z_hat_GS, Q_hat_GS, X_hat_GS = GS_orthog.fit(h_opt) 
 
     ## Z CLP
     CLP_reg = ConstrainedLocalPolynomialRegression(Y, grid_arc_s, adaptative=False, deg_polynomial=3)
-    h_opt, err_h = CLP_reg.grid_search_CV_optimization_bandwidth(bandwidth_grid=grid_bandwidth, K_split=10)
+    h_opt = CLP_reg.bayesian_optimization_hyperparameters(n_call_bayopt, h_bounds=bounds_h, verbose=False)
     Z_hat_CLP, Q_hat_CLP, X_hat_CLP = CLP_reg.fit(h_opt)
    
     ## theta extrinsic

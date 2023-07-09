@@ -40,9 +40,8 @@ def arc_length_fct(s, a):
 mu0 = np.eye(4) 
 P0 = 0.01**2*np.eye(6)
 n_MC = 90
-grid_bandwidth = np.array([0.1, 0.12, 0.15, 0.17, 0.2, 0.25, 0.3])
 bounds_lambda = np.array([[1e-09, 1e-03], [1e-09, 1e-03]])
-bounds_h = np.array([0.1, 0.3])
+bounds_h = np.array([0.05, 0.35])
 n_call_bayopt = 100
 
 directory = r"results/scenario2/model_01/"
@@ -54,7 +53,7 @@ if not os.path.exists(final_directory):
    os.makedirs(final_directory)
 
 filename = filename_base + "model"
-dic = {"nb_iterations_simu": n_MC, "P0": P0, "mu0": mu0, "theta":theta, "arc_length_fct": arc_length_fct, "grid_bandwidth":grid_bandwidth, 
+dic = {"nb_iterations_simu": n_MC, "P0": P0, "mu0": mu0, "theta":theta, "arc_length_fct": arc_length_fct, 
        "bounds_lambda": bounds_lambda, "bounds_h": bounds_h, "n_call_bayopt": n_call_bayopt}
 if os.path.isfile(filename):
    print("Le fichier ", filename, " existe déjà.")
@@ -75,7 +74,7 @@ nb_basis = 10
 time_init = time.time()
 
 with tqdm(total=n_MC) as pbar:
-   res = Parallel(n_jobs=-1)(delayed(compare_method_without_iteration)(theta, arc_length_fct, N, Gamma, mu0, P0, nb_basis, grid_bandwidth, bounds_h, bounds_lambda, n_call_bayopt) for k in range(n_MC))
+   res = Parallel(n_jobs=-1)(delayed(compare_method_without_iteration)(theta, arc_length_fct, N, Gamma, mu0, P0, nb_basis, bounds_h, bounds_lambda, n_call_bayopt) for k in range(n_MC))
    pbar.update()
 
 time_end = time.time()
@@ -104,7 +103,7 @@ nb_basis = 10
 time_init = time.time()
 
 with tqdm(total=n_MC) as pbar:
-   res = Parallel(n_jobs=-1)(delayed(compare_method_without_iteration)(theta, arc_length_fct, N, Gamma, mu0, P0, nb_basis, grid_bandwidth, bounds_h, bounds_lambda, n_call_bayopt) for k in range(n_MC))
+   res = Parallel(n_jobs=-1)(delayed(compare_method_without_iteration)(theta, arc_length_fct, N, Gamma, mu0, P0, nb_basis, bounds_h, bounds_lambda, n_call_bayopt) for k in range(n_MC))
    pbar.update()
 
 time_end = time.time()
@@ -133,7 +132,7 @@ nb_basis = 15
 time_init = time.time()
 
 with tqdm(total=n_MC) as pbar:
-   res = Parallel(n_jobs=-1)(delayed(compare_method_without_iteration)(theta, arc_length_fct, N, Gamma, mu0, P0, nb_basis, grid_bandwidth, bounds_h, bounds_lambda, n_call_bayopt) for k in range(n_MC))
+   res = Parallel(n_jobs=-1)(delayed(compare_method_without_iteration)(theta, arc_length_fct, N, Gamma, mu0, P0, nb_basis, bounds_h, bounds_lambda, n_call_bayopt) for k in range(n_MC))
    pbar.update()
 
 time_end = time.time()
@@ -162,7 +161,7 @@ nb_basis = 15
 time_init = time.time()
 
 with tqdm(total=n_MC) as pbar:
-   res = Parallel(n_jobs=-1)(delayed(compare_method_without_iteration)(theta, arc_length_fct, N, Gamma, mu0, P0, nb_basis, grid_bandwidth, bounds_h, bounds_lambda, n_call_bayopt) for k in range(n_MC))
+   res = Parallel(n_jobs=-1)(delayed(compare_method_without_iteration)(theta, arc_length_fct, N, Gamma, mu0, P0, nb_basis, bounds_h, bounds_lambda, n_call_bayopt) for k in range(n_MC))
    pbar.update()
 
 time_end = time.time()

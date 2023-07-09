@@ -6,6 +6,7 @@ from FrenetFDA.processing_Euclidean_curve.preprocessing import compute_arc_lengt
 from sklearn.model_selection import KFold
 from sklearn.preprocessing import PolynomialFeatures
 from sklearn.linear_model import LinearRegression
+from skopt import gp_minimize
 
 
 class GramSchmidtOrthogonalization:
@@ -78,6 +79,12 @@ class GramSchmidtOrthogonalization:
 
         return h_opt, err_h
     
+
+    def bayesian_optimization_hyperparameters(self, n_call_bayopt, h_bounds, n_splits=10, verbose=True):
+
+        h_opt = LocalPolynomialSmoothing(self.deg).bayesian_optimization_hyperparameters(self.Y, self.grid_arc_s, self.grid_arc_s, n_call_bayopt, h_bounds, n_splits=n_splits, verbose=verbose)
+
+        return h_opt
 
 
 
@@ -197,34 +204,34 @@ class ConstrainedLocalPolynomialRegression:
             Si = T_poly.T @ np.diag(W) @ T_poly # p+1 x p+1
             Ti = T_poly.T @ np.diag(W) @ data # p+1 x 3
 
-            try:
-                # estimates with constraints
-                if self.deg==1: # local linear
-                    tb0 = np.array([-Si[0,1], Si[0,0]]) @ Ti
-                    la_m = (np.linalg.det(Si) - np.linalg.norm(tb0))/Si[0,0]
-                    Param[i,:] = np.reshape(np.linalg.solve(Si-la_m*np.array([[0,0],[0,1]]), Ti),(1,(self.deg+1)*self.dim))
+            # try:
+            # estimates with constraints
+            if self.deg==1: # local linear
+                tb0 = np.array([-Si[0,1], Si[0,0]]) @ Ti
+                la_m = (np.linalg.det(Si) - np.linalg.norm(tb0))/Si[0,0]
+                Param[i,:] = np.reshape(np.linalg.solve(Si-la_m*np.array([[0,0],[0,1]]), Ti),(1,(self.deg+1)*self.dim))
 
-                elif self.deg>1:
-                    la0 = 0
-                    mu0 = 0
-                    # tol = 1e-4
-                    param0 = np.array([la0, mu0])
-                    res = optimize.root(fun=self.__get_loc_param, x0=param0, args=(Si, Ti), method='hybr')
+            elif self.deg>1:
+                la0 = 0
+                mu0 = 0
+                # tol = 1e-4
+                param0 = np.array([la0, mu0])
+                res = optimize.root(fun=self.__get_loc_param, x0=param0, args=(Si, Ti), method='hybr')
+                parami = res.x
+                itr = 0
+                epsilon_vect = np.array([10e-6,10e-6])
+                while res.success==False and itr<30:
+                    parami += epsilon_vect
+                    res = optimize.root(fun=self.__get_loc_param, x0=parami, args=(Si, Ti), method='hybr')
                     parami = res.x
-                    itr = 0
-                    epsilon_vect = np.array([10e-6,10e-6])
-                    while res.success==False and itr<30:
-                        parami += epsilon_vect
-                        res = optimize.root(fun=self.__get_loc_param, x0=parami, args=(Si, Ti), method='hybr')
-                        parami = res.x
-                        itr += 1
+                    itr += 1
 
-                    la0 = parami[0]
-                    mu0 = parami[1]
-                    Bi = np.linalg.inv(Si-la0*U-mu0*V) @ Ti
-                    Param[i,:] = np.reshape(Bi,(1,(self.deg+1)*self.dim))
-            except:
-                raise Exception("The bandwidth parameter is too small.")
+                la0 = parami[0]
+                mu0 = parami[1]
+                Bi = np.linalg.inv(Si-la0*U-mu0*V) @ Ti
+                Param[i,:] = np.reshape(Bi,(1,(self.deg+1)*self.dim))
+            # except:
+            #     raise Exception("The bandwidth parameter is too small.")
 
         # output
         Gamma = Param[:,:3]
@@ -264,8 +271,44 @@ class ConstrainedLocalPolynomialRegression:
         # B = np.linalg.solve(S-param[0]*U-param[1]*V,T)
         out = [B[1,:] @ B[1,:].T - 1, B[1,:] @ B[2,:].T]
         return out
-    
 
+
+    def bayesian_optimization_hyperparameters(self, n_call_bayopt, h_bounds, n_splits=10, verbose=True):
+
+        def func(x):
+            score = np.zeros(n_splits)
+            kf = KFold(n_splits=n_splits, shuffle=True)
+            grid_split = self.grid_arc_s[1:-1]
+            ind_CV = 0
+
+            for train_index, test_index in kf.split(grid_split):
+                train_index = train_index+1
+                test_index = test_index+1
+                train_index = np.concatenate((np.array([0]), train_index, np.array([len(self.grid_arc_s[1:-1])+1])))
+                Y_train = self.Y[train_index]
+                Y_test = self.Y[test_index]
+                t_train, t_test = self.grid_arc_s[train_index], self.grid_arc_s[test_index]
+                try:
+                    Q_LP, X_LP = self.__constrained_local_polynomial_regression(Y_train, t_train, t_test, x[0])
+                    error = np.linalg.norm(X_LP - Y_test)**2
+                except:
+                    error = 1e3
+                score[ind_CV] = error
+                ind_CV += 1 
+
+            return np.mean(score)
+
+        # Do a bayesian optimisation and return the optimal parameter (lambda_kappa, lambda_tau)
+        res_bayopt = gp_minimize(func,                  # the function to minimize
+                                [h_bounds],                 # the bounds on each dimension of x
+                                acq_func="EI",          # the acquisition function
+                                n_calls=n_call_bayopt,  # the number of evaluations of f
+                                n_random_starts=2,      # the number of random initialization points
+                                random_state=1,         # the random seed
+                                n_jobs=1,               # use all the cores for parallel calculation
+                                verbose=verbose)
+        h_opt = res_bayopt.x[0]
+        return h_opt
 
 
     ### OLD VERSION CONSTRAINED LOCAL POLY
