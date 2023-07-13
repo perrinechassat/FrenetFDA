@@ -15,7 +15,8 @@ import dill as pickle
 from tqdm import tqdm
 from compare_smoother import compare_method_with_iteration
 from compare_method_without_iteration import compare_method_without_iteration
-
+import warnings
+warnings.filterwarnings('ignore')
 
 def theta(s):
     curv = lambda s : 2*np.cos(2*np.pi*s) + 5
