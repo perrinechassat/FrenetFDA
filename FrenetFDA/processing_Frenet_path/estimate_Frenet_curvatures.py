@@ -378,10 +378,11 @@ class LocalApproxFrenetODE:
                     Q_test_pred = solve_FrenetSerret_ODE_SO(Bspline_repres.evaluate, self.grid, self.Q[0])
                     dist = np.mean(SO3.geodesic_distance(Q_test, Q_test_pred[test_index]))
                 else:
-                    try:
-                        Z_test_pred = solve_FrenetSerret_ODE_SE(Bspline_repres.evaluate, self.grid, self.Z[0])
-                    except:
-                        Z_test_pred = solve_FrenetSerret_ODE_SE(Bspline_repres.evaluate, self.grid, self.Z[0], method='Radau')
+                    # try:
+                    #     Z_test_pred = solve_FrenetSerret_ODE_SE(Bspline_repres.evaluate, self.grid, self.Z[0])
+                    # except:
+                    #     Z_test_pred = solve_FrenetSerret_ODE_SE(Bspline_repres.evaluate, self.grid, self.Z[0], method='Radau')
+                    Z_test_pred = solve_FrenetSerret_ODE_SE(Bspline_repres.evaluate, self.grid, self.Z[0], method='Radau')
 
                     dist = np.mean(SE3.geodesic_distance(self.Z[test_index], Z_test_pred[test_index]))
 

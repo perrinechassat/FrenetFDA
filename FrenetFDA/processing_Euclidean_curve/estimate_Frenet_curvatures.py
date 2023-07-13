@@ -261,10 +261,11 @@ class ExtrinsicFormulas:
                 raw_theta_train = self.__raw_estimates(self.time[train_index], Y_train, x[0])
                 lbda = np.array([x[1],x[2]])
                 Bspline_repres.fit(self.grid_arc_s[train_index], raw_theta_train, regularization_parameter=lbda)
-                try:
-                    Z_test_pred = solve_FrenetSerret_ODE_SE(Bspline_repres.evaluate, self.grid_arc_s[test_index], method='Linearized')
-                except:
-                    Z_test_pred = solve_FrenetSerret_ODE_SE(Bspline_repres.evaluate, self.grid_arc_s[test_index], method='Radau')
+                # try:
+                #     Z_test_pred = solve_FrenetSerret_ODE_SE(Bspline_repres.evaluate, self.grid_arc_s[test_index], method='Linearized')
+                # except:
+                #     Z_test_pred = solve_FrenetSerret_ODE_SE(Bspline_repres.evaluate, self.grid_arc_s[test_index], method='Radau')
+                Z_test_pred = solve_FrenetSerret_ODE_SE(Bspline_repres.evaluate, self.grid_arc_s[test_index], method='Radau')
                 
                 X_test_pred = Z_test_pred[:,:self.dim,self.dim]
                 score[ind_CV] = Euclidean_dist_cent_rot(Y_test, X_test_pred)
