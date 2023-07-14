@@ -68,7 +68,7 @@ fil = open(filename,"rb")
 dic_model = pickle.load(fil)
 fil.close()
 
-n_MC = dic_model["n_MC"]
+n_MC = dic_model["nb_iterations_simu"]
 P0 = dic_model["P0"]
 mu0 = dic_model["mu0"]
 theta = dic_model["theta"]
