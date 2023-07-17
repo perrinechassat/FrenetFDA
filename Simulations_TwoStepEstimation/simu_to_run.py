@@ -13,7 +13,7 @@ import os.path
 import os
 import dill as pickle
 from tqdm import tqdm
-from compare_smoother import compare_method_with_iteration
+from compare_smoother import compare_method_with_iteration, compare_method_with_iteration_parallel
 from compare_method_without_iteration import compare_method_without_iteration, compare_method_without_iteration_parallel
 import warnings
 warnings.filterwarnings('ignore')
@@ -41,23 +41,23 @@ def arc_length_fct(s):
    a = -0.7536625822195512
    return (np.exp(a*s) - 1)/(np.exp(a) - 1)
 
-directory = r"results/scenario2/model_02/"
-filename_base = "results/scenario2/model_02/"
+# directory = r"results/scenario2/model_02/"
+# filename_base = "results/scenario2/model_02/"
 
-current_directory = os.getcwd()
-final_directory = os.path.join(current_directory, directory)
-if not os.path.exists(final_directory):
-   os.makedirs(final_directory)
+# current_directory = os.getcwd()
+# final_directory = os.path.join(current_directory, directory)
+# if not os.path.exists(final_directory):
+#    os.makedirs(final_directory)
 
-filename = filename_base + "model"
-dic = {"nb_iterations_simu": n_MC, "P0": P0, "mu0": mu0, "theta":theta, "arc_length_fct": arc_length_fct, 
-       "bounds_lambda": bounds_lambda, "bounds_h": bounds_h, "n_call_bayopt": n_call_bayopt}
-if os.path.isfile(filename):
-   print("Le fichier ", filename, " existe déjà.")
-   filename = filename + '_bis'
-fil = open(filename,"xb")
-pickle.dump(dic,fil)
-fil.close()
+# filename = filename_base + "model"
+# dic = {"nb_iterations_simu": n_MC, "P0": P0, "mu0": mu0, "theta":theta, "arc_length_fct": arc_length_fct, 
+#        "bounds_lambda": bounds_lambda, "bounds_h": bounds_h, "n_call_bayopt": n_call_bayopt}
+# if os.path.isfile(filename):
+#    print("Le fichier ", filename, " existe déjà.")
+#    filename = filename + '_bis'
+# fil = open(filename,"xb")
+# pickle.dump(dic,fil)
+# fil.close()
 
 
 # filename = "/home/pchassat/FrenetFDA/Simulations_TwoStepEstimation/results/scenario2/model_02/model"
@@ -81,15 +81,15 @@ fil.close()
 # n_call_bayopt = dic_model["n_call_bayopt"]
 
 
-print(" Scenario 2, simu 1: N=100, gamma=0.001 ")
+# print(" Scenario 2, simu 1: N=100, gamma=0.001 ")
 
-N = 100
-gamma = 0.001
-Gamma = gamma**2*np.eye(3)
-nb_basis = 10
-filename = filename_base + "simu_1_"
+# N = 100
+# gamma = 0.001
+# Gamma = gamma**2*np.eye(3)
+# nb_basis = 10
+# filename = filename_base + "simu_1_"
 
-compare_method_without_iteration_parallel(filename, n_MC, theta, arc_length_fct, N, Gamma, mu0, P0, nb_basis, bounds_h, bounds_lambda, n_call_bayopt)
+# compare_method_without_iteration_parallel(filename, n_MC, theta, arc_length_fct, N, Gamma, mu0, P0, nb_basis, bounds_h, bounds_lambda, n_call_bayopt)
 
 # time_init = time.time()
 
@@ -113,15 +113,15 @@ compare_method_without_iteration_parallel(filename, n_MC, theta, arc_length_fct,
 
 
 
-print(" Scenario 2, simu 2: N=100, gamma=0.005 ")
+# print(" Scenario 2, simu 2: N=100, gamma=0.005 ")
 
-N = 100
-gamma = 0.005
-Gamma = gamma**2*np.eye(3)
-nb_basis = 10
-filename = filename_base + "simu_2_"
+# N = 100
+# gamma = 0.005
+# Gamma = gamma**2*np.eye(3)
+# nb_basis = 10
+# filename = filename_base + "simu_2_"
 
-compare_method_without_iteration_parallel(filename, n_MC, theta, arc_length_fct, N, Gamma, mu0, P0, nb_basis, bounds_h, bounds_lambda, n_call_bayopt)
+# compare_method_without_iteration_parallel(filename, n_MC, theta, arc_length_fct, N, Gamma, mu0, P0, nb_basis, bounds_h, bounds_lambda, n_call_bayopt)
 
 # time_init = time.time()
 
@@ -145,15 +145,15 @@ compare_method_without_iteration_parallel(filename, n_MC, theta, arc_length_fct,
 
 
 
-print(" Scenario 2, simu 3: N=200, gamma=0.001 ")
+# print(" Scenario 2, simu 3: N=200, gamma=0.001 ")
 
-N = 200
-gamma = 0.001
-Gamma = gamma**2*np.eye(3)
-nb_basis = 15
-filename = filename_base + "simu_3_"
+# N = 200
+# gamma = 0.001
+# Gamma = gamma**2*np.eye(3)
+# nb_basis = 15
+# filename = filename_base + "simu_3_"
 
-compare_method_without_iteration_parallel(filename, n_MC, theta, arc_length_fct, N, Gamma, mu0, P0, nb_basis, bounds_h, bounds_lambda, n_call_bayopt)
+# compare_method_without_iteration_parallel(filename, n_MC, theta, arc_length_fct, N, Gamma, mu0, P0, nb_basis, bounds_h, bounds_lambda, n_call_bayopt)
 
 # time_init = time.time()
 
@@ -177,15 +177,15 @@ compare_method_without_iteration_parallel(filename, n_MC, theta, arc_length_fct,
 
 
 
-print(" Scenario 2, simu 4: N=200, gamma=0.005 ")
+# print(" Scenario 2, simu 4: N=200, gamma=0.005 ")
 
-N = 200
-gamma = 0.005
-Gamma = gamma**2*np.eye(3)
-nb_basis = 15
-filename = filename_base + "simu_4_"
+# N = 200
+# gamma = 0.005
+# Gamma = gamma**2*np.eye(3)
+# nb_basis = 15
+# filename = filename_base + "simu_4_"
 
-compare_method_without_iteration_parallel(filename, n_MC, theta, arc_length_fct, N, Gamma, mu0, P0, nb_basis, bounds_h, bounds_lambda, n_call_bayopt)
+# compare_method_without_iteration_parallel(filename, n_MC, theta, arc_length_fct, N, Gamma, mu0, P0, nb_basis, bounds_h, bounds_lambda, n_call_bayopt)
 
 
 # time_init = time.time()
@@ -246,26 +246,28 @@ print(" Scenario 1, simu 1: N=100, alpha=10 ")
 N = 100
 nb_basis = 10
 K = 10**2
+filename = filename_base + "simu_1_"
+compare_method_with_iteration_parallel(filename, n_MC, theta, arc_length_fct, N, mu0, K, nb_basis, bounds_h, bounds_lambda, bounds_lambda_track, n_call_bayopt, tol, max_iter)
 
-time_init = time.time()
+# time_init = time.time()
 
-with tqdm(total=n_MC) as pbar:
-   res = Parallel(n_jobs=n_MC)(delayed(compare_method_with_iteration)(theta, arc_length_fct, N, mu0, K, nb_basis, bounds_h, bounds_lambda, bounds_lambda_track, n_call_bayopt, tol, max_iter) for k in range(n_MC))
-   pbar.update()
+# with tqdm(total=n_MC) as pbar:
+#    res = Parallel(n_jobs=n_MC)(delayed(compare_method_with_iteration)(theta, arc_length_fct, N, mu0, K, nb_basis, bounds_h, bounds_lambda, bounds_lambda_track, n_call_bayopt, tol, max_iter) for k in range(n_MC))
+#    pbar.update()
 
-time_end = time.time()
-duration = time_end - time_init
+# time_end = time.time()
+# duration = time_end - time_init
 
-filename = filename_base + "simu_1"
+# filename = filename_base + "simu_1"
 
-dic = {"results":res, "duration":duration, "N":N, "alpha":np.sqrt(K), "nb_basis":nb_basis}
+# dic = {"results":res, "duration":duration, "N":N, "alpha":np.sqrt(K), "nb_basis":nb_basis}
 
-if os.path.isfile(filename):
-   print("Le fichier ", filename, " existe déjà.")
-   filename = filename + '_bis'
-fil = open(filename,"xb")
-pickle.dump(dic,fil)
-fil.close()
+# if os.path.isfile(filename):
+#    print("Le fichier ", filename, " existe déjà.")
+#    filename = filename + '_bis'
+# fil = open(filename,"xb")
+# pickle.dump(dic,fil)
+# fil.close()
 
 
 
@@ -274,26 +276,29 @@ print(" Scenario 1, simu 2: N=100, alpha=20 ")
 N = 100
 nb_basis = 10
 K = 20**2
+filename = filename_base + "simu_2_"
+compare_method_with_iteration_parallel(filename, n_MC, theta, arc_length_fct, N, mu0, K, nb_basis, bounds_h, bounds_lambda, bounds_lambda_track, n_call_bayopt, tol, max_iter)
 
-time_init = time.time()
 
-with tqdm(total=n_MC) as pbar:
-   res = Parallel(n_jobs=n_MC)(delayed(compare_method_with_iteration)(theta, arc_length_fct, N, mu0, K, nb_basis, bounds_h, bounds_lambda, bounds_lambda_track, n_call_bayopt, tol, max_iter) for k in range(n_MC))
-   pbar.update()
+# time_init = time.time()
 
-time_end = time.time()
-duration = time_end - time_init
+# with tqdm(total=n_MC) as pbar:
+#    res = Parallel(n_jobs=n_MC)(delayed(compare_method_with_iteration)(theta, arc_length_fct, N, mu0, K, nb_basis, bounds_h, bounds_lambda, bounds_lambda_track, n_call_bayopt, tol, max_iter) for k in range(n_MC))
+#    pbar.update()
 
-filename = filename_base + "simu_2"
+# time_end = time.time()
+# duration = time_end - time_init
 
-dic = {"results":res, "duration":duration, "N":N, "alpha":np.sqrt(K), "nb_basis":nb_basis}
+# filename = filename_base + "simu_2"
 
-if os.path.isfile(filename):
-   print("Le fichier ", filename, " existe déjà.")
-   filename = filename + '_bis'
-fil = open(filename,"xb")
-pickle.dump(dic,fil)
-fil.close()
+# dic = {"results":res, "duration":duration, "N":N, "alpha":np.sqrt(K), "nb_basis":nb_basis}
+
+# if os.path.isfile(filename):
+#    print("Le fichier ", filename, " existe déjà.")
+#    filename = filename + '_bis'
+# fil = open(filename,"xb")
+# pickle.dump(dic,fil)
+# fil.close()
 
 
 print(" Scenario 1, simu 3: N=200, alpha=10 ")
@@ -301,26 +306,30 @@ print(" Scenario 1, simu 3: N=200, alpha=10 ")
 N = 200
 nb_basis = 15
 K = 10**2
+filename = filename_base + "simu_3_"
+compare_method_with_iteration_parallel(filename, n_MC, theta, arc_length_fct, N, mu0, K, nb_basis, bounds_h, bounds_lambda, bounds_lambda_track, n_call_bayopt, tol, max_iter)
 
-time_init = time.time()
 
-with tqdm(total=n_MC) as pbar:
-   res = Parallel(n_jobs=n_MC)(delayed(compare_method_with_iteration)(theta, arc_length_fct, N, mu0, K, nb_basis, bounds_h, bounds_lambda, bounds_lambda_track, n_call_bayopt, tol, max_iter) for k in range(n_MC))
-   pbar.update()
 
-time_end = time.time()
-duration = time_end - time_init
+# time_init = time.time()
 
-filename = filename_base + "simu_3"
+# with tqdm(total=n_MC) as pbar:
+#    res = Parallel(n_jobs=n_MC)(delayed(compare_method_with_iteration)(theta, arc_length_fct, N, mu0, K, nb_basis, bounds_h, bounds_lambda, bounds_lambda_track, n_call_bayopt, tol, max_iter) for k in range(n_MC))
+#    pbar.update()
 
-dic = {"results":res, "duration":duration, "N":N, "alpha":np.sqrt(K), "nb_basis":nb_basis}
+# time_end = time.time()
+# duration = time_end - time_init
 
-if os.path.isfile(filename):
-   print("Le fichier ", filename, " existe déjà.")
-   filename = filename + '_bis'
-fil = open(filename,"xb")
-pickle.dump(dic,fil)
-fil.close()
+# filename = filename_base + "simu_3"
+
+# dic = {"results":res, "duration":duration, "N":N, "alpha":np.sqrt(K), "nb_basis":nb_basis}
+
+# if os.path.isfile(filename):
+#    print("Le fichier ", filename, " existe déjà.")
+#    filename = filename + '_bis'
+# fil = open(filename,"xb")
+# pickle.dump(dic,fil)
+# fil.close()
 
 
 
@@ -329,23 +338,26 @@ print(" Scenario 1, simu 4: N=200, alpha=20 ")
 N = 200
 nb_basis = 15
 K = 20**2
+filename = filename_base + "simu_4_"
+compare_method_with_iteration_parallel(filename, n_MC, theta, arc_length_fct, N, mu0, K, nb_basis, bounds_h, bounds_lambda, bounds_lambda_track, n_call_bayopt, tol, max_iter)
 
-time_init = time.time()
 
-with tqdm(total=n_MC) as pbar:
-   res = Parallel(n_jobs=n_MC)(delayed(compare_method_with_iteration)(theta, arc_length_fct, N, mu0, K, nb_basis, bounds_h, bounds_lambda, bounds_lambda_track, n_call_bayopt, tol, max_iter) for k in range(n_MC))
-   pbar.update()
+# time_init = time.time()
 
-time_end = time.time()
-duration = time_end - time_init
+# with tqdm(total=n_MC) as pbar:
+#    res = Parallel(n_jobs=n_MC)(delayed(compare_method_with_iteration)(theta, arc_length_fct, N, mu0, K, nb_basis, bounds_h, bounds_lambda, bounds_lambda_track, n_call_bayopt, tol, max_iter) for k in range(n_MC))
+#    pbar.update()
 
-filename = filename_base + "simu_4"
+# time_end = time.time()
+# duration = time_end - time_init
 
-dic = {"results":res, "duration":duration, "N":N, "alpha":np.sqrt(K), "nb_basis":nb_basis}
+# filename = filename_base + "simu_4"
 
-if os.path.isfile(filename):
-   print("Le fichier ", filename, " existe déjà.")
-   filename = filename + '_bis'
-fil = open(filename,"xb")
-pickle.dump(dic,fil)
-fil.close()
+# dic = {"results":res, "duration":duration, "N":N, "alpha":np.sqrt(K), "nb_basis":nb_basis}
+
+# if os.path.isfile(filename):
+#    print("Le fichier ", filename, " existe déjà.")
+#    filename = filename + '_bis'
+# fil = open(filename,"xb")
+# pickle.dump(dic,fil)
+# fil.close()
