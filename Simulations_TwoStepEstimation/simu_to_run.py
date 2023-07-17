@@ -180,7 +180,7 @@ nb_basis = 15
 time_init = time.time()
 
 with tqdm(total=n_MC) as pbar:
-   res = Parallel(n_jobs=-1)(delayed(compare_method_without_iteration)(theta, arc_length_fct, N, Gamma, mu0, P0, nb_basis, bounds_h, bounds_lambda, n_call_bayopt) for k in range(n_MC))
+   res = Parallel(n_jobs=n_MC)(delayed(compare_method_without_iteration)(theta, arc_length_fct, N, Gamma, mu0, P0, nb_basis, bounds_h, bounds_lambda, n_call_bayopt) for k in range(n_MC))
    pbar.update()
 
 time_end = time.time()
@@ -239,7 +239,7 @@ K = 10**2
 time_init = time.time()
 
 with tqdm(total=n_MC) as pbar:
-   res = Parallel(n_jobs=-1)(delayed(compare_method_with_iteration)(theta, arc_length_fct, N, mu0, K, nb_basis, bounds_h, bounds_lambda, bounds_lambda_track, n_call_bayopt, tol, max_iter) for k in range(n_MC))
+   res = Parallel(n_jobs=n_MC)(delayed(compare_method_with_iteration)(theta, arc_length_fct, N, mu0, K, nb_basis, bounds_h, bounds_lambda, bounds_lambda_track, n_call_bayopt, tol, max_iter) for k in range(n_MC))
    pbar.update()
 
 time_end = time.time()
@@ -267,7 +267,7 @@ K = 20**2
 time_init = time.time()
 
 with tqdm(total=n_MC) as pbar:
-   res = Parallel(n_jobs=-1)(delayed(compare_method_with_iteration)(theta, arc_length_fct, N, mu0, K, nb_basis, bounds_h, bounds_lambda, bounds_lambda_track, n_call_bayopt, tol, max_iter) for k in range(n_MC))
+   res = Parallel(n_jobs=n_MC)(delayed(compare_method_with_iteration)(theta, arc_length_fct, N, mu0, K, nb_basis, bounds_h, bounds_lambda, bounds_lambda_track, n_call_bayopt, tol, max_iter) for k in range(n_MC))
    pbar.update()
 
 time_end = time.time()
@@ -294,7 +294,7 @@ K = 10**2
 time_init = time.time()
 
 with tqdm(total=n_MC) as pbar:
-   res = Parallel(n_jobs=-1)(delayed(compare_method_with_iteration)(theta, arc_length_fct, N, mu0, K, nb_basis, bounds_h, bounds_lambda, bounds_lambda_track, n_call_bayopt, tol, max_iter) for k in range(n_MC))
+   res = Parallel(n_jobs=n_MC)(delayed(compare_method_with_iteration)(theta, arc_length_fct, N, mu0, K, nb_basis, bounds_h, bounds_lambda, bounds_lambda_track, n_call_bayopt, tol, max_iter) for k in range(n_MC))
    pbar.update()
 
 time_end = time.time()
@@ -316,13 +316,13 @@ fil.close()
 print(" Scenario 1, simu 4: N=200, alpha=20 ")
 
 N = 200
-nb_basis = 10
+nb_basis = 15
 K = 20**2
 
 time_init = time.time()
 
 with tqdm(total=n_MC) as pbar:
-   res = Parallel(n_jobs=-1)(delayed(compare_method_with_iteration)(theta, arc_length_fct, N, mu0, K, nb_basis, bounds_h, bounds_lambda, bounds_lambda_track, n_call_bayopt, tol, max_iter) for k in range(n_MC))
+   res = Parallel(n_jobs=n_MC)(delayed(compare_method_with_iteration)(theta, arc_length_fct, N, mu0, K, nb_basis, bounds_h, bounds_lambda, bounds_lambda_track, n_call_bayopt, tol, max_iter) for k in range(n_MC))
    pbar.update()
 
 time_end = time.time()
