@@ -14,7 +14,7 @@ import os
 import dill as pickle
 from tqdm import tqdm
 from compare_smoother import compare_method_with_iteration
-from compare_method_without_iteration import compare_method_without_iteration
+from compare_method_without_iteration import compare_method_without_iteration, compare_method_without_iteration_parallel
 import warnings
 warnings.filterwarnings('ignore')
 
@@ -89,7 +89,7 @@ Gamma = gamma**2*np.eye(3)
 nb_basis = 10
 filename = filename_base + "simu_1_"
 
-compare_method_without_iteration(filename, n_MC, theta, arc_length_fct, N, Gamma, mu0, P0, nb_basis, bounds_h, bounds_lambda, n_call_bayopt)
+compare_method_without_iteration_parallel(filename, n_MC, theta, arc_length_fct, N, Gamma, mu0, P0, nb_basis, bounds_h, bounds_lambda, n_call_bayopt)
 
 # time_init = time.time()
 
@@ -121,7 +121,7 @@ Gamma = gamma**2*np.eye(3)
 nb_basis = 10
 filename = filename_base + "simu_2_"
 
-compare_method_without_iteration(filename, n_MC, theta, arc_length_fct, N, Gamma, mu0, P0, nb_basis, bounds_h, bounds_lambda, n_call_bayopt)
+compare_method_without_iteration_parallel(filename, n_MC, theta, arc_length_fct, N, Gamma, mu0, P0, nb_basis, bounds_h, bounds_lambda, n_call_bayopt)
 
 # time_init = time.time()
 
@@ -153,7 +153,7 @@ Gamma = gamma**2*np.eye(3)
 nb_basis = 15
 filename = filename_base + "simu_3_"
 
-compare_method_without_iteration(filename, n_MC, theta, arc_length_fct, N, Gamma, mu0, P0, nb_basis, bounds_h, bounds_lambda, n_call_bayopt)
+compare_method_without_iteration_parallel(filename, n_MC, theta, arc_length_fct, N, Gamma, mu0, P0, nb_basis, bounds_h, bounds_lambda, n_call_bayopt)
 
 # time_init = time.time()
 
@@ -185,7 +185,7 @@ Gamma = gamma**2*np.eye(3)
 nb_basis = 15
 filename = filename_base + "simu_4_"
 
-compare_method_without_iteration(filename, n_MC, theta, arc_length_fct, N, Gamma, mu0, P0, nb_basis, bounds_h, bounds_lambda, n_call_bayopt)
+compare_method_without_iteration_parallel(filename, n_MC, theta, arc_length_fct, N, Gamma, mu0, P0, nb_basis, bounds_h, bounds_lambda, n_call_bayopt)
 
 
 # time_init = time.time()
