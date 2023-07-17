@@ -165,7 +165,7 @@ def compare_method_without_iteration_parallel(filename_base, n_MC, theta, arc_le
 
     if os.path.isfile(filename):
         print("Le fichier ", filename, " existe déjà.")
-    filename = filename + '_bis'
+        filename = filename + '_bis'
     fil = open(filename,"xb")
     pickle.dump(dic,fil)
     fil.close()
@@ -188,7 +188,7 @@ def compare_method_without_iteration_parallel(filename_base, n_MC, theta, arc_le
 
     if os.path.isfile(filename):
         print("Le fichier ", filename, " existe déjà.")
-    filename = filename + '_bis'
+        filename = filename + '_bis'
     fil = open(filename,"xb")
     pickle.dump(dic,fil)
     fil.close()
@@ -212,7 +212,7 @@ def compare_method_without_iteration_parallel(filename_base, n_MC, theta, arc_le
 
     if os.path.isfile(filename):
         print("Le fichier ", filename, " existe déjà.")
-    filename = filename + '_bis'
+        filename = filename + '_bis'
     fil = open(filename,"xb")
     pickle.dump(dic,fil)
     fil.close()
@@ -229,13 +229,13 @@ def compare_method_without_iteration_parallel(filename_base, n_MC, theta, arc_le
     time_end = time.time()
     duration = time_end - time_init
 
-    filename = filename_base + "basis_theta_GS_leastsquares"
+    filename = filename_base + "basis_theta_CLP_leastsquares"
 
     dic = {"duration":duration, "results":res}
 
     if os.path.isfile(filename):
         print("Le fichier ", filename, " existe déjà.")
-    filename = filename + '_bis'
+        filename = filename + '_bis'
     fil = open(filename,"xb")
     pickle.dump(dic,fil)
     fil.close()
