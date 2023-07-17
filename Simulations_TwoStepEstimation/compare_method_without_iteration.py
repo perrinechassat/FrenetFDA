@@ -147,11 +147,11 @@ def compare_method_without_iteration_parallel(filename_base, n_MC, theta, arc_le
     time_end = time.time()
     duration = time_end - time_init
 
-    Y_tab = np.zeros(n_MC, N, 3)
-    Z_tab = np.zeros(n_MC, N, 4, 4)
-    grid_arc_s_tab = np.zeros(n_MC, N)
-    Z_hat_GS_tab = np.zeros(n_MC, N, 4, 4)
-    Z_hat_CLP_tab = np.zeros(n_MC, N, 4, 4)
+    Y_tab = np.zeros((n_MC, N, 3))
+    Z_tab = np.zeros((n_MC, N, 4, 4))
+    grid_arc_s_tab = np.zeros((n_MC, N))
+    Z_hat_GS_tab = np.zeros((n_MC, N, 4, 4))
+    Z_hat_CLP_tab = np.zeros((n_MC, N, 4, 4))
     for i in range(n_MC):
         Y_tab[i] = res[i][0]
         Z_tab[i] = res[i][1]
@@ -242,4 +242,3 @@ def compare_method_without_iteration_parallel(filename_base, n_MC, theta, arc_le
 
     print('___________________________ End CLP + Least Squares ___________________________')
 
-    
