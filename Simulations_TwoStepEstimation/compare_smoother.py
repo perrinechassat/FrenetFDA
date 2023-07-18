@@ -121,40 +121,7 @@ def compare_method_with_iteration_parallel(filename_base, n_MC, theta, arc_lengt
     print('___________________________ End Init ___________________________')
 
     
-    time_init = time.time()
-
-    with tqdm(total=n_MC) as pbar:
-        res = Parallel(n_jobs=n_MC)(delayed(karcher_mean_smoother)(arc_length_fct, N, Q_noisy_tab[k], nb_basis, bounds_h, bounds_lbda, bounds_lbda_track, n_call_bayopt, tol, max_iter) for k in range(n_MC))
-    pbar.update()
-
-    time_end = time.time()
-    duration = time_end - time_init
-
-    basis_theta_tab = []
-    Q_smooth_tab = np.zeros((n_MC, N, 3, 3))
-    nb_iter_tab = np.zeros(n_MC)
-    duration_tab = np.zeros(n_MC)
-    for i in range(n_MC):
-        if res[i] is not None:
-            basis_theta_tab.append(res[i][0])
-            Q_smooth_tab[i] = res[i][1]
-            nb_iter_tab[i] = res[i][2]
-            duration_tab[i] = res[i][3]
-
-    filename = filename_base + "karcher_mean_smoother"
-
-    dic = {"duration":duration, "basis_theta_tab":basis_theta_tab, "Q_smooth_tab":Q_smooth_tab, "duration_tab":duration_tab, "nb_iter_tab":nb_iter_tab}
-
-    if os.path.isfile(filename):
-        print("Le fichier ", filename, " existe déjà.")
-        filename = filename + '_bis'
-    fil = open(filename,"xb")
-    pickle.dump(dic,fil)
-    fil.close()
-
-
-    print('___________________________ End Karcher Mean ___________________________')
-
+    
 
     time_init = time.time()
 
@@ -192,4 +159,36 @@ def compare_method_with_iteration_parallel(filename_base, n_MC, theta, arc_lengt
     
     
     
-    
+    time_init = time.time()
+
+    with tqdm(total=n_MC) as pbar:
+        res = Parallel(n_jobs=n_MC)(delayed(karcher_mean_smoother)(arc_length_fct, N, Q_noisy_tab[k], nb_basis, bounds_h, bounds_lbda, bounds_lbda_track, n_call_bayopt, tol, max_iter) for k in range(n_MC))
+    pbar.update()
+
+    time_end = time.time()
+    duration = time_end - time_init
+
+    basis_theta_tab = []
+    Q_smooth_tab = np.zeros((n_MC, N, 3, 3))
+    nb_iter_tab = np.zeros(n_MC)
+    duration_tab = np.zeros(n_MC)
+    for i in range(n_MC):
+        if res[i] is not None:
+            basis_theta_tab.append(res[i][0])
+            Q_smooth_tab[i] = res[i][1]
+            nb_iter_tab[i] = res[i][2]
+            duration_tab[i] = res[i][3]
+
+    filename = filename_base + "karcher_mean_smoother"
+
+    dic = {"duration":duration, "basis_theta_tab":basis_theta_tab, "Q_smooth_tab":Q_smooth_tab, "duration_tab":duration_tab, "nb_iter_tab":nb_iter_tab}
+
+    if os.path.isfile(filename):
+        print("Le fichier ", filename, " existe déjà.")
+        filename = filename + '_bis'
+    fil = open(filename,"xb")
+    pickle.dump(dic,fil)
+    fil.close()
+
+
+    print('___________________________ End Karcher Mean ___________________________')

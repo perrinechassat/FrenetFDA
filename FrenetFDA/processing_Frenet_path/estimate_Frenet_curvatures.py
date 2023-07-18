@@ -484,7 +484,6 @@ class TwoStepEstimatorKarcherMean:
     def bayesian_optimization_hyperparameters(self, n_call_bayopt, lambda_bounds, h_bounds, nb_basis, order=4, epsilon=1e-03, max_iter=30, n_splits=10, verbose=True):
 
         def func(x):
-            print(x)
             score = np.zeros(n_splits)
             kf = KFold(n_splits=n_splits, shuffle=True)
             grid_split = self.grid[1:-1]
@@ -515,7 +514,7 @@ class TwoStepEstimatorKarcherMean:
                         n_calls=n_call_bayopt,       # the number of evaluations of f
                         n_random_starts=2,    # the number of random initialization points
                         random_state=1,       # the random seed
-                        n_jobs=1,            # use all the cores for parallel calculation
+                        # n_jobs=1,            # use all the cores for parallel calculation
                         verbose=verbose)
         param_opt = res_bayopt.x
         h_opt = param_opt[0]
@@ -597,10 +596,8 @@ class TwoStepEstimatorTracking:
     def bayesian_optimization_hyperparameters(self, n_call_bayopt, lambda_track_bounds, lambda_bounds, h_bounds, nb_basis, order=4, epsilon=1e-03, max_iter=30, n_splits=10, verbose=True):
 
         # ## CV optimization of lambda
-        Bspline_repres = VectorBSplineSmoothing(self.dim_theta, nb_basis, domain_range=(self.grid[0], self.grid[-1]), order=order, penalization=True)
 
         def func(x):
-            print(x)
             score = np.zeros(n_splits)
             kf = KFold(n_splits=n_splits, shuffle=True)
             grid_split = self.grid[1:-1]
@@ -633,7 +630,7 @@ class TwoStepEstimatorTracking:
                         n_calls=n_call_bayopt,       # the number of evaluations of f
                         n_random_starts=2,    # the number of random initialization points
                         random_state=1,       # the random seed
-                        n_jobs=1,            # use all the cores for parallel calculation
+                        # n_jobs=1,            # use all the cores for parallel calculation
                         verbose=verbose)
         param_opt = res_bayopt.x
         h_opt = param_opt[0]
