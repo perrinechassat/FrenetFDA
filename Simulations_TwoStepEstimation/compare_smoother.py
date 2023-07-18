@@ -66,11 +66,8 @@ def karcher_mean_smoother(arc_length_fct, N, Q_noisy, nb_basis, bounds_h, bounds
         arc_length = arc_length_fct(grid_time)
         karcher_mean_smoother = TwoStepEstimatorKarcherMean(arc_length, Q_noisy)
         h_opt, lbda_opt = karcher_mean_smoother.bayesian_optimization_hyperparameters(n_call_bayopt=n_call_bayopt, lambda_bounds=bounds_lbda, h_bounds=bounds_h, nb_basis=nb_basis, epsilon=tol, max_iter=max_iter, n_splits=5, verbose=False)
-        time_init = time.time()
         basis_theta_karch, Q_smooth_karch, nb_iter_karch = karcher_mean_smoother.fit(h_opt, lbda_opt, nb_basis=nb_basis, epsilon=tol, max_iter=max_iter)
-        time_end = time.time()
-        duration_karch = time_end - time_init
-        return basis_theta_karch, Q_smooth_karch, nb_iter_karch, duration_karch
+        return basis_theta_karch, Q_smooth_karch, nb_iter_karch
     except:
         return None
 
@@ -81,11 +78,8 @@ def tracking_smoother(arc_length_fct, N, Q_noisy, nb_basis, bounds_h, bounds_lbd
         arc_length = arc_length_fct(grid_time)
         tracking_smoother = TwoStepEstimatorTracking(arc_length, Q_noisy)
         h_opt, lbda_opt, lbda_track_opt = tracking_smoother.bayesian_optimization_hyperparameters(n_call_bayopt=n_call_bayopt, lambda_track_bounds=bounds_lbda_track, lambda_bounds=bounds_lbda, h_bounds=bounds_h, nb_basis=nb_basis, epsilon=tol, max_iter=max_iter, n_splits=5, verbose=False)
-        time_init = time.time()
         basis_theta_track, Q_smooth_track, nb_iter_track = tracking_smoother.fit(lbda_track_opt, h_opt, lbda_opt, nb_basis=nb_basis, epsilon=tol, max_iter=max_iter)
-        time_end = time.time()
-        duration_track = time_end - time_init
-        return basis_theta_track, Q_smooth_track, nb_iter_track, duration_track
+        return basis_theta_track, Q_smooth_track, nb_iter_track
     except:
         return None
 
@@ -141,11 +135,10 @@ def compare_method_with_iteration_parallel(filename_base, n_MC, theta, arc_lengt
             basis_theta_tab[i] = res[i][0]
             Q_smooth_tab[i] = res[i][1]
             nb_iter_tab[i] = res[i][2]
-            duration_tab[i] = res[i][3]
 
     filename = filename_base + "tracking_smoother"
 
-    dic = {"duration":duration, "basis_theta_tab":basis_theta_tab, "Q_smooth_tab":Q_smooth_tab, "duration_tab":duration_tab, "nb_iter_tab":nb_iter_tab}
+    dic = {"duration":duration, "basis_theta_tab":basis_theta_tab, "Q_smooth_tab":Q_smooth_tab, "nb_iter_tab":nb_iter_tab}
 
     if os.path.isfile(filename):
         print("Le fichier ", filename, " existe déjà.")
@@ -177,11 +170,10 @@ def compare_method_with_iteration_parallel(filename_base, n_MC, theta, arc_lengt
             basis_theta_tab.append(res[i][0])
             Q_smooth_tab[i] = res[i][1]
             nb_iter_tab[i] = res[i][2]
-            duration_tab[i] = res[i][3]
 
     filename = filename_base + "karcher_mean_smoother"
 
-    dic = {"duration":duration, "basis_theta_tab":basis_theta_tab, "Q_smooth_tab":Q_smooth_tab, "duration_tab":duration_tab, "nb_iter_tab":nb_iter_tab}
+    dic = {"duration":duration, "basis_theta_tab":basis_theta_tab, "Q_smooth_tab":Q_smooth_tab, "nb_iter_tab":nb_iter_tab}
 
     if os.path.isfile(filename):
         print("Le fichier ", filename, " existe déjà.")
