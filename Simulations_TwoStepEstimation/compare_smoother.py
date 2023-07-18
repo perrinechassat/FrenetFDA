@@ -65,7 +65,7 @@ def karcher_mean_smoother(arc_length_fct, N, Q_noisy, nb_basis, bounds_h, bounds
         grid_time = np.linspace(0,1,N)
         arc_length = arc_length_fct(grid_time)
         karcher_mean_smoother = TwoStepEstimatorKarcherMean(arc_length, Q_noisy)
-        h_opt, lbda_opt = karcher_mean_smoother.bayesian_optimization_hyperparameters(n_call_bayopt=n_call_bayopt, lambda_bounds=bounds_lbda, h_bounds=bounds_h, nb_basis=nb_basis, epsilon=tol, max_iter=max_iter, n_splits=5, verbose=False)
+        h_opt, lbda_opt = karcher_mean_smoother.bayesian_optimization_hyperparameters(n_call_bayopt=n_call_bayopt, lambda_bounds=bounds_lbda, h_bounds=bounds_h, nb_basis=nb_basis, epsilon=tol, max_iter=max_iter, n_splits=5, verbose=True)
         basis_theta_karch, Q_smooth_karch, nb_iter_karch = karcher_mean_smoother.fit(h_opt, lbda_opt, nb_basis=nb_basis, epsilon=tol, max_iter=max_iter)
         return basis_theta_karch, Q_smooth_karch, nb_iter_karch
     except:
@@ -77,7 +77,7 @@ def tracking_smoother(arc_length_fct, N, Q_noisy, nb_basis, bounds_h, bounds_lbd
         grid_time = np.linspace(0,1,N)
         arc_length = arc_length_fct(grid_time)
         tracking_smoother = TwoStepEstimatorTracking(arc_length, Q_noisy)
-        h_opt, lbda_opt, lbda_track_opt = tracking_smoother.bayesian_optimization_hyperparameters(n_call_bayopt=n_call_bayopt, lambda_track_bounds=bounds_lbda_track, lambda_bounds=bounds_lbda, h_bounds=bounds_h, nb_basis=nb_basis, epsilon=tol, max_iter=max_iter, n_splits=5, verbose=False)
+        h_opt, lbda_opt, lbda_track_opt = tracking_smoother.bayesian_optimization_hyperparameters(n_call_bayopt=n_call_bayopt, lambda_track_bounds=bounds_lbda_track, lambda_bounds=bounds_lbda, h_bounds=bounds_h, nb_basis=nb_basis, epsilon=tol, max_iter=max_iter, n_splits=5, verbose=True)
         basis_theta_track, Q_smooth_track, nb_iter_track = tracking_smoother.fit(lbda_track_opt, h_opt, lbda_opt, nb_basis=nb_basis, epsilon=tol, max_iter=max_iter)
         return basis_theta_track, Q_smooth_track, nb_iter_track
     except:
@@ -93,6 +93,7 @@ def compare_method_with_iteration_parallel(filename_base, n_MC, theta, arc_lengt
     with tqdm(total=n_MC) as pbar:
         res = Parallel(n_jobs=n_MC)(delayed(init)(theta, arc_length_fct, N, mu0, K) for k in range(n_MC))
     pbar.update()
+    print(np.array(res).shape)
 
     time_end = time.time()
     duration = time_end - time_init
@@ -116,6 +117,7 @@ def compare_method_with_iteration_parallel(filename_base, n_MC, theta, arc_lengt
 
     
     
+
 
     time_init = time.time()
 
@@ -148,7 +150,8 @@ def compare_method_with_iteration_parallel(filename_base, n_MC, theta, arc_lengt
     fil.close()
 
 
-    print('___________________________ End Tracking Mean ___________________________')
+    print('___________________________ End Tracking ___________________________')
+    
     
     
     
