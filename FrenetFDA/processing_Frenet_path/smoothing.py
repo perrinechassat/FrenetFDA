@@ -123,7 +123,7 @@ class KarcherMeanSmoother:
                         n_calls=n_call_bayopt,       # the number of evaluations of f
                         n_random_starts=2,    # the number of random initialization points
                         random_state=1,       # the random seed
-                        n_jobs=1,            # use all the cores for parallel calculation
+                        # n_jobs=1,            # use all the cores for parallel calculation
                         verbose=verbose)
         h_opt = res_bayopt.x[0]
 
@@ -283,7 +283,7 @@ class TrackingSmootherLinear:
                         n_calls=n_call_bayopt,       # the number of evaluations of f
                         n_random_starts=2,    # the number of random initialization points
                         random_state=1,       # the random seed
-                        n_jobs=1,            # use all the cores for parallel calculation
+                        # n_jobs=1,            # use all the cores for parallel calculation
                         verbose=verbose)
         lbda_opt = res_bayopt.x[0]
 
