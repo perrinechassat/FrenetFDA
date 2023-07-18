@@ -218,7 +218,7 @@ bounds_lambda = np.array([[1e-09, 1e-03], [1e-09, 1e-03]])
 bounds_lambda_track = np.array([1e-04, 1])
 bounds_h = np.array([0.05, 1])
 n_call_bayopt = 2
-max_iter = 25
+max_iter = 3
 tol = 0.001
 
 

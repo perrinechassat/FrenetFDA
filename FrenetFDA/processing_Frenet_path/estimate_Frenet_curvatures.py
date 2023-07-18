@@ -619,10 +619,11 @@ class TwoStepEstimatorTracking:
                 print('end fit')
                 Q_test_pred = solve_FrenetSerret_ODE_SO(basis_theta.evaluate, self.grid, self.Q[0])
                 dist = np.mean(SO3.geodesic_distance(Q_test, Q_test_pred[test_index]))
-                print('end distance')
+                print('end distance', dist)
                 score[ind_CV] = dist
                 ind_CV += 1 
-
+            
+            print('FIN CV', np.mean(score))
             return np.mean(score)
 
         # Do a bayesian optimisation and return the optimal parameter (lambda_kappa, lambda_tau)
