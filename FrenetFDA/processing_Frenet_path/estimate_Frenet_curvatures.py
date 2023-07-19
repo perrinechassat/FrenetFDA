@@ -485,7 +485,34 @@ class TwoStepEstimatorKarcherMean:
         return basis_theta.evaluate
 
 
-    def bayesian_optimization_hyperparameters(self, n_call_bayopt, lambda_bounds, h_bounds, nb_basis, order=4, epsilon=1e-03, max_iter=30, n_splits=10, verbose=True):
+    def func_CV(self, x, nb_basis, order=4, epsilon=1e-03, max_iter=30, n_splits=5):
+        score = np.zeros(n_splits)
+        kf = KFold(n_splits=n_splits, shuffle=True)
+        grid_split = self.grid[1:-1]
+        ind_CV = 0
+
+        for train_index, test_index in kf.split(grid_split):
+            # print('-------------- ind_CV:', ind_CV+1)
+            train_index = train_index+1
+            test_index = test_index+1
+            train_index = np.concatenate((np.array([0]), train_index, np.array([len(self.grid[1:-1])+1])))
+            grid_train = self.grid[train_index]
+            Q_train = self.Q[train_index]
+            Q_test = self.Q[test_index]
+            lbda = np.array([x[1],x[2]])
+            # print(lbda)
+            func_basis_theta = self.__fit(grid_train, Q_train, x[0], lbda, nb_basis, epsilon=epsilon, max_iter=max_iter)
+            # print('end fit')
+            Q_test_pred = solve_FrenetSerret_ODE_SO(func_basis_theta, self.grid, self.Q[0])
+            dist = np.mean(SO3.geodesic_distance(Q_test, Q_test_pred[test_index]))
+            # print('end distance')
+            score[ind_CV] = dist
+            ind_CV += 1 
+
+        return np.mean(score)
+
+
+    def bayesian_optimization_hyperparameters(self, n_call_bayopt, lambda_bounds, h_bounds, nb_basis, order=4, epsilon=1e-03, max_iter=30, n_splits=5, verbose=True):
 
         def func(x):
             # print('hyperparam:', x)
@@ -591,7 +618,7 @@ class TwoStepEstimatorTracking:
         Dtheta = theta
         k=0
         while np.linalg.norm(Dtheta)>=epsilon*np.linalg.norm(theta) and k<max_iter:
-            # print('iteration smoother n°', k)
+            print('iteration smoother n°', k)
             theta_old = theta
             Smoother = TrackingSmootherLinear(grid, Q=Q_smooth)
             Q_smooth = Smoother.fit(lbda_track, basis_theta.evaluate)
@@ -604,6 +631,33 @@ class TwoStepEstimatorTracking:
             k += 1  
 
         return basis_theta.evaluate 
+    
+
+    def func_CV(self, x, nb_basis, order=4, epsilon=1e-03, max_iter=30, n_splits=5):
+        score = np.zeros(n_splits)
+        kf = KFold(n_splits=n_splits, shuffle=True)
+        grid_split = self.grid[1:-1]
+        ind_CV = 0
+
+        for train_index, test_index in kf.split(grid_split):
+            # print('-------------- ind_CV:', ind_CV+1)
+            train_index = train_index+1
+            test_index = test_index+1
+            train_index = np.concatenate((np.array([0]), train_index, np.array([len(self.grid[1:-1])+1])))
+            grid_train = self.grid[train_index]
+            Q_train = self.Q[train_index]
+            Q_test = self.Q[test_index]
+            lbda = np.array([x[1],x[2]])
+            # print(lbda)
+            func_basis_theta = self.__fit(grid_train, Q_train, x[3], x[0], lbda, nb_basis, epsilon=epsilon, max_iter=max_iter)
+            # print('end fit')
+            Q_test_pred = solve_FrenetSerret_ODE_SO(func_basis_theta, self.grid, self.Q[0])
+            dist = np.mean(SO3.geodesic_distance(Q_test, Q_test_pred[test_index]))
+            # print('end distance')
+            score[ind_CV] = dist
+            ind_CV += 1 
+
+        return np.mean(score)
 
 
     def bayesian_optimization_hyperparameters(self, n_call_bayopt, lambda_track_bounds, lambda_bounds, h_bounds, nb_basis, order=4, epsilon=1e-03, max_iter=30, n_splits=10, verbose=True):

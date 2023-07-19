@@ -33,7 +33,7 @@ def theta(s):
 
 mu0 = np.eye(4) 
 P0 = 0.01**2*np.eye(6)
-n_MC = 80
+n_MC = 2
 bounds_lambda = np.array([[1e-09, 1e-03], [1e-09, 1e-03]])
 bounds_h = np.array([0.05, 0.35])
 # n_call_bayopt = 50
@@ -217,7 +217,7 @@ def arc_length_fct(s):
 bounds_lambda = np.array([[1e-09, 1e-03], [1e-09, 1e-03]])
 bounds_lambda_track = np.array([1e-04, 1])
 bounds_h = np.array([0.05, 1])
-n_call_bayopt = 20
+n_call_bayopt = 3
 max_iter = 25
 tol = 0.001
 

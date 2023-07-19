@@ -131,7 +131,6 @@ def compare_method_with_iteration_parallel(filename_base, n_MC, theta, arc_lengt
     basis_theta_tab = np.empty((n_MC), dtype=object)
     Q_smooth_tab = np.zeros((n_MC, N, 3, 3))
     nb_iter_tab = np.zeros(n_MC)
-    duration_tab = np.zeros(n_MC)
     for i in range(n_MC):
         if res[i] is not None:
             basis_theta_tab[i] = res[i][0]
@@ -167,7 +166,6 @@ def compare_method_with_iteration_parallel(filename_base, n_MC, theta, arc_lengt
     basis_theta_tab = []
     Q_smooth_tab = np.zeros((n_MC, N, 3, 3))
     nb_iter_tab = np.zeros(n_MC)
-    duration_tab = np.zeros(n_MC)
     for i in range(n_MC):
         if res[i] is not None:
             basis_theta_tab.append(res[i][0])
