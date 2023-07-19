@@ -7,7 +7,7 @@ from FrenetFDA.processing_Frenet_path.smoothing import KarcherMeanSmoother, Trac
 from skopt import gp_minimize
 from joblib import Parallel, delayed
 from sklearn.model_selection import KFold
-from memory_profiler import profile
+# from memory_profiler import profile
 
 class ApproxFrenetODE:
 
