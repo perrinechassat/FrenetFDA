@@ -7,7 +7,7 @@ from FrenetFDA.processing_Frenet_path.smoothing import KarcherMeanSmoother, Trac
 from skopt import gp_minimize
 from joblib import Parallel, delayed
 from sklearn.model_selection import KFold
-
+from memory_profiler import profile
 
 class ApproxFrenetODE:
 
@@ -548,9 +548,9 @@ class TwoStepEstimatorKarcherMean:
                         bounds,        # the bounds on each dimension of x
                         acq_func="EI",        # the acquisition function
                         n_calls=n_call_bayopt,       # the number of evaluations of f
-                        n_random_starts=2,    # the number of random initialization points
-                        random_state=1,       # the random seed
-                        # n_jobs=1,            # use all the cores for parallel calculation
+                        n_initial_points=2,    # the number of random initialization points
+                        random_state=2,       # the random seed
+                        n_jobs=1,            # use all the cores for parallel calculation
                         verbose=verbose)
         param_opt = res_bayopt.x
         h_opt = param_opt[0]
@@ -585,6 +585,7 @@ class TwoStepEstimatorTracking:
         self.adaptive_ind = adaptive 
 
 
+    @profile
     def fit(self, lbda_track, h, lbda, nb_basis, epsilon=1e-03, max_iter=30):
 
         LS_theta = LocalApproxFrenetODE(self.grid, Q=self.Q)
@@ -607,7 +608,7 @@ class TwoStepEstimatorTracking:
 
         return basis_theta, Q_smooth, k 
     
-    
+    @profile
     def __fit(self, grid, Q, lbda_track, h, lbda, nb_basis, epsilon=1e-03, max_iter=30):
 
         LS_theta = LocalApproxFrenetODE(grid, Q=Q)
@@ -618,7 +619,7 @@ class TwoStepEstimatorTracking:
         Dtheta = theta
         k=0
         while np.linalg.norm(Dtheta)>=epsilon*np.linalg.norm(theta) and k<max_iter:
-            print('iteration smoother n°', k)
+            # print('iteration smoother n°', k)
             theta_old = theta
             Smoother = TrackingSmootherLinear(grid, Q=Q_smooth)
             Q_smooth = Smoother.fit(lbda_track, basis_theta.evaluate)
@@ -632,7 +633,7 @@ class TwoStepEstimatorTracking:
 
         return basis_theta.evaluate 
     
-
+    @profile
     def func_CV(self, x, nb_basis, order=4, epsilon=1e-03, max_iter=30, n_splits=5):
         score = np.zeros(n_splits)
         kf = KFold(n_splits=n_splits, shuffle=True)
@@ -670,7 +671,7 @@ class TwoStepEstimatorTracking:
             ind_CV = 0
 
             for train_index, test_index in kf.split(grid_split):
-                # print('-------------- ind_CV:', ind_CV+1)
+                print('-------------- ind_CV:', ind_CV+1)
                 train_index = train_index+1
                 test_index = test_index+1
                 train_index = np.concatenate((np.array([0]), train_index, np.array([len(self.grid[1:-1])+1])))
@@ -683,11 +684,11 @@ class TwoStepEstimatorTracking:
                 # print('end fit')
                 Q_test_pred = solve_FrenetSerret_ODE_SO(func_basis_theta, self.grid, self.Q[0])
                 dist = np.mean(SO3.geodesic_distance(Q_test, Q_test_pred[test_index]))
-                # print('end distance', dist)
+                print('end distance', dist)
                 score[ind_CV] = dist
                 ind_CV += 1 
             
-            # print('FIN CV', np.mean(score))
+            print('FIN CV', np.mean(score))
             return np.mean(score)
 
         # Do a bayesian optimisation and return the optimal parameter (lambda_kappa, lambda_tau)
@@ -697,9 +698,9 @@ class TwoStepEstimatorTracking:
                         bounds,        # the bounds on each dimension of x
                         acq_func="EI",        # the acquisition function
                         n_calls=n_call_bayopt,       # the number of evaluations of f
-                        n_random_starts=2,    # the number of random initialization points
-                        random_state=1,       # the random seed
-                        # n_jobs=1,            # use all the cores for parallel calculation
+                        n_initial_points=2,    # the number of random initialization points
+                        random_state=2,       # the random seed
+                        n_jobs=1,            # use all the cores for parallel calculation
                         verbose=verbose)
         param_opt = res_bayopt.x
         h_opt = param_opt[0]
