@@ -101,11 +101,11 @@ class LocalApproxFrenetODE:
         self.dim_theta = len(np.diag(np.eye(self.dim), k=1))
         self.adaptive_ind = adaptive
 
+
     def raw_estimates(self, h):
-
         grid_theta, raw_theta, weight_theta = self.__raw_estimates(h, self.grid, self.Q)
-
         return grid_theta, raw_theta, weight_theta
+
 
     def __raw_estimates(self, h, grid, Q):
         
@@ -191,6 +191,7 @@ class LocalApproxFrenetODE:
         Bspline_repres.fit(grid_theta, raw_theta, weights=weight_theta, regularization_parameter=regularization_parameter)
         cf_limits = Bspline_repres.compute_confidence_limits(0.95)
         return Bspline_repres
+
 
 
     def __step_cross_val(self, train_index, test_index, h, lbda, Bspline_repres):
@@ -410,7 +411,7 @@ class LocalApproxFrenetODE:
     
 
 
-    
+"""___________________________________________________________________  Karcher Mean  ___________________________________________________________________"""    
 
 
 class TwoStepEstimatorKarcherMean:
@@ -439,46 +440,54 @@ class TwoStepEstimatorKarcherMean:
 
     def fit(self, h, lbda, nb_basis, epsilon=1e-03, max_iter=30):
 
-        LS_theta = LocalApproxFrenetODE(self.grid, Q=self.Q)
+        # LS_theta = LocalApproxFrenetODE(self.grid, Q=self.Q)
+        # basis_theta = LS_theta.Bspline_smooth_estimates(h, nb_basis, order=4, regularization_parameter=lbda)
+
+        basis_theta = VectorBSplineSmoothing(self.dim_theta, nb_basis, domain_range=(self.grid[0], self.grid[-1]), order=4, penalization=True)
         Q_smooth = self.Q
-        basis_theta = LS_theta.Bspline_smooth_estimates(h, nb_basis, order=4, regularization_parameter=lbda)
+        grid_theta, raw_theta, weight_theta = LocalApproxFrenetODE(self.grid, Q=self.Q).raw_estimates(h)
+        basis_theta.fit(grid_theta, raw_theta, weights=weight_theta, regularization_parameter=lbda)
         theta  = basis_theta.evaluate(self.grid)
         Dtheta = theta
         k=0
         while np.linalg.norm(Dtheta)>=epsilon*np.linalg.norm(theta) and k<max_iter:
-            print('iteration n°', k)
+            # print('iteration n°', k)
             theta_old = theta
             Smoother = KarcherMeanSmoother(self.grid, Q=Q_smooth)
             Q_smooth = Smoother.fit(h, basis_theta.evaluate)
-            LS_theta = LocalApproxFrenetODE(self.grid, Q=Q_smooth)
-            basis_theta = LS_theta.Bspline_smooth_estimates(h, nb_basis, order=4, regularization_parameter=lbda)
+            # LS_theta = LocalApproxFrenetODE(self.grid, Q=Q_smooth)
+            # basis_theta = LS_theta.Bspline_smooth_estimates(h, nb_basis, order=4, regularization_parameter=lbda)
+            grid_theta, raw_theta, weight_theta = LocalApproxFrenetODE(self.grid, Q=Q_smooth).raw_estimates(h)
+            basis_theta.fit(grid_theta, raw_theta, weights=weight_theta, regularization_parameter=lbda)
             theta  = basis_theta.evaluate(self.grid)
             Dtheta = theta - theta_old
             k += 1  
-            print('relative error:', np.linalg.norm(Dtheta)/np.linalg.norm(theta))
+            # print('relative error:', np.linalg.norm(Dtheta)/np.linalg.norm(theta))
 
         return basis_theta, Q_smooth, k 
     
 
     def __fit(self, grid, Q, h, lbda, nb_basis, epsilon=1e-03, max_iter=30):
 
-        LS_theta = LocalApproxFrenetODE(grid, Q=Q)
+        # LS_theta = LocalApproxFrenetODE(grid, Q=Q)
+        basis_theta = VectorBSplineSmoothing(self.dim_theta, nb_basis, domain_range=(self.grid[0], self.grid[-1]), order=4, penalization=True)
         Q_smooth = Q
-        basis_theta = LS_theta.Bspline_smooth_estimates(h, nb_basis, order=4, regularization_parameter=lbda)
+        # basis_theta = LS_theta.Bspline_smooth_estimates(h, nb_basis, order=4, regularization_parameter=lbda)
+        grid_theta, raw_theta, weight_theta = LocalApproxFrenetODE(grid, Q=Q).raw_estimates(h)
+        basis_theta.fit(grid_theta, raw_theta, weights=weight_theta, regularization_parameter=lbda)
         theta  = basis_theta.evaluate(grid)
         Dtheta = theta
-        del LS_theta
         k=0
         while np.linalg.norm(Dtheta)>=epsilon*np.linalg.norm(theta) and k<max_iter:
             # print('iteration smoother n°', k)
             theta_old = theta
             Smoother = KarcherMeanSmoother(grid, Q=Q_smooth)
             Q_smooth = Smoother.fit(h, basis_theta.evaluate)
-            LS_theta = LocalApproxFrenetODE(grid, Q=Q_smooth)
-            basis_theta = LS_theta.Bspline_smooth_estimates(h, nb_basis, order=4, regularization_parameter=lbda)
+            grid_theta, raw_theta, weight_theta = LocalApproxFrenetODE(grid, Q=Q_smooth).raw_estimates(h)
+            basis_theta.fit(grid_theta, raw_theta, weights=weight_theta, regularization_parameter=lbda)
+            # basis_theta = LS_theta.Bspline_smooth_estimates(h, nb_basis, order=4, regularization_parameter=lbda)
             theta  = basis_theta.evaluate(grid)
             Dtheta = theta - theta_old
-            del LS_theta
             del Smoother
             k += 1  
 
@@ -560,6 +569,8 @@ class TwoStepEstimatorKarcherMean:
     
 
 
+"""___________________________________________________________________  Tracking  ___________________________________________________________________"""    
+
 
 class TwoStepEstimatorTracking:
 
@@ -585,37 +596,44 @@ class TwoStepEstimatorTracking:
         self.adaptive_ind = adaptive 
 
 
-    @profile
+    # @profile
     def fit(self, lbda_track, h, lbda, nb_basis, epsilon=1e-03, max_iter=30):
 
-        LS_theta = LocalApproxFrenetODE(self.grid, Q=self.Q)
+        # LS_theta = LocalApproxFrenetODE(self.grid, Q=self.Q)
+        # basis_theta = LS_theta.Bspline_smooth_estimates(h, nb_basis, order=4, regularization_parameter=lbda)
+        basis_theta = VectorBSplineSmoothing(self.dim_theta, nb_basis, domain_range=(self.grid[0], self.grid[-1]), order=4, penalization=True)
+        grid_theta, raw_theta, weight_theta = LocalApproxFrenetODE(self.grid, Q=self.Q).raw_estimates(h)
+        basis_theta.fit(grid_theta, raw_theta, weights=weight_theta, regularization_parameter=lbda)
         Q_smooth = self.Q
-        basis_theta = LS_theta.Bspline_smooth_estimates(h, nb_basis, order=4, regularization_parameter=lbda)
         theta  = basis_theta.evaluate(self.grid)
         Dtheta = theta
         k=0
         while np.linalg.norm(Dtheta)>=epsilon*np.linalg.norm(theta) and k<max_iter:
-            print('iteration n°', k)
+            # print('iteration n°', k)
             theta_old = theta
             Smoother = TrackingSmootherLinear(self.grid, Q=Q_smooth)
             Q_smooth = Smoother.fit(lbda_track, basis_theta.evaluate)
-            LS_theta = LocalApproxFrenetODE(self.grid, Q=Q_smooth)
-            basis_theta = LS_theta.Bspline_smooth_estimates(h, nb_basis, order=4, regularization_parameter=lbda)
+            grid_theta, raw_theta, weight_theta = LocalApproxFrenetODE(self.grid, Q=Q_smooth).raw_estimates(h)
+            basis_theta.fit(grid_theta, raw_theta, weights=weight_theta, regularization_parameter=lbda)
+            # LS_theta = LocalApproxFrenetODE(self.grid, Q=Q_smooth)
+            # basis_theta = LS_theta.Bspline_smooth_estimates(h, nb_basis, order=4, regularization_parameter=lbda)
             theta  = basis_theta.evaluate(self.grid)
             Dtheta = theta - theta_old
             k += 1  
-            print('relative error:', np.linalg.norm(Dtheta)/np.linalg.norm(theta))
+            # print('relative error:', np.linalg.norm(Dtheta)/np.linalg.norm(theta))
 
         return basis_theta, Q_smooth, k 
     
-    @profile
+    # @profile
     def __fit(self, grid, Q, lbda_track, h, lbda, nb_basis, epsilon=1e-03, max_iter=30):
-
-        LS_theta = LocalApproxFrenetODE(grid, Q=Q)
+        
+        # LS_theta = LocalApproxFrenetODE(grid, Q=Q)
+        # basis_theta = LS_theta.Bspline_smooth_estimates(h, nb_basis, order=4, regularization_parameter=lbda)
+        basis_theta = VectorBSplineSmoothing(self.dim_theta, nb_basis, domain_range=(self.grid[0], self.grid[-1]), order=4, penalization=True)
+        grid_theta, raw_theta, weight_theta = LocalApproxFrenetODE(grid, Q=Q).raw_estimates(h)
+        basis_theta.fit(grid_theta, raw_theta, weights=weight_theta, regularization_parameter=lbda)
         Q_smooth = Q
-        basis_theta = LS_theta.Bspline_smooth_estimates(h, nb_basis, order=4, regularization_parameter=lbda)
         theta  = basis_theta.evaluate(grid)
-        del LS_theta
         Dtheta = theta
         k=0
         while np.linalg.norm(Dtheta)>=epsilon*np.linalg.norm(theta) and k<max_iter:
@@ -623,17 +641,18 @@ class TwoStepEstimatorTracking:
             theta_old = theta
             Smoother = TrackingSmootherLinear(grid, Q=Q_smooth)
             Q_smooth = Smoother.fit(lbda_track, basis_theta.evaluate)
-            LS_theta = LocalApproxFrenetODE(grid, Q=Q_smooth)
-            basis_theta = LS_theta.Bspline_smooth_estimates(h, nb_basis, order=4, regularization_parameter=lbda)
+            # LS_theta = LocalApproxFrenetODE(grid, Q=Q_smooth)
+            # basis_theta = LS_theta.Bspline_smooth_estimates(h, nb_basis, order=4, regularization_parameter=lbda)
+            grid_theta, raw_theta, weight_theta = LocalApproxFrenetODE(grid, Q=Q_smooth).raw_estimates(h)
+            basis_theta.fit(grid_theta, raw_theta, weights=weight_theta, regularization_parameter=lbda)
             theta  = basis_theta.evaluate(grid)
             Dtheta = theta - theta_old
-            del LS_theta
             del Smoother
             k += 1  
 
         return basis_theta.evaluate 
     
-    @profile
+    # @profile
     def func_CV(self, x, nb_basis, order=4, epsilon=1e-03, max_iter=30, n_splits=5):
         score = np.zeros(n_splits)
         kf = KFold(n_splits=n_splits, shuffle=True)
@@ -671,7 +690,7 @@ class TwoStepEstimatorTracking:
             ind_CV = 0
 
             for train_index, test_index in kf.split(grid_split):
-                print('-------------- ind_CV:', ind_CV+1)
+                # print('-------------- ind_CV:', ind_CV+1)
                 train_index = train_index+1
                 test_index = test_index+1
                 train_index = np.concatenate((np.array([0]), train_index, np.array([len(self.grid[1:-1])+1])))
@@ -684,11 +703,11 @@ class TwoStepEstimatorTracking:
                 # print('end fit')
                 Q_test_pred = solve_FrenetSerret_ODE_SO(func_basis_theta, self.grid, self.Q[0])
                 dist = np.mean(SO3.geodesic_distance(Q_test, Q_test_pred[test_index]))
-                print('end distance', dist)
+                # print('end distance', dist)
                 score[ind_CV] = dist
                 ind_CV += 1 
             
-            print('FIN CV', np.mean(score))
+            # print('FIN CV', np.mean(score))
             return np.mean(score)
 
         # Do a bayesian optimisation and return the optimal parameter (lambda_kappa, lambda_tau)
