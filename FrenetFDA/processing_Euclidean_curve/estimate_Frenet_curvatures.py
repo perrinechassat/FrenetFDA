@@ -97,7 +97,7 @@ class ExtrinsicFormulas:
         Y_test = self.Y[test_index]
         raw_theta_train = self.__raw_estimates(self.time[train_index], Y_train, h)
         Bspline_repres.fit(self.grid_arc_s[train_index], raw_theta_train, regularization_parameter=lbda)
-        Z_test_pred = solve_FrenetSerret_ODE_SE(Bspline_repres.evaluate, self.grid_arc_s[test_index], method='Linearized')
+        Z_test_pred = solve_FrenetSerret_ODE_SE(Bspline_repres.evaluate, self.grid_arc_s[test_index]) #, method='Linearized')
         X_test_pred = Z_test_pred[:,:self.dim,self.dim]
         dist = Euclidean_dist_cent_rot(Y_test, X_test_pred)
         return dist
@@ -224,7 +224,7 @@ class ExtrinsicFormulas:
                             for k in range(N_param_smoothing):
                                 lbda = regularization_parameter_list[k]
                                 Bspline_repres.fit(self.grid_arc_s[train_index], raw_theta_train, regularization_parameter=lbda)
-                                Z_test_pred = solve_FrenetSerret_ODE_SE(Bspline_repres.evaluate, self.grid_arc_s[test_index], method='Linearized')
+                                Z_test_pred = solve_FrenetSerret_ODE_SE(Bspline_repres.evaluate, self.grid_arc_s[test_index]) #, method='Linearized')
                                 X_test_pred = Z_test_pred[:,:self.dim,self.dim]
                                 CV_err_lbda[k,k_split] = Euclidean_dist_cent_rot(Y_test, X_test_pred)
                             k_split += 1 
