@@ -13,7 +13,7 @@ import os.path
 import os
 import dill as pickle
 from tqdm import tqdm
-from compare_smoother import compare_method_with_iteration, compare_method_with_iteration_parallel
+from compare_smoother import compare_method_with_iteration, compare_method_with_iteration_parallel, smoother_on_smooth_data
 from compare_method_without_iteration import compare_method_without_iteration, compare_method_without_iteration_parallel
 import warnings
 warnings.filterwarnings('ignore')
@@ -33,31 +33,31 @@ def theta(s):
 
 mu0 = np.eye(4) 
 P0 = 0.01**2*np.eye(6)
-n_MC = 80
+n_MC = 90
 bounds_lambda = np.array([[1e-09, 1e-03], [1e-09, 1e-03]])
 bounds_h = np.array([0.05, 0.35])
-# n_call_bayopt = 50
+n_call_bayopt = 50
 def arc_length_fct(s):
    a = -0.7536625822195512
    return (np.exp(a*s) - 1)/(np.exp(a) - 1)
 
-# directory = r"results/scenario2/model_02/"
-# filename_base = "results/scenario2/model_02/"
+directory = r"results/scenario2/model_03/"
+filename_base = "results/scenario2/model_03/"
 
-# current_directory = os.getcwd()
-# final_directory = os.path.join(current_directory, directory)
-# if not os.path.exists(final_directory):
-#    os.makedirs(final_directory)
+current_directory = os.getcwd()
+final_directory = os.path.join(current_directory, directory)
+if not os.path.exists(final_directory):
+   os.makedirs(final_directory)
 
-# filename = filename_base + "model"
-# dic = {"nb_iterations_simu": n_MC, "P0": P0, "mu0": mu0, "theta":theta, "arc_length_fct": arc_length_fct, 
-#        "bounds_lambda": bounds_lambda, "bounds_h": bounds_h, "n_call_bayopt": n_call_bayopt}
-# if os.path.isfile(filename):
-#    print("Le fichier ", filename, " existe déjà.")
-#    filename = filename + '_bis'
-# fil = open(filename,"xb")
-# pickle.dump(dic,fil)
-# fil.close()
+filename = filename_base + "model"
+dic = {"nb_iterations_simu": n_MC, "P0": P0, "mu0": mu0, "theta":theta, "arc_length_fct": arc_length_fct, 
+       "bounds_lambda": bounds_lambda, "bounds_h": bounds_h, "n_call_bayopt": n_call_bayopt}
+if os.path.isfile(filename):
+   print("Le fichier ", filename, " existe déjà.")
+   filename = filename + '_bis'
+fil = open(filename,"xb")
+pickle.dump(dic,fil)
+fil.close()
 
 
 # filename = "/home/pchassat/FrenetFDA/Simulations_TwoStepEstimation/results/scenario2/model_02/model"
@@ -81,15 +81,15 @@ def arc_length_fct(s):
 # n_call_bayopt = dic_model["n_call_bayopt"]
 
 
-# print(" Scenario 2, simu 1: N=100, gamma=0.001 ")
+print(" Scenario 2, simu 1: N=100, gamma=0.001 ")
 
-# N = 100
-# gamma = 0.001
-# Gamma = gamma**2*np.eye(3)
-# nb_basis = 10
-# filename = filename_base + "simu_1_"
+N = 100
+gamma = 0.001
+Gamma = gamma**2*np.eye(3)
+nb_basis = 10
+filename = filename_base + "simu_1_"
 
-# compare_method_without_iteration_parallel(filename, n_MC, theta, arc_length_fct, N, Gamma, mu0, P0, nb_basis, bounds_h, bounds_lambda, n_call_bayopt)
+compare_method_without_iteration_parallel(filename, n_MC, theta, arc_length_fct, N, Gamma, mu0, P0, nb_basis, bounds_h, bounds_lambda, n_call_bayopt)
 
 # time_init = time.time()
 
@@ -113,15 +113,15 @@ def arc_length_fct(s):
 
 
 
-# print(" Scenario 2, simu 2: N=100, gamma=0.005 ")
+print(" Scenario 2, simu 2: N=100, gamma=0.005 ")
 
-# N = 100
-# gamma = 0.005
-# Gamma = gamma**2*np.eye(3)
-# nb_basis = 10
-# filename = filename_base + "simu_2_"
+N = 100
+gamma = 0.005
+Gamma = gamma**2*np.eye(3)
+nb_basis = 10
+filename = filename_base + "simu_2_"
 
-# compare_method_without_iteration_parallel(filename, n_MC, theta, arc_length_fct, N, Gamma, mu0, P0, nb_basis, bounds_h, bounds_lambda, n_call_bayopt)
+compare_method_without_iteration_parallel(filename, n_MC, theta, arc_length_fct, N, Gamma, mu0, P0, nb_basis, bounds_h, bounds_lambda, n_call_bayopt)
 
 # time_init = time.time()
 
@@ -145,15 +145,15 @@ def arc_length_fct(s):
 
 
 
-# print(" Scenario 2, simu 3: N=200, gamma=0.001 ")
+print(" Scenario 2, simu 3: N=200, gamma=0.001 ")
 
-# N = 200
-# gamma = 0.001
-# Gamma = gamma**2*np.eye(3)
-# nb_basis = 15
-# filename = filename_base + "simu_3_"
+N = 200
+gamma = 0.001
+Gamma = gamma**2*np.eye(3)
+nb_basis = 15
+filename = filename_base + "simu_3_"
 
-# compare_method_without_iteration_parallel(filename, n_MC, theta, arc_length_fct, N, Gamma, mu0, P0, nb_basis, bounds_h, bounds_lambda, n_call_bayopt)
+compare_method_without_iteration_parallel(filename, n_MC, theta, arc_length_fct, N, Gamma, mu0, P0, nb_basis, bounds_h, bounds_lambda, n_call_bayopt)
 
 # time_init = time.time()
 
@@ -177,15 +177,15 @@ def arc_length_fct(s):
 
 
 
-# print(" Scenario 2, simu 4: N=200, gamma=0.005 ")
+print(" Scenario 2, simu 4: N=200, gamma=0.005 ")
 
-# N = 200
-# gamma = 0.005
-# Gamma = gamma**2*np.eye(3)
-# nb_basis = 15
-# filename = filename_base + "simu_4_"
+N = 200
+gamma = 0.005
+Gamma = gamma**2*np.eye(3)
+nb_basis = 15
+filename = filename_base + "simu_4_"
 
-# compare_method_without_iteration_parallel(filename, n_MC, theta, arc_length_fct, N, Gamma, mu0, P0, nb_basis, bounds_h, bounds_lambda, n_call_bayopt)
+compare_method_without_iteration_parallel(filename, n_MC, theta, arc_length_fct, N, Gamma, mu0, P0, nb_basis, bounds_h, bounds_lambda, n_call_bayopt)
 
 
 # time_init = time.time()
@@ -217,7 +217,7 @@ def arc_length_fct(s):
 bounds_lambda = np.array([[1e-09, 1e-03], [1e-09, 1e-03]])
 bounds_lambda_track = np.array([1e-04, 1])
 bounds_h = np.array([0.05, 1])
-n_call_bayopt = 40
+n_call_bayopt = 50
 max_iter = 30
 tol = 0.001
 
@@ -361,3 +361,46 @@ compare_method_with_iteration_parallel(filename, n_MC, theta, arc_length_fct, N,
 # fil = open(filename,"xb")
 # pickle.dump(dic,fil)
 # fil.close()
+
+
+
+""" SCENARIO 3: """
+
+
+directory = r"results/scenario3/model_01/"
+filename_base = "results/scenario3/model_01/"
+
+current_directory = os.getcwd()
+final_directory = os.path.join(current_directory, directory)
+if not os.path.exists(final_directory):
+   os.makedirs(final_directory)
+
+bounds_lambda = np.array([[1e-09, 1e-03], [1e-09, 1e-03]])
+bounds_lambda_track = np.array([1e-04, 1])
+bounds_h = np.array([0.05, 1])
+n_call_bayopt = 50
+max_iter = 30
+tol = 0.001
+
+filename = filename_base + "model"
+dic = {"nb_iterations_simu": n_MC, "mu0": mu0, "theta":theta, "arc_length_fct": arc_length_fct, "tol":tol, "max_iter":max_iter, 
+       "bounds_lambda": bounds_lambda, "bounds_h": bounds_h, "n_call_bayopt": n_call_bayopt, "bounds_lambda_track": bounds_lambda_track}
+if os.path.isfile(filename):
+   print("Le fichier ", filename, " existe déjà.")
+   filename = filename + '_bis'
+fil = open(filename,"xb")
+pickle.dump(dic,fil)
+fil.close()
+
+
+print('Start Smoother on simu 1')
+
+filename_simu_Q  = "/home/pchassat/FrenetFDA/Simulations_TwoStepEstimation/results/scenario2/model_03/simu_1"
+smoother_on_smooth_data(filename_base, filename_simu_Q, arc_length_fct, bounds_h, bounds_lambda, bounds_lambda_track, n_call_bayopt, tol, max_iter)
+
+
+print('Start Smoother on simu 2')
+
+filename_simu_Q  = "/home/pchassat/FrenetFDA/Simulations_TwoStepEstimation/results/scenario2/model_03/simu_2"
+smoother_on_smooth_data(filename_base, filename_simu_Q, arc_length_fct, bounds_h, bounds_lambda, bounds_lambda_track, n_call_bayopt, tol, max_iter)
+

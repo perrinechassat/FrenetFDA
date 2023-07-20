@@ -155,9 +155,9 @@ def compare_method_without_iteration_parallel(filename_base, n_MC, theta, arc_le
     for i in range(n_MC):
         Y_tab[i] = res[i][0]
         Z_tab[i] = res[i][1]
-        grid_arc_s_tab = res[i][2]
-        Z_hat_GS_tab = res[i][3]
-        Z_hat_CLP_tab = res[i][4]
+        grid_arc_s_tab[i] = res[i][2]
+        Z_hat_GS_tab[i] = res[i][3]
+        Z_hat_CLP_tab[i] = res[i][4]
 
     filename = filename_base + "init_and_Q"
 

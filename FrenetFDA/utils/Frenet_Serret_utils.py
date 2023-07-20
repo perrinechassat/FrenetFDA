@@ -14,7 +14,7 @@ def solve_FrenetSerret_ODE_SE(theta, t_eval, Z0=None,  method='Linearized'):
         rho[0,0] = 1
         A_theta = lambda s: np.vstack((np.hstack(((- np.diag(theta(s), 1) + np.diag(theta(s), -1)), rho)), np.zeros(dim+2)))
         ode = lambda s,Z: (np.matmul(Z.reshape(dim+2,dim+2),A_theta(s))).flatten()
-        sol = solve_ivp(ode, t_span=(t_eval[0], t_eval[-1]), y0=Z0.flatten(), t_eval=t_eval,  method='Radau')
+        sol = solve_ivp(ode, t_span=(t_eval[0], t_eval[-1]), y0=Z0.flatten(), t_eval=t_eval) #,  method='Radau')
         Z = sol.y.reshape(dim+2,dim+2,len(t_eval))
         Z = np.moveaxis(Z, -1, 0)
     elif method=='Linearized':
@@ -50,7 +50,7 @@ def solve_FrenetSerret_ODE_SO(theta, t_eval, Q0=None, method='Radau'):
     if method=='Radau':
         A_theta = lambda s: - np.diag(theta(s), 1) + np.diag(theta(s), -1)
         ode = lambda s,Q: (np.matmul(Q.reshape(dim+1,dim+1),A_theta(s))).flatten()
-        sol = solve_ivp(ode, t_span=(t_eval[0], t_eval[-1]), y0=Q0.flatten(), t_eval=t_eval,  method='Radau')
+        sol = solve_ivp(ode, t_span=(t_eval[0], t_eval[-1]), y0=Q0.flatten(), t_eval=t_eval) #,  method='Radau')
         Q = sol.y.reshape(dim+1,dim+1,len(t_eval))
         Q = np.moveaxis(Q, -1, 0)
     return Q

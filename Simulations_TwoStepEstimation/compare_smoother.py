@@ -184,3 +184,155 @@ def compare_method_with_iteration_parallel(filename_base, n_MC, theta, arc_lengt
     fil.close()
 
     print('___________________________ End Karcher Mean ___________________________')
+
+
+
+
+
+def smoother_on_smooth_data(filename_base, filename_simu_Q, arc_length_fct, bounds_h, bounds_lbda, bounds_lbda_track, n_call_bayopt, tol, max_iter):
+
+    filename = filename_simu_Q + '_init_and_Q'
+    fil = open(filename,"rb")
+    dic_init = pickle.load(fil)
+    fil.close()
+
+    Y_tab = dic_init["Y_tab"]
+    N = dic_init["N"]
+    Gamma = dic_init["gamma"]
+    nb_basis = dic_init["nb_basis"]
+    Z_tab = dic_init["Z_tab"]
+    n_MC = Z_tab.shape[0]
+    grid_arc_s_tab = dic_init["grid_arc_s_tab"]
+    Z_hat_GS_tab = dic_init["Z_hat_GS_tab"]
+    Z_hat_CLP_tab = dic_init["Z_hat_CLP_tab"]
+
+
+    time_init = time.time()
+
+    with tqdm(total=n_MC) as pbar:
+        res = Parallel(n_jobs=n_MC)(delayed(tracking_smoother)(arc_length_fct, N, Z_hat_GS_tab[k][:,:3,:3], nb_basis, bounds_h, bounds_lbda, bounds_lbda_track, n_call_bayopt, tol, max_iter) for k in range(n_MC))
+    pbar.update()
+
+    time_end = time.time()
+    duration = time_end - time_init
+
+    basis_theta_tab = np.empty((n_MC), dtype=object)
+    Q_smooth_tab = np.zeros((n_MC, N, 3, 3))
+    nb_iter_tab = np.zeros(n_MC)
+    for i in range(n_MC):
+        if res[i] is not None:
+            basis_theta_tab[i] = res[i][0]
+            Q_smooth_tab[i] = res[i][1]
+            nb_iter_tab[i] = res[i][2]
+
+    filename = filename_base + "tracking_smoother_from_GS"
+
+    dic = {"duration":duration, "basis_theta_tab":basis_theta_tab, "Q_smooth_tab":Q_smooth_tab, "nb_iter_tab":nb_iter_tab}
+
+    if os.path.isfile(filename):
+        print("Le fichier ", filename, " existe déjà.")
+        filename = filename + '_bis'
+    fil = open(filename,"xb")
+    pickle.dump(dic,fil)
+    fil.close()
+
+    print('___________________________ End Tracking GS ___________________________')
+    
+    
+    
+    time_init = time.time()
+
+    with tqdm(total=n_MC) as pbar:
+        res = Parallel(n_jobs=n_MC)(delayed(karcher_mean_smoother)(arc_length_fct, N, Z_hat_GS_tab[k][:,:3,:3], nb_basis, bounds_h, bounds_lbda, n_call_bayopt, tol, max_iter) for k in range(n_MC))
+    pbar.update()
+
+    time_end = time.time()
+    duration = time_end - time_init
+
+    basis_theta_tab = []
+    Q_smooth_tab = np.zeros((n_MC, N, 3, 3))
+    nb_iter_tab = np.zeros(n_MC)
+    for i in range(n_MC):
+        if res[i] is not None:
+            basis_theta_tab.append(res[i][0])
+            Q_smooth_tab[i] = res[i][1]
+            nb_iter_tab[i] = res[i][2]
+
+    filename = filename_base + "karcher_mean_smoother_from_GS"
+
+    dic = {"duration":duration, "basis_theta_tab":basis_theta_tab, "Q_smooth_tab":Q_smooth_tab, "nb_iter_tab":nb_iter_tab}
+
+    if os.path.isfile(filename):
+        print("Le fichier ", filename, " existe déjà.")
+        filename = filename + '_bis'
+    fil = open(filename,"xb")
+    pickle.dump(dic,fil)
+    fil.close()
+
+    print('___________________________ End Karcher Mean GS ___________________________')
+
+
+
+    time_init = time.time()
+
+    with tqdm(total=n_MC) as pbar:
+        res = Parallel(n_jobs=n_MC)(delayed(tracking_smoother)(arc_length_fct, N, Z_hat_CLP_tab[k][:,:3,:3], nb_basis, bounds_h, bounds_lbda, bounds_lbda_track, n_call_bayopt, tol, max_iter) for k in range(n_MC))
+    pbar.update()
+
+    time_end = time.time()
+    duration = time_end - time_init
+
+    basis_theta_tab = np.empty((n_MC), dtype=object)
+    Q_smooth_tab = np.zeros((n_MC, N, 3, 3))
+    nb_iter_tab = np.zeros(n_MC)
+    for i in range(n_MC):
+        if res[i] is not None:
+            basis_theta_tab[i] = res[i][0]
+            Q_smooth_tab[i] = res[i][1]
+            nb_iter_tab[i] = res[i][2]
+
+    filename = filename_base + "tracking_smoother_from_CLP"
+
+    dic = {"duration":duration, "basis_theta_tab":basis_theta_tab, "Q_smooth_tab":Q_smooth_tab, "nb_iter_tab":nb_iter_tab}
+
+    if os.path.isfile(filename):
+        print("Le fichier ", filename, " existe déjà.")
+        filename = filename + '_bis'
+    fil = open(filename,"xb")
+    pickle.dump(dic,fil)
+    fil.close()
+
+    print('___________________________ End Tracking CLP ___________________________')
+    
+    
+    
+    time_init = time.time()
+
+    with tqdm(total=n_MC) as pbar:
+        res = Parallel(n_jobs=n_MC)(delayed(karcher_mean_smoother)(arc_length_fct, N, Z_hat_CLP_tab[k][:,:3,:3], nb_basis, bounds_h, bounds_lbda, n_call_bayopt, tol, max_iter) for k in range(n_MC))
+    pbar.update()
+
+    time_end = time.time()
+    duration = time_end - time_init
+
+    basis_theta_tab = []
+    Q_smooth_tab = np.zeros((n_MC, N, 3, 3))
+    nb_iter_tab = np.zeros(n_MC)
+    for i in range(n_MC):
+        if res[i] is not None:
+            basis_theta_tab.append(res[i][0])
+            Q_smooth_tab[i] = res[i][1]
+            nb_iter_tab[i] = res[i][2]
+
+    filename = filename_base + "karcher_mean_smoother_from_CLP"
+
+    dic = {"duration":duration, "basis_theta_tab":basis_theta_tab, "Q_smooth_tab":Q_smooth_tab, "nb_iter_tab":nb_iter_tab}
+
+    if os.path.isfile(filename):
+        print("Le fichier ", filename, " existe déjà.")
+        filename = filename + '_bis'
+    fil = open(filename,"xb")
+    pickle.dump(dic,fil)
+    fil.close()
+
+    print('___________________________ End Karcher Mean CLP ___________________________')
