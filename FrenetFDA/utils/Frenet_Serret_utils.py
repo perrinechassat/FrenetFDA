@@ -3,98 +3,104 @@ from scipy.integrate import solve_ivp
 from fdasrsf import curve_functions as cf
 from FrenetFDA.utils.Lie_group.SE3_utils import SE3
 from scipy.linalg import block_diag
-import multiprocessing
+# import multiprocessing
 import time
 
 
-def solve_ivp_with_timeout(fun, t_span, y0, t_eval=None, timeout=None, **kwargs):
-    # def target():
-    #     result = solve_ivp(fun, t_span, y0, t_eval=t_eval, **kwargs)
-    #     return result
+# def solve_ivp_with_timeout(fun, t_span, y0, t_eval=None, timeout=None, **kwargs):
+#     # def target():
+#     #     result = solve_ivp(fun, t_span, y0, t_eval=t_eval, **kwargs)
+#     #     return result
 
-    # process = multiprocessing.Process(target=target)
-    # process.start()
-    # process.join(timeout)
+#     # process = multiprocessing.Process(target=target)
+#     # process.start()
+#     # process.join(timeout)
 
-    # if process.is_alive():
-    #     process.terminate()
-    #     process.join()
-    #     return False
-    # else:
-    #     process.join() 
-    #     return result
+#     # if process.is_alive():
+#     #     process.terminate()
+#     #     process.join()
+#     #     return False
+#     # else:
+#     #     process.join() 
+#     #     return result
     
-    def target():
-        return solve_ivp(fun, t_span, y0, t_eval=t_eval, **kwargs)
+#     def target():
+#         return solve_ivp(fun, t_span, y0, t_eval=t_eval, **kwargs)
 
-    process = multiprocessing.Process(target=target)
-    process.start()
-    process.join(timeout)
+#     process = multiprocessing.Process(target=target)
+#     process.start()
+#     process.join(timeout)
 
-    if process.is_alive():
-        process.terminate()
-        process.join()
-        return None 
-    else:
-        return solve_ivp(fun, t_span, y0, t_eval=t_eval, **kwargs)
+#     if process.is_alive():
+#         process.terminate()
+#         process.join()
+#         return None 
+#     else:
+#         return solve_ivp(fun, t_span, y0, t_eval=t_eval, **kwargs)
 
 
 
 
 
 def solve_FrenetSerret_ODE_SE(theta, t_eval, Z0=None,  method='Radau'):
-    N, dim = theta(t_eval).shape
-    if Z0 is None:
-        Z0 = np.eye(dim+2)
-    if method=='Radau':
-        rho = np.zeros((dim+1,1))
-        rho[0,0] = 1
-        A_theta = lambda s: np.vstack((np.hstack(((- np.diag(theta(s), 1) + np.diag(theta(s), -1)), rho)), np.zeros(dim+2)))
-        ode = lambda s,Z: (np.matmul(Z.reshape(dim+2,dim+2),A_theta(s))).flatten()
-        sol = solve_ivp_with_timeout(ode, t_span=(t_eval[0], t_eval[-1]), y0=Z0.flatten(), t_eval=t_eval, timeout=60) #,  method='Radau')
-        if sol is None:
-            return np.stack([np.eye(dim+2) for i in range(len(t_eval))])
-        else:
+    if np.isnan(theta(t_eval)).any():
+        return np.stack([np.eye(dim+2) for i in range(len(t_eval))])
+    else:
+        N, dim = theta(t_eval).shape
+        if Z0 is None:
+            Z0 = np.eye(dim+2)
+        if method=='Radau':
+            rho = np.zeros((dim+1,1))
+            rho[0,0] = 1
+            A_theta = lambda s: np.vstack((np.hstack(((- np.diag(theta(s), 1) + np.diag(theta(s), -1)), rho)), np.zeros(dim+2)))
+            ode = lambda s,Z: (np.matmul(Z.reshape(dim+2,dim+2),A_theta(s))).flatten()
+            sol = solve_ivp(ode, t_span=(t_eval[0], t_eval[-1]), y0=Z0.flatten(), t_eval=t_eval) #, timeout=60) #,  method='Radau')
+            # if sol is None:
+            #     return np.stack([np.eye(dim+2) for i in range(len(t_eval))])
+            # else:
             Z = sol.y.reshape(dim+2,dim+2,len(t_eval))
             Z = np.moveaxis(Z, -1, 0)
             return Z
-    elif method=='Linearized':
-        n = dim+1
-        X0 = Z0[:n,n]
-        Q0 = Z0[:n,:n]
-        A_theta = lambda s:  np.diag(theta(s), 1) - np.diag(theta(s), -1)
-        A22 = lambda t: np.kron(A_theta(t), np.eye(n))
-        A11 = np.zeros((n,n))
-        A21 = np.zeros((n*n,n))
-        A12 = np.concatenate((np.eye(n), np.zeros((n,n*(n-1)))), axis=1)
-        Az  = lambda t: np.concatenate((np.concatenate((A11, A12), axis=1), np.concatenate((A21, A22(t)), axis=1)))
-        Z0 = np.concatenate((X0, np.concatenate(([Q0[:,i] for i in range(n)]))))
-        ode_func = lambda t,z: np.matmul(Az(t),z)
-        sol = solve_ivp(ode_func, t_span=(t_eval[0], t_eval[-1]), y0=Z0, t_eval=t_eval)
-        sol_Z = sol.y
-        """ Reshape Z """
-        sol_Z = np.reshape(sol_Z, (dim+2,dim+1,-1))
-        sol_Z = np.moveaxis(sol_Z, (0,1,2),(2,1,0))
-        Z = np.zeros((len(t_eval), dim+2, dim+2))
-        Z[:,dim+1, dim+1] = np.ones(len(t_eval))
-        Z[:,:dim+1,:dim+1] = sol_Z[:,:,1:dim+2]
-        Z[:,:dim+1,dim+1] = sol_Z[:,:,0]
-        return Z
-    else:
-        raise Exception('Invalide method name, choose between: Linearized or Radau')
+        elif method=='Linearized':
+            n = dim+1
+            X0 = Z0[:n,n]
+            Q0 = Z0[:n,:n]
+            A_theta = lambda s:  np.diag(theta(s), 1) - np.diag(theta(s), -1)
+            A22 = lambda t: np.kron(A_theta(t), np.eye(n))
+            A11 = np.zeros((n,n))
+            A21 = np.zeros((n*n,n))
+            A12 = np.concatenate((np.eye(n), np.zeros((n,n*(n-1)))), axis=1)
+            Az  = lambda t: np.concatenate((np.concatenate((A11, A12), axis=1), np.concatenate((A21, A22(t)), axis=1)))
+            Z0 = np.concatenate((X0, np.concatenate(([Q0[:,i] for i in range(n)]))))
+            ode_func = lambda t,z: np.matmul(Az(t),z)
+            sol = solve_ivp(ode_func, t_span=(t_eval[0], t_eval[-1]), y0=Z0, t_eval=t_eval)
+            sol_Z = sol.y
+            """ Reshape Z """
+            sol_Z = np.reshape(sol_Z, (dim+2,dim+1,-1))
+            sol_Z = np.moveaxis(sol_Z, (0,1,2),(2,1,0))
+            Z = np.zeros((len(t_eval), dim+2, dim+2))
+            Z[:,dim+1, dim+1] = np.ones(len(t_eval))
+            Z[:,:dim+1,:dim+1] = sol_Z[:,:,1:dim+2]
+            Z[:,:dim+1,dim+1] = sol_Z[:,:,0]
+            return Z
+        else:
+            raise Exception('Invalide method name, choose between: Linearized or Radau')
     
 
 
 def solve_FrenetSerret_ODE_SO(theta, t_eval, Q0=None, method='Radau'):
-    N, dim = theta(t_eval).shape
-    if Q0 is None:
-        Q0 = np.eye(dim+1)
-    A_theta = lambda s: - np.diag(theta(s), 1) + np.diag(theta(s), -1)
-    ode = lambda s,Q: (np.matmul(Q.reshape(dim+1,dim+1),A_theta(s))).flatten()
-    sol = solve_ivp_with_timeout(ode, t_span=(t_eval[0], t_eval[-1]), y0=Q0.flatten(), t_eval=t_eval, timeout=60) #,  method='Radau')
-    if sol is None:
+    if np.isnan(theta(t_eval)).any():
         return np.stack([np.eye(dim+1) for i in range(len(t_eval))])
     else:
+        N, dim = theta(t_eval).shape
+        if Q0 is None:
+            Q0 = np.eye(dim+1)
+        A_theta = lambda s: - np.diag(theta(s), 1) + np.diag(theta(s), -1)
+        ode = lambda s,Q: (np.matmul(Q.reshape(dim+1,dim+1),A_theta(s))).flatten()
+        sol = solve_ivp(ode, t_span=(t_eval[0], t_eval[-1]), y0=Q0.flatten(), t_eval=t_eval) #, timeout=60) #,  method='Radau')
+        # if sol is None:
+        #     return np.stack([np.eye(dim+1) for i in range(len(t_eval))])
+        # else:
         Q = sol.y.reshape(dim+1,dim+1,len(t_eval))
         Q = np.moveaxis(Q, -1, 0)
         return Q
