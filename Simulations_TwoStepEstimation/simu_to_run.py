@@ -145,15 +145,15 @@ fil.close()
 
 
 
-print(" Scenario 2, simu 3: N=200, gamma=0.001 ")
+# print(" Scenario 2, simu 3: N=200, gamma=0.001 ")
 
-N = 200
-gamma = 0.001
-Gamma = gamma**2*np.eye(3)
-nb_basis = 15
-filename = filename_base + "simu_3_"
+# N = 200
+# gamma = 0.001
+# Gamma = gamma**2*np.eye(3)
+# nb_basis = 15
+# filename = filename_base + "simu_3_"
 
-compare_method_without_iteration_parallel(filename, n_MC, theta, arc_length_fct, N, Gamma, mu0, P0, nb_basis, bounds_h, bounds_lambda, n_call_bayopt)
+# compare_method_without_iteration_parallel(filename, n_MC, theta, arc_length_fct, N, Gamma, mu0, P0, nb_basis, bounds_h, bounds_lambda, n_call_bayopt)
 
 # time_init = time.time()
 

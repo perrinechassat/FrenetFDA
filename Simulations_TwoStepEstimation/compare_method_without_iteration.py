@@ -251,7 +251,7 @@ def compare_method_without_iteration_parallel(filename_base, n_MC, theta, arc_le
             tab_smooth_theta.append(res[k][0])
             tab_h_opt.append(res[k][1])
             tab_lbda_opt.append(res[k][2])
-            
+
     filename = filename_base + "basis_theta_CLP_leastsquares"
 
     dic = {"duration":duration, "tab_smooth_theta":tab_smooth_theta, "tab_h_opt":tab_h_opt, "tab_lbda_opt":tab_lbda_opt}
@@ -265,3 +265,4 @@ def compare_method_without_iteration_parallel(filename_base, n_MC, theta, arc_le
 
     print('___________________________ End CLP + Least Squares ___________________________')
 
+    return  
