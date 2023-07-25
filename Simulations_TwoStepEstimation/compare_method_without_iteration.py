@@ -119,9 +119,12 @@ def basis_extrins(Y, N, grid_arc_s, nb_basis, bounds_h, bounds_lbda, n_call_bayo
 def basis_GS_leastsquares(grid_arc_s, Z_hat_GS, nb_basis, bounds_h, bounds_lbda, n_call_bayopt):
     try:
         local_approx_ode = LocalApproxFrenetODE(grid_arc_s, Z=Z_hat_GS)
-        h_opt, lbda_opt = local_approx_ode.bayesian_optimization_hyperparameters(n_call_bayopt=n_call_bayopt, lambda_bounds=bounds_lbda, h_bounds=bounds_h, nb_basis=nb_basis, n_splits=10, verbose=False)
-        Basis_theta_hat_GS_LS = local_approx_ode.Bspline_smooth_estimates(h_opt, nb_basis, regularization_parameter=lbda_opt)
-        return Basis_theta_hat_GS_LS.evaluate
+        h_opt, lbda_opt, Basis_theta_hat_GS_LS = local_approx_ode.bayesian_optimization_hyperparameters(n_call_bayopt=n_call_bayopt, lambda_bounds=bounds_lbda, h_bounds=bounds_h, nb_basis=nb_basis, n_splits=10, verbose=False, return_basis=True)
+        # Basis_theta_hat_GS_LS = local_approx_ode.Bspline_smooth_estimates(h_opt, nb_basis, regularization_parameter=lbda_opt)
+        theta_smooth = Basis_theta_hat_GS_LS.evaluate
+        del local_approx_ode
+        del Basis_theta_hat_GS_LS
+        return theta_smooth, h_opt, lbda_opt
     except:
         return None
 
@@ -129,9 +132,11 @@ def basis_GS_leastsquares(grid_arc_s, Z_hat_GS, nb_basis, bounds_h, bounds_lbda,
 def basis_CLP_leastsquares(grid_arc_s, Z_hat_CLP, nb_basis, bounds_h, bounds_lbda, n_call_bayopt):
     try:
         local_approx_ode = LocalApproxFrenetODE(grid_arc_s, Z=Z_hat_CLP)
-        h_opt, lbda_opt = local_approx_ode.bayesian_optimization_hyperparameters(n_call_bayopt=n_call_bayopt, lambda_bounds=bounds_lbda, h_bounds=bounds_h, nb_basis=nb_basis, n_splits=10, verbose=False)
-        Basis_theta_hat_CLP_LS = local_approx_ode.Bspline_smooth_estimates(h_opt, nb_basis, regularization_parameter=lbda_opt)
-        return Basis_theta_hat_CLP_LS.evaluate
+        h_opt, lbda_opt, Basis_theta_hat_CLP_LS = local_approx_ode.bayesian_optimization_hyperparameters(n_call_bayopt=n_call_bayopt, lambda_bounds=bounds_lbda, h_bounds=bounds_h, nb_basis=nb_basis, n_splits=10, verbose=False, return_basis=True)
+        theta_smooth = Basis_theta_hat_CLP_LS.evaluate
+        del local_approx_ode
+        del Basis_theta_hat_CLP_LS
+        return theta_smooth, h_opt, lbda_opt
     except:
         return None
 
@@ -197,25 +202,34 @@ def compare_method_without_iteration_parallel(filename_base, n_MC, theta, arc_le
     # print('___________________________ End Extrinsic ___________________________')
 
 
-    # time_init = time.time()
+    time_init = time.time()
 
-    # with tqdm(total=n_MC) as pbar:
-    #     res = Parallel(n_jobs=n_MC)(delayed(basis_GS_leastsquares)(grid_arc_s_tab[k], Z_hat_GS_tab[k], nb_basis, bounds_h, bounds_lbda, n_call_bayopt) for k in range(n_MC))
-    # pbar.update()
+    with tqdm(total=n_MC) as pbar:
+        res = Parallel(n_jobs=n_MC)(delayed(basis_GS_leastsquares)(grid_arc_s_tab[k], Z_hat_GS_tab[k], nb_basis, bounds_h, bounds_lbda, n_call_bayopt) for k in range(n_MC))
+    pbar.update()
 
-    # time_end = time.time()
-    # duration = time_end - time_init
+    time_end = time.time()
+    duration = time_end - time_init
 
-    # filename = filename_base + "basis_theta_GS_leastsquares"
+    tab_smooth_theta = []
+    tab_h_opt = []
+    tab_lbda_opt = []
+    for k in range(n_MC):
+        if res[k] is not None:
+            tab_smooth_theta.append(res[k][0])
+            tab_h_opt.append(res[k][1])
+            tab_lbda_opt.append(res[k][2])
 
-    # dic = {"duration":duration, "results":res}
+    filename = filename_base + "basis_theta_GS_leastsquares"
 
-    # if os.path.isfile(filename):
-    #     print("Le fichier ", filename, " existe déjà.")
-    #     filename = filename + '_bis'
-    # fil = open(filename,"xb")
-    # pickle.dump(dic,fil)
-    # fil.close()
+    dic = {"duration":duration, "tab_smooth_theta":tab_smooth_theta, "tab_h_opt":tab_h_opt, "tab_lbda_opt":tab_lbda_opt}
+
+    if os.path.isfile(filename):
+        print("Le fichier ", filename, " existe déjà.")
+        filename = filename + '_bis'
+    fil = open(filename,"xb")
+    pickle.dump(dic,fil)
+    fil.close()
 
     # print('___________________________ End GS + Least Squares ___________________________')
 
@@ -229,9 +243,18 @@ def compare_method_without_iteration_parallel(filename_base, n_MC, theta, arc_le
     time_end = time.time()
     duration = time_end - time_init
 
+    tab_smooth_theta = []
+    tab_h_opt = []
+    tab_lbda_opt = []
+    for k in range(n_MC):
+        if res[k] is not None:
+            tab_smooth_theta.append(res[k][0])
+            tab_h_opt.append(res[k][1])
+            tab_lbda_opt.append(res[k][2])
+            
     filename = filename_base + "basis_theta_CLP_leastsquares"
 
-    dic = {"duration":duration, "results":res}
+    dic = {"duration":duration, "tab_smooth_theta":tab_smooth_theta, "tab_h_opt":tab_h_opt, "tab_lbda_opt":tab_lbda_opt}
 
     if os.path.isfile(filename):
         print("Le fichier ", filename, " existe déjà.")

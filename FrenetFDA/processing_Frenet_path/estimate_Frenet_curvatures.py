@@ -354,7 +354,7 @@ class LocalApproxFrenetODE:
             return h_opt, nb_basis_opt, regularization_parameter_opt, CV_error_tab
 
     
-    def bayesian_optimization_hyperparameters(self, n_call_bayopt, lambda_bounds, h_bounds, nb_basis, order=4, n_splits=10, verbose=True):
+    def bayesian_optimization_hyperparameters(self, n_call_bayopt, lambda_bounds, h_bounds, nb_basis, order=4, n_splits=10, verbose=True, return_basis=False):
 
         # ## CV optimization of lambda
         Bspline_repres = VectorBSplineSmoothing(self.dim_theta, nb_basis, domain_range=(self.grid[0], self.grid[-1]), order=order, penalization=True)
@@ -383,8 +383,7 @@ class LocalApproxFrenetODE:
                     #     Z_test_pred = solve_FrenetSerret_ODE_SE(Bspline_repres.evaluate, self.grid, self.Z[0])
                     # except:
                     #     Z_test_pred = solve_FrenetSerret_ODE_SE(Bspline_repres.evaluate, self.grid, self.Z[0], method='Radau')
-                    Z_test_pred = solve_FrenetSerret_ODE_SE(Bspline_repres.evaluate, self.grid, self.Z[0], method='Radau')
-
+                    Z_test_pred = solve_FrenetSerret_ODE_SE(Bspline_repres.evaluate, self.grid, self.Z[0]) #, method='Radau')
                     dist = np.mean(SE3.geodesic_distance(self.Z[test_index], Z_test_pred[test_index]))
 
                 score[ind_CV] = dist
@@ -407,7 +406,13 @@ class LocalApproxFrenetODE:
         h_opt = param_opt[0]
         lbda_opt = np.array([param_opt[1], param_opt[2]])
 
-        return h_opt, lbda_opt
+        if return_basis:
+            grid_theta, raw_theta, weight_theta = self.raw_estimates(h_opt)
+            Bspline_repres.fit(grid_theta, raw_theta, weights=weight_theta, regularization_parameter=lbda_opt)
+            return h_opt, lbda_opt, Bspline_repres
+
+        else:
+            return h_opt, lbda_opt
     
 
 
