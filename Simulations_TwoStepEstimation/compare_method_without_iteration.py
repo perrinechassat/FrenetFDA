@@ -111,7 +111,7 @@ def basis_extrins(Y, N, grid_arc_s, nb_basis, bounds_h, bounds_lbda, n_call_bayo
         extrins_model_theta = ExtrinsicFormulas(Y, grid_time, grid_arc_s, deg_polynomial=3)
         h_opt, lbda_opt = extrins_model_theta.bayesian_optimization_hyperparameters(n_call_bayopt=n_call_bayopt, lambda_bounds=bounds_lbda, h_bounds=bounds_h, nb_basis=nb_basis, n_splits=10, verbose=False)
         Basis_theta_hat_extrins = extrins_model_theta.Bspline_smooth_estimates(h_opt, nb_basis, regularization_parameter=lbda_opt)
-        return Basis_theta_hat_extrins
+        return Basis_theta_hat_extrins.evaluate
     except:
         return None
 
@@ -121,7 +121,7 @@ def basis_GS_leastsquares(grid_arc_s, Z_hat_GS, nb_basis, bounds_h, bounds_lbda,
         local_approx_ode = LocalApproxFrenetODE(grid_arc_s, Z=Z_hat_GS)
         h_opt, lbda_opt = local_approx_ode.bayesian_optimization_hyperparameters(n_call_bayopt=n_call_bayopt, lambda_bounds=bounds_lbda, h_bounds=bounds_h, nb_basis=nb_basis, n_splits=10, verbose=False)
         Basis_theta_hat_GS_LS = local_approx_ode.Bspline_smooth_estimates(h_opt, nb_basis, regularization_parameter=lbda_opt)
-        return Basis_theta_hat_GS_LS
+        return Basis_theta_hat_GS_LS.evaluate
     except:
         return None
 
@@ -131,7 +131,7 @@ def basis_CLP_leastsquares(grid_arc_s, Z_hat_CLP, nb_basis, bounds_h, bounds_lbd
         local_approx_ode = LocalApproxFrenetODE(grid_arc_s, Z=Z_hat_CLP)
         h_opt, lbda_opt = local_approx_ode.bayesian_optimization_hyperparameters(n_call_bayopt=n_call_bayopt, lambda_bounds=bounds_lbda, h_bounds=bounds_h, nb_basis=nb_basis, n_splits=10, verbose=False)
         Basis_theta_hat_CLP_LS = local_approx_ode.Bspline_smooth_estimates(h_opt, nb_basis, regularization_parameter=lbda_opt)
-        return Basis_theta_hat_CLP_LS
+        return Basis_theta_hat_CLP_LS.evaluate
     except:
         return None
 

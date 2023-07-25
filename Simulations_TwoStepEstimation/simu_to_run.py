@@ -81,15 +81,15 @@ fil.close()
 # n_call_bayopt = dic_model["n_call_bayopt"]
 
 
-print(" Scenario 2, simu 1: N=100, gamma=0.001 ")
+# print(" Scenario 2, simu 1: N=100, gamma=0.001 ")
 
-N = 100
-gamma = 0.001
-Gamma = gamma**2*np.eye(3)
-nb_basis = 10
-filename = filename_base + "simu_1_"
+# N = 100
+# gamma = 0.001
+# Gamma = gamma**2*np.eye(3)
+# nb_basis = 10
+# filename = filename_base + "simu_1_"
 
-compare_method_without_iteration_parallel(filename, n_MC, theta, arc_length_fct, N, Gamma, mu0, P0, nb_basis, bounds_h, bounds_lambda, n_call_bayopt)
+# compare_method_without_iteration_parallel(filename, n_MC, theta, arc_length_fct, N, Gamma, mu0, P0, nb_basis, bounds_h, bounds_lambda, n_call_bayopt)
 
 # time_init = time.time()
 
@@ -113,15 +113,15 @@ compare_method_without_iteration_parallel(filename, n_MC, theta, arc_length_fct,
 
 
 
-print(" Scenario 2, simu 2: N=100, gamma=0.005 ")
+# print(" Scenario 2, simu 2: N=100, gamma=0.005 ")
 
-N = 100
-gamma = 0.005
-Gamma = gamma**2*np.eye(3)
-nb_basis = 10
-filename = filename_base + "simu_2_"
+# N = 100
+# gamma = 0.005
+# Gamma = gamma**2*np.eye(3)
+# nb_basis = 10
+# filename = filename_base + "simu_2_"
 
-compare_method_without_iteration_parallel(filename, n_MC, theta, arc_length_fct, N, Gamma, mu0, P0, nb_basis, bounds_h, bounds_lambda, n_call_bayopt)
+# compare_method_without_iteration_parallel(filename, n_MC, theta, arc_length_fct, N, Gamma, mu0, P0, nb_basis, bounds_h, bounds_lambda, n_call_bayopt)
 
 # time_init = time.time()
 
