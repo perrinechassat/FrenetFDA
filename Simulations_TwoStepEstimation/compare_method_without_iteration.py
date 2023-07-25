@@ -197,27 +197,27 @@ def compare_method_without_iteration_parallel(filename_base, n_MC, theta, arc_le
     # print('___________________________ End Extrinsic ___________________________')
 
 
-    time_init = time.time()
+    # time_init = time.time()
 
-    with tqdm(total=n_MC) as pbar:
-        res = Parallel(n_jobs=n_MC)(delayed(basis_GS_leastsquares)(grid_arc_s_tab[k], Z_hat_GS_tab[k], nb_basis, bounds_h, bounds_lbda, n_call_bayopt) for k in range(n_MC))
-    pbar.update()
+    # with tqdm(total=n_MC) as pbar:
+    #     res = Parallel(n_jobs=n_MC)(delayed(basis_GS_leastsquares)(grid_arc_s_tab[k], Z_hat_GS_tab[k], nb_basis, bounds_h, bounds_lbda, n_call_bayopt) for k in range(n_MC))
+    # pbar.update()
 
-    time_end = time.time()
-    duration = time_end - time_init
+    # time_end = time.time()
+    # duration = time_end - time_init
 
-    filename = filename_base + "basis_theta_GS_leastsquares"
+    # filename = filename_base + "basis_theta_GS_leastsquares"
 
-    dic = {"duration":duration, "results":res}
+    # dic = {"duration":duration, "results":res}
 
-    if os.path.isfile(filename):
-        print("Le fichier ", filename, " existe déjà.")
-        filename = filename + '_bis'
-    fil = open(filename,"xb")
-    pickle.dump(dic,fil)
-    fil.close()
+    # if os.path.isfile(filename):
+    #     print("Le fichier ", filename, " existe déjà.")
+    #     filename = filename + '_bis'
+    # fil = open(filename,"xb")
+    # pickle.dump(dic,fil)
+    # fil.close()
 
-    print('___________________________ End GS + Least Squares ___________________________')
+    # print('___________________________ End GS + Least Squares ___________________________')
 
 
     time_init = time.time()
