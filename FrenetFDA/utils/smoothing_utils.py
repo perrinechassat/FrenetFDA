@@ -368,7 +368,6 @@ class VectorBSplineSmoothing:
         else:
             raise ValueError('Variable is not a float, a int or a NumPy array.')
 
-
     def GCV_score(self, basis_matrix, data, weights_matrix, regularization_parameter):
         
         regularization_parameter, regularization_parameter_matrix = self.check_regularization_parameter(regularization_parameter)

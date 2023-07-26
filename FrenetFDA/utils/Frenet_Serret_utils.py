@@ -43,10 +43,10 @@ import time
 
 
 def solve_FrenetSerret_ODE_SE(theta, t_eval, Z0=None,  method='Radau'):
+    N, dim = theta(t_eval).shape
     if np.isnan(theta(t_eval)).any():
         return np.stack([np.eye(dim+2) for i in range(len(t_eval))])
     else:
-        N, dim = theta(t_eval).shape
         if Z0 is None:
             Z0 = np.eye(dim+2)
         if method=='Radau':
@@ -85,7 +85,7 @@ def solve_FrenetSerret_ODE_SE(theta, t_eval, Z0=None,  method='Radau'):
             return Z
         else:
             raise Exception('Invalide method name, choose between: Linearized or Radau')
-    
+        
 
 
 def solve_FrenetSerret_ODE_SO(theta, t_eval, Q0=None, method='Radau'):

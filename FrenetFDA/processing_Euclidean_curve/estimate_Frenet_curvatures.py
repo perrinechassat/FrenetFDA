@@ -241,7 +241,7 @@ class ExtrinsicFormulas:
         
 
 
-    def bayesian_optimization_hyperparameters(self, n_call_bayopt, lambda_bounds, h_bounds, nb_basis, order=4, n_splits=10, verbose=True):
+    def bayesian_optimization_hyperparameters(self, n_call_bayopt, lambda_bounds, h_bounds, nb_basis, order=4, n_splits=10, verbose=True, return_coefs=False):
 
         # ## CV optimization of lambda
         Bspline_repres = VectorBSplineSmoothing(self.dim-1, nb_basis, domain_range=(self.grid_arc_s[0], self.grid_arc_s[-1]), order=order, penalization=True)
@@ -265,7 +265,11 @@ class ExtrinsicFormulas:
                 #     Z_test_pred = solve_FrenetSerret_ODE_SE(Bspline_repres.evaluate, self.grid_arc_s[test_index], method='Linearized')
                 # except:
                 #     Z_test_pred = solve_FrenetSerret_ODE_SE(Bspline_repres.evaluate, self.grid_arc_s[test_index], method='Radau')
-                Z_test_pred = solve_FrenetSerret_ODE_SE(Bspline_repres.evaluate, self.grid_arc_s[test_index], method='Radau')
+                if np.isnan(Bspline_repres.coefs).any():
+                    print('NaN in coefficients')
+                    Z_test_pred = np.stack([np.eye(self.dim+1) for i in range(len(self.grid_arc_s[test_index]))])
+                else:
+                    Z_test_pred = solve_FrenetSerret_ODE_SE(Bspline_repres.evaluate, self.grid_arc_s[test_index]) #, method='Radau')
                 
                 X_test_pred = Z_test_pred[:,:self.dim,self.dim]
                 score[ind_CV] = Euclidean_dist_cent_rot(Y_test, X_test_pred)
@@ -288,5 +292,13 @@ class ExtrinsicFormulas:
         h_opt = param_opt[0]
         lbda_opt = np.array([param_opt[1], param_opt[2]])
 
-        return h_opt, lbda_opt
+        if return_coefs:
+            theta = self.raw_estimates(h_opt)
+            Bspline_repres.fit(self.grid_arc_s, theta, weights=None, regularization_parameter=lbda_opt)
+            coefs_opt = Bspline_repres.coefs
+            return h_opt, lbda_opt, coefs_opt
+        else:
+            return h_opt, lbda_opt
+    
+
     

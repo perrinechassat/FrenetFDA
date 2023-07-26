@@ -13,8 +13,8 @@ import os.path
 import os
 import dill as pickle
 from tqdm import tqdm
-from compare_smoother import compare_method_with_iteration, compare_method_with_iteration_parallel, smoother_on_smooth_data
-from compare_method_without_iteration import compare_method_without_iteration, compare_method_without_iteration_parallel
+from compare_smoother import compare_method_with_iteration_parallel, smoother_on_smooth_data
+from compare_method_without_iteration import compare_method_without_iteration_parallel
 import warnings
 warnings.filterwarnings('ignore')
 

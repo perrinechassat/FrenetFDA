@@ -7,7 +7,7 @@ from FrenetFDA.processing_Frenet_path.smoothing import KarcherMeanSmoother, Trac
 from skopt import gp_minimize
 from joblib import Parallel, delayed
 from sklearn.model_selection import KFold
-# from memory_profiler import profile
+from memory_profiler import profile
 
 class ApproxFrenetODE:
 
@@ -353,12 +353,14 @@ class LocalApproxFrenetODE:
             # print('Optimal parameters selected by grid search optimisation: ', 'bandwidth =', h_opt, 'nb_basis =', nb_basis_opt, 'regularization_parameter =', regularization_parameter_opt)
             return h_opt, nb_basis_opt, regularization_parameter_opt, CV_error_tab
 
-    
-    def bayesian_optimization_hyperparameters(self, n_call_bayopt, lambda_bounds, h_bounds, nb_basis, order=4, n_splits=10, verbose=True, return_basis=False):
+
+    @profile
+    def bayesian_optimization_hyperparameters(self, n_call_bayopt, lambda_bounds, h_bounds, nb_basis, order=4, n_splits=10, verbose=True, return_coefs=False):
 
         # ## CV optimization of lambda
         Bspline_repres = VectorBSplineSmoothing(self.dim_theta, nb_basis, domain_range=(self.grid[0], self.grid[-1]), order=order, penalization=True)
 
+        @profile
         def func(x):
             score = np.zeros(n_splits)
             kf = KFold(n_splits=n_splits, shuffle=True)
@@ -406,10 +408,11 @@ class LocalApproxFrenetODE:
         h_opt = param_opt[0]
         lbda_opt = np.array([param_opt[1], param_opt[2]])
 
-        if return_basis:
+        if return_coefs:
             grid_theta, raw_theta, weight_theta = self.raw_estimates(h_opt)
             Bspline_repres.fit(grid_theta, raw_theta, weights=weight_theta, regularization_parameter=lbda_opt)
-            return h_opt, lbda_opt, Bspline_repres
+            coefs_opt = Bspline_repres.coefs
+            return h_opt, lbda_opt, coefs_opt
 
         else:
             return h_opt, lbda_opt
@@ -472,12 +475,9 @@ class TwoStepEstimatorKarcherMean:
         return basis_theta, Q_smooth, k 
     
 
-    def __fit(self, grid, Q, h, lbda, nb_basis, epsilon=1e-03, max_iter=30):
+    def __fit_and_return(self, basis_theta, grid, Q, h, lbda, epsilon=1e-03, max_iter=30):
 
-        # LS_theta = LocalApproxFrenetODE(grid, Q=Q)
-        basis_theta = VectorBSplineSmoothing(self.dim_theta, nb_basis, domain_range=(self.grid[0], self.grid[-1]), order=4, penalization=True)
         Q_smooth = Q
-        # basis_theta = LS_theta.Bspline_smooth_estimates(h, nb_basis, order=4, regularization_parameter=lbda)
         grid_theta, raw_theta, weight_theta = LocalApproxFrenetODE(grid, Q=Q).raw_estimates(h)
         basis_theta.fit(grid_theta, raw_theta, weights=weight_theta, regularization_parameter=lbda)
         theta  = basis_theta.evaluate(grid)
@@ -496,10 +496,37 @@ class TwoStepEstimatorKarcherMean:
             del Smoother
             k += 1  
 
-        return basis_theta.evaluate
+        return basis_theta.coefs, Q_smooth, k
+
+
+    def __fit(self, basis_theta, grid, Q, h, lbda, epsilon=1e-03, max_iter=30):
+
+        Q_smooth = Q
+        grid_theta, raw_theta, weight_theta = LocalApproxFrenetODE(grid, Q=Q).raw_estimates(h)
+        basis_theta.fit(grid_theta, raw_theta, weights=weight_theta, regularization_parameter=lbda)
+        theta  = basis_theta.evaluate(grid)
+        Dtheta = theta
+        k=0
+        while np.linalg.norm(Dtheta)>=epsilon*np.linalg.norm(theta) and k<max_iter:
+            # print('iteration smoother n°', k)
+            theta_old = theta
+            Smoother = KarcherMeanSmoother(grid, Q=Q_smooth)
+            Q_smooth = Smoother.fit(h, basis_theta.evaluate)
+            grid_theta, raw_theta, weight_theta = LocalApproxFrenetODE(grid, Q=Q_smooth).raw_estimates(h)
+            basis_theta.fit(grid_theta, raw_theta, weights=weight_theta, regularization_parameter=lbda)
+            # basis_theta = LS_theta.Bspline_smooth_estimates(h, nb_basis, order=4, regularization_parameter=lbda)
+            theta  = basis_theta.evaluate(grid)
+            Dtheta = theta - theta_old
+            del Smoother
+            k += 1  
+
+        return basis_theta.coefs
 
 
     def func_CV(self, x, nb_basis, order=4, epsilon=1e-03, max_iter=30, n_splits=5):
+
+        basis_theta = VectorBSplineSmoothing(self.dim_theta, nb_basis, domain_range=(self.grid[0], self.grid[-1]), order=order, penalization=True)
+        
         score = np.zeros(n_splits)
         kf = KFold(n_splits=n_splits, shuffle=True)
         grid_split = self.grid[1:-1]
@@ -515,7 +542,14 @@ class TwoStepEstimatorKarcherMean:
             Q_test = self.Q[test_index]
             lbda = np.array([x[1],x[2]])
             # print(lbda)
-            func_basis_theta = self.__fit(grid_train, Q_train, x[0], lbda, nb_basis, epsilon=epsilon, max_iter=max_iter)
+            coefs = self.__fit(basis_theta, grid_train, Q_train, x[0], lbda, epsilon=epsilon, max_iter=max_iter)
+            def func_basis_theta(s):
+                if isinstance(s, int) or isinstance(s, float):
+                    return np.squeeze(basis_theta.basis_fct(s).T @ coefs)
+                elif isinstance(s, np.ndarray):
+                    return np.squeeze((basis_theta.basis_fct(s).T @ coefs).T)
+                else:
+                    raise ValueError('Variable is not a float, a int or a NumPy array.')
             # print('end fit')
             Q_test_pred = solve_FrenetSerret_ODE_SO(func_basis_theta, self.grid, self.Q[0])
             dist = np.mean(SO3.geodesic_distance(Q_test, Q_test_pred[test_index]))
@@ -526,8 +560,10 @@ class TwoStepEstimatorKarcherMean:
         return np.mean(score)
 
 
-    def bayesian_optimization_hyperparameters(self, n_call_bayopt, lambda_bounds, h_bounds, nb_basis, order=4, epsilon=1e-03, max_iter=30, n_splits=5, verbose=True):
+    def bayesian_optimization_hyperparameters(self, n_call_bayopt, lambda_bounds, h_bounds, nb_basis, order=4, epsilon=1e-03, max_iter=30, n_splits=5, verbose=True, return_coefs=False):
 
+        basis_theta = VectorBSplineSmoothing(self.dim_theta, nb_basis, domain_range=(self.grid[0], self.grid[-1]), order=order, penalization=True)
+        
         def func(x):
             # print('hyperparam:', x)
             score = np.zeros(n_splits)
@@ -544,10 +580,22 @@ class TwoStepEstimatorKarcherMean:
                 Q_train = self.Q[train_index]
                 Q_test = self.Q[test_index]
                 lbda = np.array([x[1],x[2]])
-                # print(lbda)
-                func_basis_theta = self.__fit(grid_train, Q_train, x[0], lbda, nb_basis, epsilon=epsilon, max_iter=max_iter)
-                # print('end fit')
-                Q_test_pred = solve_FrenetSerret_ODE_SO(func_basis_theta, self.grid, self.Q[0])
+                
+                coefs = self.__fit(basis_theta, grid_train, Q_train, x[0], lbda, epsilon=epsilon, max_iter=max_iter)
+
+                if np.isnan(coefs).any():
+                    print('NaN in coefficients')
+                    Q_test_pred = np.stack([np.eye(self.dim) for i in range(len(self.grid))])
+                else:
+                    def func_basis_theta(s):
+                        if isinstance(s, int) or isinstance(s, float):
+                            return np.squeeze(basis_theta.basis_fct(s).T @ coefs)
+                        elif isinstance(s, np.ndarray):
+                            return np.squeeze((basis_theta.basis_fct(s).T @ coefs).T)
+                        else:
+                            raise ValueError('Variable is not a float, a int or a NumPy array.')
+                    Q_test_pred = solve_FrenetSerret_ODE_SO(func_basis_theta, self.grid, self.Q[0])
+
                 dist = np.mean(SO3.geodesic_distance(Q_test, Q_test_pred[test_index]))
                 # print('end distance')
                 score[ind_CV] = dist
@@ -570,7 +618,11 @@ class TwoStepEstimatorKarcherMean:
         h_opt = param_opt[0]
         lbda_opt = np.array([param_opt[1], param_opt[2]])
 
-        return h_opt, lbda_opt
+        if return_coefs:
+            coefs_opt, Q_smooth_opt, nb_iter = self.__fit_and_return(basis_theta, self.grid, self.Q, h_opt, lbda_opt, epsilon=epsilon, max_iter=max_iter)
+            return coefs_opt, Q_smooth_opt, nb_iter, h_opt, lbda_opt
+        else:
+            return h_opt, lbda_opt
     
 
 
@@ -601,11 +653,9 @@ class TwoStepEstimatorTracking:
         self.adaptive_ind = adaptive 
 
 
-    # @profile
+    @profile
     def fit(self, lbda_track, h, lbda, nb_basis, epsilon=1e-03, max_iter=30):
 
-        # LS_theta = LocalApproxFrenetODE(self.grid, Q=self.Q)
-        # basis_theta = LS_theta.Bspline_smooth_estimates(h, nb_basis, order=4, regularization_parameter=lbda)
         basis_theta = VectorBSplineSmoothing(self.dim_theta, nb_basis, domain_range=(self.grid[0], self.grid[-1]), order=4, penalization=True)
         grid_theta, raw_theta, weight_theta = LocalApproxFrenetODE(self.grid, Q=self.Q).raw_estimates(h)
         basis_theta.fit(grid_theta, raw_theta, weights=weight_theta, regularization_parameter=lbda)
@@ -620,8 +670,6 @@ class TwoStepEstimatorTracking:
             Q_smooth = Smoother.fit(lbda_track, basis_theta.evaluate)
             grid_theta, raw_theta, weight_theta = LocalApproxFrenetODE(self.grid, Q=Q_smooth).raw_estimates(h)
             basis_theta.fit(grid_theta, raw_theta, weights=weight_theta, regularization_parameter=lbda)
-            # LS_theta = LocalApproxFrenetODE(self.grid, Q=Q_smooth)
-            # basis_theta = LS_theta.Bspline_smooth_estimates(h, nb_basis, order=4, regularization_parameter=lbda)
             theta  = basis_theta.evaluate(self.grid)
             Dtheta = theta - theta_old
             k += 1  
@@ -629,12 +677,9 @@ class TwoStepEstimatorTracking:
 
         return basis_theta, Q_smooth, k 
     
-    # @profile
-    def __fit(self, grid, Q, lbda_track, h, lbda, nb_basis, epsilon=1e-03, max_iter=30):
-        
-        # LS_theta = LocalApproxFrenetODE(grid, Q=Q)
-        # basis_theta = LS_theta.Bspline_smooth_estimates(h, nb_basis, order=4, regularization_parameter=lbda)
-        basis_theta = VectorBSplineSmoothing(self.dim_theta, nb_basis, domain_range=(self.grid[0], self.grid[-1]), order=4, penalization=True)
+
+    def __fit_and_return(self, basis_theta, grid, Q, lbda_track, h, lbda, epsilon=1e-03, max_iter=30):
+
         grid_theta, raw_theta, weight_theta = LocalApproxFrenetODE(grid, Q=Q).raw_estimates(h)
         basis_theta.fit(grid_theta, raw_theta, weights=weight_theta, regularization_parameter=lbda)
         Q_smooth = Q
@@ -646,8 +691,6 @@ class TwoStepEstimatorTracking:
             theta_old = theta
             Smoother = TrackingSmootherLinear(grid, Q=Q_smooth)
             Q_smooth = Smoother.fit(lbda_track, basis_theta.evaluate)
-            # LS_theta = LocalApproxFrenetODE(grid, Q=Q_smooth)
-            # basis_theta = LS_theta.Bspline_smooth_estimates(h, nb_basis, order=4, regularization_parameter=lbda)
             grid_theta, raw_theta, weight_theta = LocalApproxFrenetODE(grid, Q=Q_smooth).raw_estimates(h)
             basis_theta.fit(grid_theta, raw_theta, weights=weight_theta, regularization_parameter=lbda)
             theta  = basis_theta.evaluate(grid)
@@ -655,10 +698,36 @@ class TwoStepEstimatorTracking:
             del Smoother
             k += 1  
 
-        return basis_theta.evaluate 
+        return basis_theta.coefs, Q_smooth, k 
     
-    # @profile
+    @profile
+    def __fit(self, basis_theta, grid, Q, lbda_track, h, lbda, epsilon=1e-03, max_iter=30):
+        
+        grid_theta, raw_theta, weight_theta = LocalApproxFrenetODE(grid, Q=Q).raw_estimates(h)
+        basis_theta.fit(grid_theta, raw_theta, weights=weight_theta, regularization_parameter=lbda)
+        Q_smooth = Q
+        theta  = basis_theta.evaluate(grid)
+        Dtheta = theta
+        k=0
+        while np.linalg.norm(Dtheta)>=epsilon*np.linalg.norm(theta) and k<max_iter:
+            # print('iteration smoother n°', k)
+            theta_old = theta
+            Smoother = TrackingSmootherLinear(grid, Q=Q_smooth)
+            Q_smooth = Smoother.fit(lbda_track, basis_theta.evaluate)
+            grid_theta, raw_theta, weight_theta = LocalApproxFrenetODE(grid, Q=Q_smooth).raw_estimates(h)
+            basis_theta.fit(grid_theta, raw_theta, weights=weight_theta, regularization_parameter=lbda)
+            theta  = basis_theta.evaluate(grid)
+            Dtheta = theta - theta_old
+            del Smoother
+            k += 1  
+
+        return basis_theta.coefs 
+    
+    @profile
     def func_CV(self, x, nb_basis, order=4, epsilon=1e-03, max_iter=30, n_splits=5):
+
+        basis_theta = VectorBSplineSmoothing(self.dim_theta, nb_basis, domain_range=(self.grid[0], self.grid[-1]), order=order, penalization=True)
+
         score = np.zeros(n_splits)
         kf = KFold(n_splits=n_splits, shuffle=True)
         grid_split = self.grid[1:-1]
@@ -674,7 +743,14 @@ class TwoStepEstimatorTracking:
             Q_test = self.Q[test_index]
             lbda = np.array([x[1],x[2]])
             # print(lbda)
-            func_basis_theta = self.__fit(grid_train, Q_train, x[3], x[0], lbda, nb_basis, epsilon=epsilon, max_iter=max_iter)
+            coefs = self.__fit(basis_theta, grid_train, Q_train, x[3], x[0], lbda, epsilon=epsilon, max_iter=max_iter)
+            def func_basis_theta(s):
+                if isinstance(s, int) or isinstance(s, float):
+                    return np.squeeze(basis_theta.basis_fct(s).T @ coefs)
+                elif isinstance(s, np.ndarray):
+                    return np.squeeze((basis_theta.basis_fct(s).T @ coefs).T)
+                else:
+                    raise ValueError('Variable is not a float, a int or a NumPy array.')
             # print('end fit')
             Q_test_pred = solve_FrenetSerret_ODE_SO(func_basis_theta, self.grid, self.Q[0])
             dist = np.mean(SO3.geodesic_distance(Q_test, Q_test_pred[test_index]))
@@ -685,7 +761,9 @@ class TwoStepEstimatorTracking:
         return np.mean(score)
 
 
-    def bayesian_optimization_hyperparameters(self, n_call_bayopt, lambda_track_bounds, lambda_bounds, h_bounds, nb_basis, order=4, epsilon=1e-03, max_iter=30, n_splits=10, verbose=True):
+    def bayesian_optimization_hyperparameters(self, n_call_bayopt, lambda_track_bounds, lambda_bounds, h_bounds, nb_basis, order=4, epsilon=1e-03, max_iter=30, n_splits=10, verbose=True, return_coefs=False):
+
+        basis_theta = VectorBSplineSmoothing(self.dim_theta, nb_basis, domain_range=(self.grid[0], self.grid[-1]), order=4, penalization=True)
 
         def func(x):
             # print('hyperparam:', x)
@@ -704,9 +782,21 @@ class TwoStepEstimatorTracking:
                 Q_test = self.Q[test_index]
                 lbda = np.array([x[1],x[2]])
                 # print(lbda)
-                func_basis_theta = self.__fit(grid_train, Q_train, x[3], x[0], lbda, nb_basis, epsilon=epsilon, max_iter=max_iter)
-                # print('end fit')
-                Q_test_pred = solve_FrenetSerret_ODE_SO(func_basis_theta, self.grid, self.Q[0])
+                coefs = self.__fit(basis_theta, grid_train, Q_train, x[3], x[0], lbda, epsilon=epsilon, max_iter=max_iter)
+
+                if np.isnan(coefs).any():
+                    print('NaN in coefficients')
+                    Q_test_pred = np.stack([np.eye(self.dim) for i in range(len(self.grid))])
+                else:
+                    def func_basis_theta(s):
+                        if isinstance(s, int) or isinstance(s, float):
+                            return np.squeeze(basis_theta.basis_fct(s).T @ coefs)
+                        elif isinstance(s, np.ndarray):
+                            return np.squeeze((basis_theta.basis_fct(s).T @ coefs).T)
+                        else:
+                            raise ValueError('Variable is not a float, a int or a NumPy array.')
+                    Q_test_pred = solve_FrenetSerret_ODE_SO(func_basis_theta, self.grid, self.Q[0])
+
                 dist = np.mean(SO3.geodesic_distance(Q_test, Q_test_pred[test_index]))
                 # print('end distance', dist)
                 score[ind_CV] = dist
@@ -731,7 +821,11 @@ class TwoStepEstimatorTracking:
         lbda_opt = np.array([param_opt[1], param_opt[2]])
         lbda_track_opt = param_opt[3]
 
-        return h_opt, lbda_opt, lbda_track_opt
+        if return_coefs:
+            coefs_opt, Q_smooth_opt, nb_iter = self.__fit_and_return(basis_theta, self.grid, self.Q, lbda_track_opt, h_opt, lbda_opt, epsilon=epsilon, max_iter=max_iter)
+            return coefs_opt, Q_smooth_opt, nb_iter, h_opt, lbda_opt, lbda_track_opt
+        else:
+            return h_opt, lbda_opt, lbda_track_opt
 
 
     
