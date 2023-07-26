@@ -7,7 +7,7 @@ from FrenetFDA.processing_Frenet_path.smoothing import KarcherMeanSmoother, Trac
 from skopt import gp_minimize
 from joblib import Parallel, delayed
 from sklearn.model_selection import KFold
-from memory_profiler import profile
+# from memory_profiler import profile
 
 class ApproxFrenetODE:
 
@@ -354,13 +354,13 @@ class LocalApproxFrenetODE:
             return h_opt, nb_basis_opt, regularization_parameter_opt, CV_error_tab
 
 
-    @profile
+    # @profile
     def bayesian_optimization_hyperparameters(self, n_call_bayopt, lambda_bounds, h_bounds, nb_basis, order=4, n_splits=10, verbose=True, return_coefs=False):
 
         # ## CV optimization of lambda
         Bspline_repres = VectorBSplineSmoothing(self.dim_theta, nb_basis, domain_range=(self.grid[0], self.grid[-1]), order=order, penalization=True)
 
-        @profile
+        # @profile
         def func(x):
             score = np.zeros(n_splits)
             kf = KFold(n_splits=n_splits, shuffle=True)
@@ -653,7 +653,7 @@ class TwoStepEstimatorTracking:
         self.adaptive_ind = adaptive 
 
 
-    @profile
+    # @profile
     def fit(self, lbda_track, h, lbda, nb_basis, epsilon=1e-03, max_iter=30):
 
         basis_theta = VectorBSplineSmoothing(self.dim_theta, nb_basis, domain_range=(self.grid[0], self.grid[-1]), order=4, penalization=True)
@@ -700,7 +700,7 @@ class TwoStepEstimatorTracking:
 
         return basis_theta.coefs, Q_smooth, k 
     
-    @profile
+    # @profile
     def __fit(self, basis_theta, grid, Q, lbda_track, h, lbda, epsilon=1e-03, max_iter=30):
         
         grid_theta, raw_theta, weight_theta = LocalApproxFrenetODE(grid, Q=Q).raw_estimates(h)
@@ -723,7 +723,7 @@ class TwoStepEstimatorTracking:
 
         return basis_theta.coefs 
     
-    @profile
+    # @profile
     def func_CV(self, x, nb_basis, order=4, epsilon=1e-03, max_iter=30, n_splits=5):
 
         basis_theta = VectorBSplineSmoothing(self.dim_theta, nb_basis, domain_range=(self.grid[0], self.grid[-1]), order=order, penalization=True)
