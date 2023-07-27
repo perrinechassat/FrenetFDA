@@ -65,7 +65,8 @@ def karcher_mean_smoother(arc_length_fct, N, Q_noisy, nb_basis, bounds_h, bounds
         grid_time = np.linspace(0,1,N)
         arc_length = arc_length_fct(grid_time)
         karcher_mean_smoother = TwoStepEstimatorKarcherMean(arc_length, Q_noisy)
-        coefs_opt, Q_smooth_opt, nb_iter, h_opt, lbda_opt = karcher_mean_smoother.bayesian_optimization_hyperparameters(n_call_bayopt=n_call_bayopt, lambda_bounds=bounds_lbda, h_bounds=bounds_h, nb_basis=nb_basis, epsilon=tol, max_iter=max_iter, n_splits=5, verbose=True)
+        coefs_opt, Q_smooth_opt, nb_iter, h_opt, lbda_opt = karcher_mean_smoother.bayesian_optimization_hyperparameters(n_call_bayopt=n_call_bayopt, lambda_bounds=bounds_lbda, h_bounds=bounds_h, nb_basis=nb_basis, epsilon=tol, max_iter=max_iter, n_splits=5, verbose=False, return_coefs=True)
+        print('Fin algo')
         return coefs_opt, Q_smooth_opt, nb_iter, h_opt, lbda_opt
         # basis_theta_karch, Q_smooth_karch, nb_iter_karch = karcher_mean_smoother.fit(h_opt, lbda_opt, nb_basis=nb_basis, epsilon=tol, max_iter=max_iter)
         # return basis_theta_karch, Q_smooth_karch, nb_iter_karch
@@ -78,7 +79,8 @@ def tracking_smoother(arc_length_fct, N, Q_noisy, nb_basis, bounds_h, bounds_lbd
         grid_time = np.linspace(0,1,N)
         arc_length = arc_length_fct(grid_time)
         tracking_smoother = TwoStepEstimatorTracking(arc_length, Q_noisy)
-        coefs_opt, Q_smooth_opt, nb_iter, h_opt, lbda_opt, lbda_track_opt = tracking_smoother.bayesian_optimization_hyperparameters(n_call_bayopt=n_call_bayopt, lambda_track_bounds=bounds_lbda_track, lambda_bounds=bounds_lbda, h_bounds=bounds_h, nb_basis=nb_basis, epsilon=tol, max_iter=max_iter, n_splits=5, verbose=True)
+        coefs_opt, Q_smooth_opt, nb_iter, h_opt, lbda_opt, lbda_track_opt = tracking_smoother.bayesian_optimization_hyperparameters(n_call_bayopt=n_call_bayopt, lambda_track_bounds=bounds_lbda_track, lambda_bounds=bounds_lbda, h_bounds=bounds_h, nb_basis=nb_basis, epsilon=tol, max_iter=max_iter, n_splits=5, verbose=False, return_coefs=True)
+        print('Fin algo')
         return coefs_opt, Q_smooth_opt, nb_iter, h_opt, lbda_opt, lbda_track_opt
         # basis_theta_track, Q_smooth_track, nb_iter_track = tracking_smoother.fit(lbda_track_opt, h_opt, lbda_opt, nb_basis=nb_basis, epsilon=tol, max_iter=max_iter)
         # return basis_theta_track, Q_smooth_track, nb_iter_track
@@ -119,8 +121,6 @@ def compare_method_with_iteration_parallel(filename_base, n_MC, theta, arc_lengt
 
     
     
-
-
     time_init = time.time()
 
     with tqdm(total=n_MC) as pbar:
@@ -159,7 +159,6 @@ def compare_method_with_iteration_parallel(filename_base, n_MC, theta, arc_lengt
 
     print('___________________________ End Tracking ___________________________')
     
-    
 
     
     time_init = time.time()
@@ -189,7 +188,6 @@ def compare_method_with_iteration_parallel(filename_base, n_MC, theta, arc_lengt
     dic = {"duration":duration, "coefs_basis_theta_tab":np.array(coefs_basis_theta_tab), "Q_smooth_tab":np.array(Q_smooth_tab), "nb_iter_tab":np.array(nb_iter_tab), 
            "h_opt_tab":np.array(h_opt_tab), "lbda_opt_tab":np.array(lbda_opt_tab)}
 
-
     if os.path.isfile(filename):
         print("Le fichier ", filename, " existe déjà.")
         filename = filename + '_bis'
@@ -199,6 +197,7 @@ def compare_method_with_iteration_parallel(filename_base, n_MC, theta, arc_lengt
 
     print('___________________________ End Karcher Mean ___________________________')
 
+    return 
 
 
 
@@ -375,3 +374,5 @@ def smoother_on_smooth_data(filename_base, filename_simu_Q, arc_length_fct, boun
     fil.close()
 
     print('___________________________ End Karcher Mean CLP ___________________________')
+
+    return

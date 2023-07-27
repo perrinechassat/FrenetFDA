@@ -611,13 +611,14 @@ class TwoStepEstimatorKarcherMean:
                         acq_func="EI",        # the acquisition function
                         n_calls=n_call_bayopt,       # the number of evaluations of f
                         n_initial_points=2,    # the number of random initialization points
-                        random_state=2,       # the random seed
+                        random_state=1,       # the random seed
                         n_jobs=1,            # use all the cores for parallel calculation
                         verbose=verbose)
         param_opt = res_bayopt.x
         h_opt = param_opt[0]
         lbda_opt = np.array([param_opt[1], param_opt[2]])
 
+        print('optimal parameters:', h_opt, lbda_opt)
         if return_coefs:
             coefs_opt, Q_smooth_opt, nb_iter = self.__fit_and_return(basis_theta, self.grid, self.Q, h_opt, lbda_opt, epsilon=epsilon, max_iter=max_iter)
             return coefs_opt, Q_smooth_opt, nb_iter, h_opt, lbda_opt
@@ -813,7 +814,7 @@ class TwoStepEstimatorTracking:
                         acq_func="EI",        # the acquisition function
                         n_calls=n_call_bayopt,       # the number of evaluations of f
                         n_initial_points=2,    # the number of random initialization points
-                        random_state=2,       # the random seed
+                        random_state=1,       # the random seed
                         n_jobs=1,            # use all the cores for parallel calculation
                         verbose=verbose)
         param_opt = res_bayopt.x
@@ -821,6 +822,7 @@ class TwoStepEstimatorTracking:
         lbda_opt = np.array([param_opt[1], param_opt[2]])
         lbda_track_opt = param_opt[3]
 
+        print('optimal parameters:', h_opt, lbda_opt, lbda_track_opt)
         if return_coefs:
             coefs_opt, Q_smooth_opt, nb_iter = self.__fit_and_return(basis_theta, self.grid, self.Q, lbda_track_opt, h_opt, lbda_opt, epsilon=epsilon, max_iter=max_iter)
             return coefs_opt, Q_smooth_opt, nb_iter, h_opt, lbda_opt, lbda_track_opt
