@@ -269,7 +269,7 @@ class ExtrinsicFormulas:
                     print('NaN in coefficients')
                     Z_test_pred = np.stack([np.eye(self.dim+1) for i in range(len(self.grid_arc_s[test_index]))])
                 else:
-                    Z_test_pred = solve_FrenetSerret_ODE_SE(Bspline_repres.evaluate, self.grid_arc_s[test_index]) #, method='Radau')
+                    Z_test_pred = solve_FrenetSerret_ODE_SE(Bspline_repres.evaluate, self.grid_arc_s[test_index], timeout_seconds=60) #, method='Radau')
                 
                 X_test_pred = Z_test_pred[:,:self.dim,self.dim]
                 score[ind_CV] = Euclidean_dist_cent_rot(Y_test, X_test_pred)
