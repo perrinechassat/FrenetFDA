@@ -7,6 +7,7 @@ from FrenetFDA.processing_Frenet_path.smoothing import KarcherMeanSmoother, Trac
 from skopt import gp_minimize
 from joblib import Parallel, delayed
 from sklearn.model_selection import KFold
+import FrenetFDA.utils.visualization as visu
 # from memory_profiler import profile
 
 class ApproxFrenetODE:
@@ -722,6 +723,10 @@ class TwoStepEstimatorTracking:
             del Smoother
             k += 1  
 
+        # visu.plot_3D([Q_smooth[:,:,0], Q_smooth[:,:,1], Q_smooth[:,:,2], Q[:,:,0], Q[:,:,1], Q[:,:,2]], ['T_smooth', 'N_smooth', 'B_smooth', 'T', 'N', 'B'])
+        # visu.plot_2D(grid_theta, raw_theta[:,0])
+        # visu.plot_2D(grid_theta, raw_theta[:,1])
+
         return basis_theta.coefs 
     
     # @profile
@@ -783,6 +788,7 @@ class TwoStepEstimatorTracking:
                 Q_test = self.Q[test_index]
                 lbda = np.array([x[1],x[2]])
                 # print(lbda)
+                # print(grid_train)
                 coefs = self.__fit(basis_theta, grid_train, Q_train, x[3], x[0], lbda, epsilon=epsilon, max_iter=max_iter)
 
                 if np.isnan(coefs).any():
@@ -796,6 +802,8 @@ class TwoStepEstimatorTracking:
                             return np.squeeze((basis_theta.basis_fct(s).T @ coefs).T)
                         else:
                             raise ValueError('Variable is not a float, a int or a NumPy array.')
+                    # visu.plot_2D(self.grid, func_basis_theta(self.grid)[:,0])
+                    # visu.plot_2D(self.grid, func_basis_theta(self.grid)[:,1])
                     Q_test_pred = solve_FrenetSerret_ODE_SO(func_basis_theta, self.grid, self.Q[0], timeout_seconds=60)
 
                 dist = np.mean(SO3.geodesic_distance(Q_test, Q_test_pred[test_index]))

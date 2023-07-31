@@ -124,7 +124,7 @@ def compare_method_with_iteration_parallel(filename_base, n_MC, theta, arc_lengt
     time_init = time.time()
 
     with tqdm(total=n_MC) as pbar:
-        res = Parallel(n_jobs=n_MC)(delayed(tracking_smoother)(arc_length_fct, N, Q_noisy_tab[k], nb_basis, bounds_h, bounds_lbda, bounds_lbda_track, n_call_bayopt, tol, max_iter) for k in range(n_MC))
+        res = Parallel(n_jobs=n_MC)(delayed(tracking_smoother)(arc_length_fct, N, Q_noisy_tab[k], nb_basis, bounds_h, bounds_lbda, bounds_lbda_track, n_call_bayopt+20, tol, max_iter) for k in range(n_MC))
     pbar.update()
 
     time_end = time.time()
@@ -223,7 +223,7 @@ def smoother_on_smooth_data(filename_base, filename_simu_Q, arc_length_fct, boun
     time_init = time.time()
 
     with tqdm(total=n_MC) as pbar:
-        res = Parallel(n_jobs=n_MC)(delayed(tracking_smoother)(arc_length_fct, N, Z_hat_GS_tab[k][:,:3,:3], nb_basis, bounds_h, bounds_lbda, bounds_lbda_track, n_call_bayopt, tol, max_iter) for k in range(n_MC))
+        res = Parallel(n_jobs=n_MC)(delayed(tracking_smoother)(arc_length_fct, N, Z_hat_GS_tab[k][:,:3,:3], nb_basis, bounds_h, bounds_lbda, bounds_lbda_track, n_call_bayopt+20, tol, max_iter) for k in range(n_MC))
     pbar.update()
 
     time_end = time.time()

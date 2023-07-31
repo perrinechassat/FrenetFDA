@@ -40,13 +40,13 @@ def arc_length_fct(s):
 
 bounds_lambda = np.array([[1e-09, 1e-03], [1e-09, 1e-03]])
 bounds_lambda_track = np.array([1e-04, 1])
-bounds_h = np.array([0.05, 1])
-n_call_bayopt = 50
+bounds_h = np.array([0.05, 0.35])
+n_call_bayopt = 60
 max_iter = 30
 tol = 0.001
 
-directory = r"results/scenario1/model_02/"
-filename_base = "results/scenario1/model_02/"
+directory = r"results/scenario1/model_03/"
+filename_base = "results/scenario1/model_03/"
 
 print(" Scenario 1, simu 4: N=200, alpha=20 ")
 
