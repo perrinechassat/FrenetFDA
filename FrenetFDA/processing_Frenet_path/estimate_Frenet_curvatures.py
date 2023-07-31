@@ -594,7 +594,7 @@ class TwoStepEstimatorKarcherMean:
                             return np.squeeze((basis_theta.basis_fct(s).T @ coefs).T)
                         else:
                             raise ValueError('Variable is not a float, a int or a NumPy array.')
-                    Q_test_pred = solve_FrenetSerret_ODE_SO(func_basis_theta, self.grid, self.Q[0])
+                    Q_test_pred = solve_FrenetSerret_ODE_SO(func_basis_theta, self.grid, self.Q[0], timeout_seconds=60)
 
                 dist = np.mean(SO3.geodesic_distance(Q_test, Q_test_pred[test_index]))
                 # print('end distance')
@@ -796,7 +796,7 @@ class TwoStepEstimatorTracking:
                             return np.squeeze((basis_theta.basis_fct(s).T @ coefs).T)
                         else:
                             raise ValueError('Variable is not a float, a int or a NumPy array.')
-                    Q_test_pred = solve_FrenetSerret_ODE_SO(func_basis_theta, self.grid, self.Q[0])
+                    Q_test_pred = solve_FrenetSerret_ODE_SO(func_basis_theta, self.grid, self.Q[0], timeout_seconds=60)
 
                 dist = np.mean(SO3.geodesic_distance(Q_test, Q_test_pred[test_index]))
                 # print('end distance', dist)

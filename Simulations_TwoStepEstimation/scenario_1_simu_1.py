@@ -45,8 +45,8 @@ n_call_bayopt = 50
 max_iter = 30
 tol = 0.001
 
-directory = r"results/scenario1/model_test/"
-filename_base = "results/scenario1/model_test/"
+directory = r"results/scenario1/model_02/"
+filename_base = "results/scenario1/model_02/"
 
 current_directory = os.getcwd()
 final_directory = os.path.join(current_directory, directory)

@@ -367,6 +367,16 @@ class VectorBSplineSmoothing:
             return np.squeeze((self.basis_fct(s).T @ self.coefs).T)
         else:
             raise ValueError('Variable is not a float, a int or a NumPy array.')
+        
+    def evaluate_coefs(self, coefs_test):
+        def func(s):
+            if isinstance(s, int) or isinstance(s, float):
+                return np.squeeze(self.basis_fct(s).T @ coefs_test)
+            elif isinstance(s, np.ndarray):
+                return np.squeeze((self.basis_fct(s).T @ coefs_test).T)
+            else:
+                raise ValueError('Variable is not a float, a int or a NumPy array.')
+        return func
 
     def GCV_score(self, basis_matrix, data, weights_matrix, regularization_parameter):
         
