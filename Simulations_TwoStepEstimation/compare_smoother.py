@@ -74,6 +74,7 @@ def karcher_mean_smoother(arc_length_fct, N, Q_noisy, nb_basis, bounds_h, bounds
         return None
 
 
+
 def tracking_smoother(arc_length_fct, N, Q_noisy, nb_basis, bounds_h, bounds_lbda, bounds_lbda_track, n_call_bayopt, tol, max_iter):
     try:
         grid_time = np.linspace(0,1,N)
@@ -86,7 +87,6 @@ def tracking_smoother(arc_length_fct, N, Q_noisy, nb_basis, bounds_h, bounds_lbd
         # return basis_theta_track, Q_smooth_track, nb_iter_track
     except:
         return None
-
 
 
 
