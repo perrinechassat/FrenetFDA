@@ -2,19 +2,9 @@ import sys
 sys.path.insert(1, '../')
 from FrenetFDA.utils.Frenet_Serret_utils import *
 from FrenetFDA.utils.smoothing_utils import *
-from FrenetFDA.processing_Euclidean_curve.unified_estimate_Frenet_state_space.EM_Frenet_state_space_CV import FrenetStateSpaceCV_global, bayesian_CV_optimization_regularization_parameter
-from FrenetFDA.processing_Euclidean_curve.unified_estimate_Frenet_state_space.iek_filter_smoother_Frenet_state import IEKFilterSmootherFrenetState
 from FrenetFDA.processing_Euclidean_curve.preprocessing import *
-from FrenetFDA.processing_Euclidean_curve.estimate_Frenet_path import GramSchmidtOrthogonalization, ConstrainedLocalPolynomialRegression
-from FrenetFDA.processing_Euclidean_curve.estimate_Frenet_curvatures import ExtrinsicFormulas
 from pickle import *
-import time 
-import os.path
-import os
-import dill as pickle
-from tqdm import tqdm
-from compare_smoother import compare_method_with_iteration_parallel, smoother_on_smooth_data
-from compare_method_without_iteration import compare_method_without_iteration_parallel
+from compare_smoother import smoother_on_smooth_data
 import warnings
 warnings.filterwarnings('ignore')
 
