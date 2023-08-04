@@ -51,7 +51,7 @@ def EM_from_init_theta(filename_save, filename_simu, sigma_init, n_splits_CV, n_
         if dic_theta_ext["results"][k] is not None:
             tab_smooth_theta_coefs_ext.append(dic_theta_ext["results"][k][0])
             Y_tab_bis.append(Y_tab[k])
-            grid_arc_s_tab_bis.append(grid_arc_s_tab_bis[k])
+            grid_arc_s_tab_bis.append(grid_arc_s_tab[k])
             Gamma_tab.append(((Y_tab[k] - Z_hat_GS_tab[k][:,:3,3]).T @ (Y_tab[k] - Z_hat_GS_tab[k][:,:3,3]))/N)
             mu0_tab.append(Z_hat_GS_tab[k][0])
     tab_smooth_theta_coefs_ext = np.array(tab_smooth_theta_coefs_ext)
