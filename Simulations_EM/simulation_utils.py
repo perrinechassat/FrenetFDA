@@ -46,7 +46,7 @@ def init_from_true_param_sde(theta, arc_length, N, Gamma, mu0, P0, nb_basis, noi
 
     mu0_hat = mu0@SE3.exp(np.random.multivariate_normal(np.zeros(6), 0.001**2*np.eye(6)))
     grid_time = np.linspace(0,1,N)
-    derivatives, h_opt = compute_derivatives(Y, grid_time, deg=3, h=None, CV_optimization_h={"flag":True, "h_grid":grid_bandwidth, "K":10})
+    derivatives, h_opt = compute_derivatives(Y, grid_time, deg=3, h=None, CV_optimization_h={"flag":True, "h_grid":grid_bandwidth, "K":10, "method":"gridsearch"})
     grid_arc_s, L, arc_s, arc_s_dot = compute_arc_length(Y, grid_time, smooth=True, smoothing_param=h_opt)
     Gamma_hat = ((Y - derivatives[0]).T @ (Y - derivatives[0]))/N
 
