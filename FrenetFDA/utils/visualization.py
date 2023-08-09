@@ -7,7 +7,6 @@ import plotly.io as pio
 from plotly.subplots import make_subplots
 
 layout = go.Layout(
-    # paper_bgcolor='rgba(0,0,0,0)',
     plot_bgcolor='rgba(0,0,0,0)'
 )
 
