@@ -28,7 +28,7 @@ sigma_init = 0.1
 
 print(" Influence init, simu 2")
 
-filename = filename_base + "simu_2_"
+filename = filename_base + "simu_2"
 
 filename_simu = "/home/pchassat/FrenetFDA/Simulations_TwoStepEstimation/results/scenario2/model_04/simu_2"
 
