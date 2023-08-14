@@ -65,8 +65,8 @@ arc_length = arc_length_fct(grid_time)
 Gamma = gamma**2*np.eye(3)
 mu_Z = solve_FrenetSerret_ODE_SE(theta, arc_length, mu0)
 
-directory = r"results/simulation_from_sde/model_01/"
-filename_base = "results/simulation_from_sde/model_01/"
+directory = r"results/simulation_from_sde/model_02/"
+filename_base = "results/simulation_from_sde/model_02/"
 
 current_directory = os.getcwd()
 final_directory = os.path.join(current_directory, directory)
@@ -86,45 +86,45 @@ fil.close()
 
 
 
-# """ _______________________ Simulation 1: nu=0.0001 _______________________ """
+""" _______________________ Simulation 1: nu=1.5 _______________________ """
 
-# print('--------------------- Simulation n°1: nu=0.0001 ---------------------')
-
-# time_init = time.time()
-
-# kernel = Matern(length_scale=0.1, nu=0.0001)
-
-# with tqdm(total=n_MC) as pbar:
-#    res = Parallel(n_jobs=n_MC)(delayed(simu_from_sde)(theta, arc_length, N, Gamma, mu0, P0, nb_basis, sigma_init, noise_init_theta, grid_bandwidth, max_iter_EM, tol_EM, bounds_lambda, n_call_bayopt, n_splits_CV, kernel) for k in range(n_MC))
-#    pbar.update()
-
-# time_end = time.time()
-# duration = time_end - time_init
-
-# filename = filename_base + "simu_1"
-
-# dic = {"results":res, "kernel":kernel, "duration":duration}
-
-# if os.path.isfile(filename):
-#    print("Le fichier ", filename, " existe déjà.")
-#    filename = filename + '_bis'
-# fil = open(filename,"xb")
-# pickle.dump(dic,fil)
-# fil.close()
-
-
-# print('--------------------- End Simulation n°1 ---------------------')
-
-
-
-
-""" _______________________ Simulation 2: nu=0.001 _______________________ """
-
-print('--------------------- Simulation n°2: nu=0.001 ---------------------')
+print('--------------------- Simulation n°1: nu=1.5 ---------------------')
 
 time_init = time.time()
 
-kernel = Matern(length_scale=0.1, nu=0.001)
+kernel = Matern(length_scale=0.5, nu=1.5)
+
+with tqdm(total=n_MC) as pbar:
+   res = Parallel(n_jobs=n_MC)(delayed(simu_from_sde)(theta, arc_length, N, Gamma, mu0, P0, nb_basis, sigma_init, noise_init_theta, grid_bandwidth, max_iter_EM, tol_EM, bounds_lambda, n_call_bayopt, n_splits_CV, kernel) for k in range(n_MC))
+   pbar.update()
+
+time_end = time.time()
+duration = time_end - time_init
+
+filename = filename_base + "simu_1"
+
+dic = {"results":res, "kernel":kernel, "duration":duration}
+
+if os.path.isfile(filename):
+   print("Le fichier ", filename, " existe déjà.")
+   filename = filename + '_bis'
+fil = open(filename,"xb")
+pickle.dump(dic,fil)
+fil.close()
+
+
+print('--------------------- End Simulation n°1 ---------------------')
+
+
+
+
+""" _______________________ Simulation 2: nu=2.5 _______________________ """
+
+print('--------------------- Simulation n°2: nu=2.5 ---------------------')
+
+time_init = time.time()
+
+kernel = Matern(length_scale=0.5, nu=2.5)
 
 with tqdm(total=n_MC) as pbar:
    res = Parallel(n_jobs=n_MC)(delayed(simu_from_sde)(theta, arc_length, N, Gamma, mu0, P0, nb_basis, sigma_init, noise_init_theta, grid_bandwidth, max_iter_EM, tol_EM, bounds_lambda, n_call_bayopt, n_splits_CV, kernel) for k in range(n_MC))
