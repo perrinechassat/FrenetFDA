@@ -39,7 +39,10 @@ class GramSchmidtOrthogonalization:
             vect_frenet_frame[k] = derivatives[k] 
             for j in range(0,k):
                 vect_frenet_frame[k] = vect_frenet_frame[k] - np.dot(np.transpose(vect_frenet_frame[j]),derivatives[k])*vect_frenet_frame[j]
-            vect_frenet_frame[k] = vect_frenet_frame[k]/np.linalg.norm(vect_frenet_frame[k])
+            if np.linalg.norm(vect_frenet_frame[k]) < 1e-30:
+                vect_frenet_frame[k] = np.ones(vect_frenet_frame[k].shape)
+            else:
+                vect_frenet_frame[k] = vect_frenet_frame[k]/np.linalg.norm(vect_frenet_frame[k])
         Q = np.stack(vect_frenet_frame)
         if np.linalg.det(Q)<0:
             vect_frenet_frame[-1] = - vect_frenet_frame[-1]

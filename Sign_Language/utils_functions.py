@@ -22,7 +22,7 @@ def init_arclength_Q(Y, n_call_bayopt):
 
     grid_time = np.linspace(0,1,Y.shape[0])
     step = grid_time[1] 
-    bounds_h = [3*step, 0.1]
+    bounds_h = [3*step, 0.15]
 
     ## Init Gamma and s(t)
     derivatives, h_opt = compute_derivatives(Y, grid_time, deg=3, h=None, CV_optimization_h={"flag":True, "h_grid":np.array([bounds_h[0], bounds_h[-1]]), "K":10, "method":'bayesian', "n_call":n_call_bayopt, "verbose":False})
