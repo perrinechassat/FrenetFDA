@@ -378,16 +378,22 @@ class LocalApproxFrenetODE:
                 grid_theta_train, raw_theta_train, weight_theta_train = self.__raw_estimates(x[0], grid_train, Q_train)
                 lbda = np.array([x[1],x[2]])
                 Bspline_repres.fit(grid_theta_train, raw_theta_train, weights=weight_theta_train, regularization_parameter=lbda)
-                if self.Z is None:
-                    Q_test_pred = solve_FrenetSerret_ODE_SO(Bspline_repres.evaluate, self.grid, self.Q[0])
-                    dist = np.mean(SO3.geodesic_distance(Q_test, Q_test_pred[test_index]))
+
+                if np.isnan(Bspline_repres.coefs).any():
+                    print('NaN in coefficients')
+                    if self.Z is None:
+                        Q_test_pred = np.stack([np.eye(self.dim) for i in range(len(self.grid))])
+                        dist = np.mean(SO3.geodesic_distance(Q_test, Q_test_pred[test_index]))
+                    else:
+                        Z_test_pred = np.stack([np.eye(self.dim+1) for i in range(len(self.grid))])
+                        dist = np.mean(SE3.geodesic_distance(self.Z[test_index], Z_test_pred[test_index]))
                 else:
-                    # try:
-                    #     Z_test_pred = solve_FrenetSerret_ODE_SE(Bspline_repres.evaluate, self.grid, self.Z[0])
-                    # except:
-                    #     Z_test_pred = solve_FrenetSerret_ODE_SE(Bspline_repres.evaluate, self.grid, self.Z[0], method='Radau')
-                    Z_test_pred = solve_FrenetSerret_ODE_SE(Bspline_repres.evaluate, self.grid, self.Z[0]) #, method='Radau')
-                    dist = np.mean(SE3.geodesic_distance(self.Z[test_index], Z_test_pred[test_index]))
+                    if self.Z is None:
+                        Q_test_pred = solve_FrenetSerret_ODE_SO(Bspline_repres.evaluate, self.grid, self.Q[0], timeout_seconds=60)
+                        dist = np.mean(SO3.geodesic_distance(Q_test, Q_test_pred[test_index]))
+                    else:
+                        Z_test_pred = solve_FrenetSerret_ODE_SE(Bspline_repres.evaluate, self.grid, self.Z[0], timeout_seconds=60)
+                        dist = np.mean(SE3.geodesic_distance(self.Z[test_index], Z_test_pred[test_index]))
 
                 score[ind_CV] = dist
                 ind_CV += 1 
