@@ -22,7 +22,7 @@ def init_arclength_Q(Y, n_call_bayopt):
 
     grid_time = np.linspace(0,1,Y.shape[0])
     step = grid_time[1] 
-    bounds_h = [3*step, 0.15]
+    bounds_h = [5*step, 0.15]
 
     ## Init Gamma and s(t)
     derivatives, h_opt = compute_derivatives(Y, grid_time, deg=3, h=None, CV_optimization_h={"flag":True, "h_grid":np.array([bounds_h[0], bounds_h[-1]]), "K":10, "method":'bayesian', "n_call":n_call_bayopt, "verbose":False})
@@ -39,7 +39,7 @@ def init_arclength_Q(Y, n_call_bayopt):
     Z_hat_GS, Q_hat_GS, X_hat_GS = GS_orthog.fit(h_opt) 
     # print('fin Z GramSchmidt')
 
-    return grid_arc_s, L, Y_scale, Z_hat_GS, bounds_h
+    return grid_arc_s, L, Y_scale, Z_hat_GS, bounds_h, derivatives
 
 
 
@@ -58,7 +58,7 @@ def basis_GS_leastsquares(grid_arc_s, Z_hat_GS, nb_basis, bounds_h, bounds_lbda,
 
 def estimation_GS(Y, n_call_bayopt_der, bounds_lbda, n_call_bayopt_theta):
 
-    grid_arc_s, L, Y_scale, Z_hat_GS, bounds_h = init_arclength_Q(Y, n_call_bayopt_der)
+    grid_arc_s, L, Y_scale, Z_hat_GS, bounds_h, derivatives = init_arclength_Q(Y, n_call_bayopt_der)
     nb_basis = int(np.sqrt(Y.shape[0]))
     res_theta = basis_GS_leastsquares(grid_arc_s, Z_hat_GS, nb_basis, bounds_h, bounds_lbda, n_call_bayopt_theta)
 
@@ -115,17 +115,19 @@ def estimation_GS_group(filename_base, list_Y, n_call_bayopt_der, bounds_lbda, n
     tab_Y_scale = []
     tab_Z_hat_GS = []
     tab_bounds_h = []
+    tab_derivatives = []
     for k in range(N_curves):
         tab_grid_arc_s.append(res[k][0])
         tab_L.append(res[k][1])
         tab_Y_scale.append(res[k][2])
         tab_Z_hat_GS.append(res[k][3])
         tab_bounds_h.append(res[k][4])
+        tab_derivatives.append(res[k][5])
 
 
     filename = filename_base + "estimations_GS_leastsquares_Z"
 
-    dic = {"duration":duration, "tab_grid_arc_s":tab_grid_arc_s, "tab_L":tab_L, "tab_Y_scale":tab_Y_scale, "tab_Z_hat_GS":tab_Z_hat_GS}
+    dic = {"duration":duration, "tab_grid_arc_s":tab_grid_arc_s, "tab_L":tab_L, "tab_Y_scale":tab_Y_scale, "tab_Z_hat_GS":tab_Z_hat_GS, "tab_derivatives":tab_derivatives}
            
     if os.path.isfile(filename):
         print("Le fichier ", filename, " existe déjà.")
