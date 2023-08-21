@@ -46,6 +46,9 @@ def init_arclength_Q(Y, n_call_bayopt):
 def basis_GS_leastsquares(grid_arc_s, Z_hat_GS, nb_basis, bounds_h, bounds_lbda, n_call_bayopt):
     try:
         local_approx_ode = LocalApproxFrenetODE(grid_arc_s, Z=Z_hat_GS)
+        bounds_h[0] = (bounds_h[0]/3)*5
+        if bounds_h[1] <= bounds_h[0]:
+            bounds_h[1] = np.min((5*bounds_h[0], 0.2))
         h_opt, lbda_opt, coefs_opt = local_approx_ode.bayesian_optimization_hyperparameters(n_call_bayopt=n_call_bayopt, lambda_bounds=bounds_lbda, h_bounds=bounds_h, nb_basis=nb_basis, n_splits=10, verbose=False, return_coefs=True)
         return [coefs_opt, h_opt, lbda_opt]
     except:
@@ -119,6 +122,18 @@ def estimation_GS_group(filename_base, list_Y, n_call_bayopt_der, bounds_lbda, n
         tab_Z_hat_GS.append(res[k][3])
         tab_bounds_h.append(res[k][4])
 
+
+    filename = filename_base + "estimations_GS_leastsquares_Z"
+
+    dic = {"duration":duration, "tab_grid_arc_s":tab_grid_arc_s, "tab_L":tab_L, "tab_Y_scale":tab_Y_scale, "tab_Z_hat_GS":tab_Z_hat_GS}
+           
+    if os.path.isfile(filename):
+        print("Le fichier ", filename, " existe déjà.")
+        filename = filename + '_bis'
+    fil = open(filename,"xb")
+    pickle.dump(dic,fil)
+    fil.close()
+
     time_init = time.time()
 
     with tqdm(total=N_curves) as pbar:
@@ -143,7 +158,7 @@ def estimation_GS_group(filename_base, list_Y, n_call_bayopt_der, bounds_lbda, n
             tab_lbda_opt.append(None)
 
 
-    filename = filename_base + "estimations_GS_leastsquares"
+    filename = filename_base + "estimations_GS_leastsquares_theta"
 
     dic = {"duration":duration, "tab_smooth_theta_coefs":tab_smooth_theta_coefs, "tab_h_opt":tab_h_opt, "tab_lbda_opt":tab_lbda_opt, "tab_grid_arc_s":tab_grid_arc_s, "tab_L":tab_L, 
             "tab_Y_scale":tab_Y_scale, "tab_Z_hat_GS":tab_Z_hat_GS}

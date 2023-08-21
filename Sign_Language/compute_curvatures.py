@@ -54,7 +54,7 @@ if not os.path.exists(final_directory):
 
 
 n_call_bayopt_der = 30
-bounds_lbda = np.array([[1e-10, 1e-06], [1e-10, 1e-06]])
+bounds_lbda = np.array([[1e-09, 1e-05], [1e-09, 1e-05]])
 n_call_bayopt_theta = 30
 
 #### 1
