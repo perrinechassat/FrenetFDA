@@ -22,7 +22,7 @@ def init_arclength_Q(Y, n_call_bayopt):
 
     grid_time = np.linspace(0,1,Y.shape[0])
     step = grid_time[1] 
-    bounds_h = [5*step, 0.15]
+    bounds_h = [0.05, 0.15]
 
     ## Init Gamma and s(t)
     derivatives, h_opt = compute_derivatives(Y, grid_time, deg=3, h=None, CV_optimization_h={"flag":True, "h_grid":np.array([bounds_h[0], bounds_h[-1]]), "K":10, "method":'bayesian', "n_call":n_call_bayopt, "verbose":False})
@@ -31,9 +31,9 @@ def init_arclength_Q(Y, n_call_bayopt):
     # print('fin arc length')
 
     ## Z GramSchmidt
-    bounds_h[0] = np.max((bounds_h[0], np.max(grid_arc_s[1:]-grid_arc_s[:-1])))
-    if bounds_h[1] <= bounds_h[0]:
-        bounds_h[1] = np.min((3*bounds_h[0], 0.3))
+    # bounds_h[0] = np.max((bounds_h[0], np.max(grid_arc_s[1:]-grid_arc_s[:-1])))
+    # if bounds_h[1] <= bounds_h[0]:
+    #     bounds_h[1] = np.min((3*bounds_h[0], 0.3))
     GS_orthog = GramSchmidtOrthogonalization(Y_scale, grid_arc_s, deg=3)
     h_opt = GS_orthog.bayesian_optimization_hyperparameters(n_call_bayopt, h_bounds=bounds_h, verbose=False)
     Z_hat_GS, Q_hat_GS, X_hat_GS = GS_orthog.fit(h_opt) 
@@ -46,9 +46,9 @@ def init_arclength_Q(Y, n_call_bayopt):
 def basis_GS_leastsquares(grid_arc_s, Z_hat_GS, nb_basis, bounds_h, bounds_lbda, n_call_bayopt):
     try:
         local_approx_ode = LocalApproxFrenetODE(grid_arc_s, Z=Z_hat_GS)
-        bounds_h[0] = (bounds_h[0]/3)*5
-        if bounds_h[1] <= bounds_h[0]:
-            bounds_h[1] = np.min((5*bounds_h[0], 0.2))
+        # bounds_h[0] = (bounds_h[0]/3)*5
+        # if bounds_h[1] <= bounds_h[0]:
+        #     bounds_h[1] = np.min((5*bounds_h[0], 0.2))
         h_opt, lbda_opt, coefs_opt = local_approx_ode.bayesian_optimization_hyperparameters(n_call_bayopt=n_call_bayopt, lambda_bounds=bounds_lbda, h_bounds=bounds_h, nb_basis=nb_basis, n_splits=10, verbose=False, return_coefs=True)
         return [coefs_opt, h_opt, lbda_opt]
     except:
