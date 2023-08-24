@@ -32,7 +32,7 @@ group_2 = ['appeler', 'août', 'avant', 'animal', 'chercher', 'avion', 'besoin',
 group_3 = ['bouche bée', 'donner', 'avoir', 'bonjour', 'bouche cousue', 'brosse à dent', 'cerise', 'chaud', 'commander(resto)'] #93
 group_4 = ['aimer', 'autres', 'bleu', 'boire', 'bonbon', 'chagrin', 'chuchoter', 'cloche'] #93
 # group_5 = ['eux trois', 'ils', 'commander(qqun)', 'croire', 'ne pas croire', 'curieux', 'jusqu’à', 'il faut', 'elle'] #93
-group_5 = ['eux trois', 'ils', 'commander(qqun)', 'croire', 'ne pas croire', 'curieux', 'jusqu’à', 'il faut'] #93
+group_5 = ['eux trois', 'ils', 'commander(qqun)', 'croire', 'ne pas croire', 'curieux', 'jusqu’à', 'il faut'] #92
 group_6 = ['après-midi', 'débrouiller', 'éclair', 'enfant', 'désolé', 'décembre', 'jour', 'femme'] #90
 group_7 = ['jamais', 'dire', 'essayer', 'faim', 'je', 'janvier', 'jaune', 'Maman'] #93
 

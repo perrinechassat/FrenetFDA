@@ -32,6 +32,6 @@ group = "group_5"
 
 filename = filename_base + group + "_estimation_EM"
 
-filename_simu = "/home/pchassat/FrenetFDA/Sign_Language/results/trial_01/" + group + "_estimation_GS_leastsquares_theta"
+filename_simu = "/home/pchassat/FrenetFDA/Sign_Language/results/trial_01/" + group + "_estimations_GS_leastsquares_theta"
 
 EM_from_init_theta(filename, filename_simu, sigma_init, n_splits_CV, n_call_bayopt, bounds_lambda, tol_EM, max_iter_EM)
