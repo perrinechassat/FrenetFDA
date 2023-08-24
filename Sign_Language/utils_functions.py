@@ -22,7 +22,7 @@ def init_arclength_Q(Y, n_call_bayopt):
 
     grid_time = np.linspace(0,1,Y.shape[0])
     step = grid_time[1] 
-    bounds_h = [0.05, 0.1]
+    bounds_h = [0.1, 0.15]
 
     bounds_h[0] = np.max((bounds_h[0],step*3))
     ## Init Gamma and s(t)
