@@ -96,24 +96,24 @@ n_call_bayopt_theta = 30
 
 # print('End: Estimation curvatures with GS on group 4.', '\n')
 
-#### 6
+# #### 6
 
-print('Start: Estimation curvatures with GS on group 6.', '\n')
+# print('Start: Estimation curvatures with GS on group 6.', '\n')
 
-filename = filename_base + "group_6_"
-estimation_GS_group(filename, list_Y_6, n_call_bayopt_der, bounds_lbda, n_call_bayopt_theta)
+# filename = filename_base + "group_6_"
+# estimation_GS_group(filename, list_Y_6, n_call_bayopt_der, bounds_lbda, n_call_bayopt_theta)
 
-print('End: Estimation curvatures with GS on group 6.', '\n')
+# print('End: Estimation curvatures with GS on group 6.', '\n')
 
 
-#### 7
+# #### 7
 
-print('Start: Estimation curvatures with GS on group 7.', '\n')
+# print('Start: Estimation curvatures with GS on group 7.', '\n')
 
-filename = filename_base + "group_7_"
-estimation_GS_group(filename, list_Y_7, n_call_bayopt_der, bounds_lbda, n_call_bayopt_theta)
+# filename = filename_base + "group_7_"
+# estimation_GS_group(filename, list_Y_7, n_call_bayopt_der, bounds_lbda, n_call_bayopt_theta)
 
-print('End: Estimation curvatures with GS on group 7.', '\n')
+# print('End: Estimation curvatures with GS on group 7.', '\n')
 
 #### 5
 
