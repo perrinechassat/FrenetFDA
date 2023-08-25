@@ -24,7 +24,7 @@ max_iter_EM = 200
 n_splits_CV = 5
 n_call_bayopt = 25
 bounds_lambda = ((1e-09, 1e-05), (1e-09, 1e-05))
-sigma_init = 0.15
+sigma_init = 0.05
 
 print(" EM Group 1 ")
 
