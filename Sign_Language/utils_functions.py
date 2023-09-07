@@ -44,14 +44,21 @@ def init_arclength_Q(Y, n_call_bayopt):
 
 
 
-def basis_GS_leastsquares(grid_arc_s, Z_hat_GS, nb_basis, bounds_h, bounds_lbda, n_call_bayopt):
+def basis_GS_leastsquares(grid_arc_s, Z_hat_GS, bounds_h, bounds_lbda, n_call_bayopt):
     try:
         local_approx_ode = LocalApproxFrenetODE(grid_arc_s, Z=Z_hat_GS)
+
+        knots = [grid_arc_s[0]]
+        grid_bis = grid_arc_s[1:-1]
+        for i in range(0,len(grid_bis),4):
+            knots.append(grid_bis[i])
+        knots.append(grid_arc_s[-1])
+        nb_basis = len(knots)+2
         # bounds_h[0] = (bounds_h[0]/3)*5
         # if bounds_h[1] <= bounds_h[0]:
         #     bounds_h[1] = np.min((5*bounds_h[0], 0.2))
-        h_opt, lbda_opt, coefs_opt = local_approx_ode.bayesian_optimization_hyperparameters(n_call_bayopt=n_call_bayopt, lambda_bounds=bounds_lbda, h_bounds=bounds_h, nb_basis=nb_basis, n_splits=10, verbose=False, return_coefs=True)
-        return [coefs_opt, h_opt, lbda_opt]
+        h_opt, lbda_opt, coefs_opt = local_approx_ode.bayesian_optimization_hyperparameters(n_call_bayopt=n_call_bayopt, lambda_bounds=bounds_lbda, h_bounds=bounds_h, nb_basis=nb_basis, n_splits=10, verbose=False, return_coefs=True, knots=knots)
+        return [coefs_opt, h_opt, lbda_opt, knots, nb_basis]
     except:
         return None
     
@@ -139,8 +146,11 @@ def estimation_GS_group(filename_base, list_Y, n_call_bayopt_der, bounds_lbda, n
 
     time_init = time.time()
 
+    # with tqdm(total=N_curves) as pbar:
+    #     res = Parallel(n_jobs=N_curves)(delayed(basis_GS_leastsquares)(tab_grid_arc_s[k], tab_Z_hat_GS[k], int(list_Y[k].shape[0]/3), tab_bounds_h[k], bounds_lbda, n_call_bayopt_theta) for k in range(N_curves))
+    # pbar.update()
     with tqdm(total=N_curves) as pbar:
-        res = Parallel(n_jobs=N_curves)(delayed(basis_GS_leastsquares)(tab_grid_arc_s[k], tab_Z_hat_GS[k], int(np.sqrt(list_Y[k].shape[0])), tab_bounds_h[k], bounds_lbda, n_call_bayopt_theta) for k in range(N_curves))
+        res = Parallel(n_jobs=N_curves)(delayed(basis_GS_leastsquares)(tab_grid_arc_s[k], tab_Z_hat_GS[k], tab_bounds_h[k], bounds_lbda, n_call_bayopt_theta) for k in range(N_curves))
     pbar.update()
 
     time_end = time.time()
@@ -150,21 +160,26 @@ def estimation_GS_group(filename_base, list_Y, n_call_bayopt_der, bounds_lbda, n
     tab_smooth_theta_coefs = []
     tab_h_opt = []
     tab_lbda_opt = []
+    tab_nb_basis = []
+    tab_knots = []
     for k in range(N_curves):
         if res[k] is not None:
             tab_smooth_theta_coefs.append(res[k][0])
             tab_h_opt.append(res[k][1])
             tab_lbda_opt.append(res[k][2])
+            tab_knots.append(res[k][3])
+            tab_nb_basis.append(res[k][4])
         else:
             tab_smooth_theta_coefs.append(None)
             tab_h_opt.append(None)
             tab_lbda_opt.append(None)
-
+            tab_knots.append(None)
+            tab_nb_basis.append(None)
 
     filename = filename_base + "estimations_GS_leastsquares_theta"
 
-    dic = {"duration":duration, "tab_smooth_theta_coefs":tab_smooth_theta_coefs, "tab_h_opt":tab_h_opt, "tab_lbda_opt":tab_lbda_opt, "tab_grid_arc_s":tab_grid_arc_s, "tab_L":tab_L, 
-            "tab_Y_scale":tab_Y_scale, "tab_Z_hat_GS":tab_Z_hat_GS}
+    dic = {"duration":duration, "tab_smooth_theta_coefs":tab_smooth_theta_coefs, "tab_h_opt":tab_h_opt, "tab_lbda_opt":tab_lbda_opt, 
+           "tab_grid_arc_s":tab_grid_arc_s, "tab_L":tab_L, "tab_Y_scale":tab_Y_scale, "tab_Z_hat_GS":tab_Z_hat_GS, "tab_knots":tab_knots, "tab_nb_basis":tab_nb_basis}
            
     if os.path.isfile(filename):
         print("Le fichier ", filename, " existe déjà.")

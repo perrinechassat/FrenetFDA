@@ -314,12 +314,18 @@ def grid_search_GCV_optimization_Bspline_hyperparameters(dim, grid, data_init, n
 
 class VectorBSplineSmoothing:
 
-    def __init__(self, dim, nb_basis, domain_range=(0,1), order=4, penalization=True):
+    def __init__(self, dim, nb_basis=None, domain_range=(0,1), order=4, penalization=True, knots=None):
 
         if isinstance(dim, int) and dim > 0:
             self.dim = dim
         else:
             raise Exception("Invalide value of dim.")
+        
+        if (nb_basis is None) and (knots is None):
+            raise Exception("Either nb_basis or knots must be set.")
+        
+        if knots is not None:
+            nb_basis = len(knots)+2
         
         if isinstance(nb_basis, int) or isinstance(nb_basis, float) or isinstance(nb_basis, np.int64) or isinstance(nb_basis, np.int32):
             self.nb_basis = np.repeat(int(nb_basis), dim)
@@ -330,7 +336,10 @@ class VectorBSplineSmoothing:
 
         self.domain_range = domain_range
         self.order = order
-        list_basis = [BSpline(domain_range=self.domain_range, n_basis=self.nb_basis[i], order=order) for i in range(self.dim)]
+        if knots is not None:
+            list_basis = [BSpline(domain_range=self.domain_range, order=order, knots=knots) for i in range(self.dim)]
+        else:
+            list_basis = [BSpline(domain_range=self.domain_range, n_basis=self.nb_basis[i], order=order) for i in range(self.dim)]
         self.basis = VectorValued(list_basis)
         def basis_fct(s):
             return np.squeeze(self.basis.evaluate(s))
