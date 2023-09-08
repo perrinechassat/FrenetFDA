@@ -145,6 +145,7 @@ class LocalApproxFrenetODE:
             Tau = np.append(Tau, tau.tolist())        
 
         Ms, Momega, Mkappa, Mtau = self.__compute_sort_unique_val(np.around(S, 8), Omega, Kappa, Tau)
+        Mkappa = abs(Mkappa)
 
         # Test pour enlever les valeurs à zeros.
         Momega = np.asarray(Momega)

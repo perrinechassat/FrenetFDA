@@ -246,3 +246,9 @@ def EM_from_init_theta(filename_save, filename_simu, sigma_init, n_splits_CV, n_
     fil.close()
 
     print('___________________________ End EM ___________________________')
+
+
+
+
+
+
