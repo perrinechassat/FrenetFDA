@@ -822,13 +822,13 @@ class FrenetStateSpaceCV_global:
     def expected_loglikelihood(self):
         # P0 / mu0
         val = np.log(np.linalg.det(self.P0))
-        print('v P0:', -np.log(np.linalg.det(self.P0))) 
+        # print('v P0:', -np.log(np.linalg.det(self.P0))) 
         # Gamma
         val += self.N*np.log(np.linalg.det(self.Gamma)) 
-        print('v gamma:', -self.N*np.log(np.linalg.det(self.Gamma)))
+        # print('v gamma:', -self.N*np.log(np.linalg.det(self.Gamma)))
         # Theta / Sigma
         val += 2*self.N*np.log(self.sigma_square)
-        print('v sigma:', -2*self.N*np.log(self.sigma_square))
+        # print('v sigma:', -2*self.N*np.log(self.sigma_square))
         # print('val l1:', val)
         v_bis = 0
         for i in range(self.N):
@@ -836,7 +836,7 @@ class FrenetStateSpaceCV_global:
             val += np.log(np.linalg.det( self.u[i]*self.L_tilde[i] @ self.L_tilde[i].T )) # Sigma deja dans W_tilde
             # val += (1/self.sigma_square)*np.trace(self.expect_MSE[i]) 
 
-        print('v weights:', -v_bis)
+        # print('v weights:', -v_bis)
         return -val
 
 
@@ -913,7 +913,7 @@ def bayesian_CV_optimization_regularization_parameter(n_CV, n_call_bayopt, lambd
             FS_statespace = FrenetStateSpaceCV_global(grid_train, Y_train, bornes_theta=np.array([0,1]))
             FS_statespace.expectation_maximization(tol, max_iter, nb_basis=nb_basis, regularization_parameter=x, init_params=init_params, method=method, order=order, verbose=verbose, knots=knots)
             
-            Z_reconst = solve_FrenetSerret_ODE_SE(FS_statespace.theta, grid_test, Z0=FS_statespace.mu0, timeout_seconds=60)
+            Z_reconst = solve_FrenetSerret_ODE_SE(FS_statespace.theta, grid_test, Z0=FS_statespace.mu0, timeout_seconds=120)
             X_reconst_test = Z_reconst[1:,:3,3]
             score_lambda[ind_CV] = np.linalg.norm(X_reconst_test - Y_test)**2
             
