@@ -57,7 +57,7 @@ def basis_GS_leastsquares(grid_arc_s, Z_hat_GS, bounds_h, bounds_lbda, n_call_ba
         # bounds_h[0] = (bounds_h[0]/3)*5
         # if bounds_h[1] <= bounds_h[0]:
         #     bounds_h[1] = np.min((5*bounds_h[0], 0.2))
-        h_opt, lbda_opt, coefs_opt = local_approx_ode.bayesian_optimization_hyperparameters(n_call_bayopt=n_call_bayopt, lambda_bounds=bounds_lbda, h_bounds=bounds_h, nb_basis=nb_basis, n_splits=10, verbose=False, return_coefs=True, knots=knots)
+        h_opt, lbda_opt, coefs_opt = local_approx_ode.bayesian_optimization_hyperparameters(n_call_bayopt=n_call_bayopt, lambda_bounds=bounds_lbda, h_bounds=bounds_h, nb_basis=nb_basis, n_splits=5, verbose=True, return_coefs=True, knots=knots)
         return [coefs_opt, h_opt, lbda_opt, knots, nb_basis]
     except:
         return None
