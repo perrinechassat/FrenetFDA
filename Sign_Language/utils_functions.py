@@ -206,22 +206,24 @@ def EM_from_init_theta(filename_save, filename_simu, sigma_init, n_splits_CV, n_
     tab_Z_hat_GS = dic_init["tab_Z_hat_GS"]
     tab_smooth_theta_coefs = dic_init["tab_smooth_theta_coefs"]
     tab_grid_arc_s = dic_init["tab_grid_arc_s"]
+    tab_nb_basis = dic_init["tab_nb_basis"]
+    tab_knots = dic_init["tab_knots"]
     n_curves = len(tab_Y_scale)
 
     Gamma_tab = []
     mu0_tab = []
-    nb_basis_tab = []
+    # nb_basis_tab = []
     for k in range(n_curves):
         Gamma_tab.append(((tab_Y_scale[k] - tab_Z_hat_GS[k][:,:3,3]).T @ (tab_Y_scale[k] - tab_Z_hat_GS[k][:,:3,3]))/len(tab_Y_scale[k]))
         mu0_tab.append(tab_Z_hat_GS[k][0])
-        nb_basis_tab.append(int(np.sqrt(tab_Y_scale[k].shape[0])))
+        # nb_basis_tab.append(int(np.sqrt(tab_Y_scale[k].shape[0])))
 
     time_init = time.time()
 
     with tqdm(total=n_curves) as pbar:
         res = Parallel(n_jobs=n_curves)(delayed(bayesian_CV_optimization_regularization_parameter)(n_CV=n_splits_CV, n_call_bayopt=n_call_bayopt, lambda_bounds=bounds_lambda, grid_obs=tab_grid_arc_s[k], 
-                                                                                                   Y_obs=tab_Y_scale[k], tol=tol_EM, max_iter=max_iter_EM, nb_basis=nb_basis_tab[k], 
-                                                                                init_params={"Gamma":Gamma_tab[k], "coefs":tab_smooth_theta_coefs[k], "mu0":mu0_tab[k], "Sigma":init_Sigma, "P0":P0_init}) for k in range(n_curves))
+                                                                    Y_obs=tab_Y_scale[k], tol=tol_EM, max_iter=max_iter_EM, nb_basis=tab_nb_basis[k], knots=tab_knots[k], 
+                                                                    init_params={"Gamma":Gamma_tab[k], "coefs":tab_smooth_theta_coefs[k], "mu0":mu0_tab[k], "Sigma":init_Sigma, "P0":P0_init}) for k in range(n_curves))
     pbar.update()
 
     time_end = time.time()
@@ -236,7 +238,7 @@ def EM_from_init_theta(filename_save, filename_simu, sigma_init, n_splits_CV, n_
 
     filename = filename_save
 
-    dic = {"duration":duration, "FS_statespace_tab":FS_statespace_tab, "res_bayopt_tab":res_bayopt_tab, "nb_basis_tab":nb_basis_tab, "mu0_tab":mu0_tab, "Gamma_tab":Gamma_tab}
+    dic = {"duration":duration, "FS_statespace_tab":FS_statespace_tab, "res_bayopt_tab":res_bayopt_tab, "nb_basis_tab":tab_nb_basis, "mu0_tab":mu0_tab, "Gamma_tab":Gamma_tab, "knots_tab":tab_knots}
 
     if os.path.isfile(filename):
         print("Le fichier ", filename, " existe déjà.")
