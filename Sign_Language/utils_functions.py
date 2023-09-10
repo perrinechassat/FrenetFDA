@@ -24,15 +24,15 @@ def init_arclength_Q(Y, n_call_bayopt):
     step = grid_time[1] 
     bounds_h = [0.05, 0.15]
 
-    bounds_h[0] = np.max((bounds_h[0],step*3))
+    # bounds_h[0] = np.max((bounds_h[0],step*3))
     ## Init Gamma and s(t)
-    derivatives, h_opt = compute_derivatives(Y, grid_time, deg=3, h=None, CV_optimization_h={"flag":True, "h_grid":np.array([bounds_h[0], bounds_h[-1]]), "K":10, "method":'bayesian', "n_call":n_call_bayopt, "verbose":True})
+    derivatives, h_opt = compute_derivatives(Y, grid_time, deg=3, h=None, CV_optimization_h={"flag":True, "h_grid":np.array([bounds_h[0], bounds_h[-1]]), "K":10, "method":'bayesian', "n_call":n_call_bayopt, "verbose":False})
     grid_arc_s, L, arc_s, arc_s_dot = compute_arc_length(Y, grid_time, smooth=True, smoothing_param=h_opt)
     Y_scale = Y/L
     # print('fin arc length')
 
     ## Z GramSchmidt
-    # bounds_h[0] = np.max((bounds_h[0], np.max(grid_arc_s[1:]-grid_arc_s[:-1])))
+    bounds_h[0] = np.max((bounds_h[0], np.max(grid_arc_s[1:]-grid_arc_s[:-1])*3))
     # if bounds_h[1] <= bounds_h[0]:
     #     bounds_h[1] = np.min((3*bounds_h[0], 0.3))
     GS_orthog = GramSchmidtOrthogonalization(Y_scale, grid_arc_s, deg=3)

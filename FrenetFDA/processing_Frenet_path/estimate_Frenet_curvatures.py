@@ -364,6 +364,7 @@ class LocalApproxFrenetODE:
 
         # @profile
         def func(x):
+            print('x:', x)
             score = np.zeros(n_splits)
             kf = KFold(n_splits=n_splits, shuffle=True)
             grid_split = self.grid[1:-1]
