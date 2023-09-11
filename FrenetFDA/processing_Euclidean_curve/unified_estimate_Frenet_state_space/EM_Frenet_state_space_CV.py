@@ -702,7 +702,7 @@ class FrenetStateSpaceCV_global:
         self.regularization_parameter, self.regularization_parameter_matrix = self.Bspline_decomp.check_regularization_parameter(self.regularization_parameter)
         self.coefs, self.mat_weights, self.weights, self.L_tilde = self.opti_coefs(tol, max_iter, self.regularization_parameter_matrix)
         self.sigma_square, self.Sigma, self.expect_MSE = self.opti_Sigma(self.coefs, self.weights, self.regularization_parameter_matrix)
-        self.plot_theta()
+        # self.plot_theta()
 
 
     def theta_from_coefs(self, coefs, s):
