@@ -42,7 +42,7 @@ tol_EM = 0.1
 max_iter_EM = 200
 n_splits_CV = 5
 n_call_bayopt = 25
-bounds_lambda = ((1e-15, 1e-07), (1e-15, 1e-07))
+bounds_lambda = ((1e-15, 1e-06), (1e-15, 1e-06))
 sigma_init = 1
 
 print(" EM Group 1 ")
@@ -51,6 +51,6 @@ group = "group_1"
 
 filename = filename_base + group + "_estimation_EM_1"
 
-filename_simu = "/home/pchassat/FrenetFDA/Sign_Language/results/trial_02/" + group + "_estimations_GS_leastsquares_theta"
+filename_simu = "/home/pchassat/FrenetFDA/Sign_Language/results/trial_03/" + group + "_estimations_GS_leastsquares_theta"
 
 EM_from_init_theta(filename, filename_simu, sigma_init, n_splits_CV, n_call_bayopt, bounds_lambda, tol_EM, max_iter_EM)
