@@ -50,7 +50,7 @@ def basis_GS_leastsquares(grid_arc_s, Z_hat_GS, bounds_h, bounds_lbda, n_call_ba
 
         knots = [grid_arc_s[0]]
         grid_bis = grid_arc_s[1:-1]
-        for i in range(0,len(grid_bis),4):
+        for i in range(0,len(grid_bis),3):
             knots.append(grid_bis[i])
         knots.append(grid_arc_s[-1])
         nb_basis = len(knots)+2

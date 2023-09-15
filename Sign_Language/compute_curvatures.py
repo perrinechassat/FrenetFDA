@@ -45,9 +45,12 @@ list_Y_6 = compute_list_Y_from_group(df, group_6)
 list_Y_7 = compute_list_Y_from_group(df, group_7)
 
 
+# trial_03 : un noeud tous les 4 points
+# trial_04 : un noeud tous les 3 points
 
-directory = r"results/trial_03/"
-filename_base = "results/trial_03/"
+
+directory = r"results/trial_04/"
+filename_base = "results/trial_04/"
 current_directory = os.getcwd()
 final_directory = os.path.join(current_directory, directory)
 if not os.path.exists(final_directory):
