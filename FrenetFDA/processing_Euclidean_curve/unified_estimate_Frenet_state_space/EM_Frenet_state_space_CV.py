@@ -947,7 +947,52 @@ def bayesian_CV_optimization_regularization_parameter(n_CV, n_call_bayopt, lambd
         
 
 
+def grid_search_CV_optimization_regularization_parameter(n_CV, lambda_grids, grid_obs, Y_obs, tol, max_iter, nb_basis, init_params = None, order=4, method='approx', verbose=False, knots=None):
 
+    ## CV optimization of lambda
+    
+    def func(x):
+        score_lambda = np.zeros(n_CV)
+        kf = KFold(n_splits=n_CV, shuffle=True)
+        ind_CV = 0
+
+        for train_index, test_index in kf.split(grid_obs[1:]):
+            # print('     --> Start CV step n°', ind_CV+1)
+            Y_train = Y_obs[train_index]
+            Y_test = Y_obs[test_index]
+            grid_train = np.concatenate((np.array([grid_obs[0]]), grid_obs[1:][train_index]))
+            grid_test = np.concatenate((np.array([grid_obs[0]]), grid_obs[1:][test_index]))
+            
+            FS_statespace = FrenetStateSpaceCV_global(grid_train, Y_train, bornes_theta=np.array([0,1]))
+            FS_statespace.expectation_maximization(tol, max_iter, nb_basis=nb_basis, regularization_parameter=x, init_params=init_params, method=method, order=order, verbose=verbose, knots=knots)
+            
+            Z_reconst = solve_FrenetSerret_ODE_SE(FS_statespace.theta, grid_test, Z0=FS_statespace.mu0, timeout_seconds=120)
+            X_reconst_test = Z_reconst[1:,:3,3]
+            score_lambda[ind_CV] = np.linalg.norm(X_reconst_test - Y_test)**2
+            
+            ind_CV += 1
+
+        # print(score_lambda)
+        # print('val x:', x, 'score:', np.mean(score_lambda))
+        return np.mean(score_lambda)
+
+    # Do a grid search optimisation and return the optimal parameter (lambda_kappa, lambda_tau)
+    
+    n = len(lambda_grids[0])
+    m = len(lambda_grids[1])
+    res_grid_search = np.zeros((n,m))
+    for i in range(n):
+        for j in range(m):
+            res_grid_search[i,j] = func(np.array([lambda_grids[0][i], lambda_grids[1][j]]))
+    
+    ind = np.unravel_index(np.argmin(res_grid_search, axis=None), res_grid_search.shape)
+    lbda_opt = np.array([lambda_grids[0][ind[0]], lambda_grids[1][ind[1]]])
+    print('the optimal hyperparameters selected are: ', lbda_opt)
+
+    FS_statespace = FrenetStateSpaceCV_global(grid_obs, Y_obs[1:], bornes_theta=np.array([0,1]))
+    FS_statespace.expectation_maximization(tol, max_iter, nb_basis=nb_basis, regularization_parameter=lbda_opt, init_params=init_params, method=method, order=order, verbose=verbose, knots=knots)
+
+    return FS_statespace, res_grid_search
 
 
 
