@@ -899,6 +899,8 @@ def bayesian_CV_optimization_regularization_parameter(n_CV, n_call_bayopt, lambd
     ## CV optimization of lambda
     
     def func(x):
+        x_log = 10 ** x
+        print(x_log)
         score_lambda = np.zeros(n_CV)
         kf = KFold(n_splits=n_CV, shuffle=True)
         ind_CV = 0
@@ -911,7 +913,7 @@ def bayesian_CV_optimization_regularization_parameter(n_CV, n_call_bayopt, lambd
             grid_test = np.concatenate((np.array([grid_obs[0]]), grid_obs[1:][test_index]))
             
             FS_statespace = FrenetStateSpaceCV_global(grid_train, Y_train, bornes_theta=np.array([0,1]))
-            FS_statespace.expectation_maximization(tol, max_iter, nb_basis=nb_basis, regularization_parameter=x, init_params=init_params, method=method, order=order, verbose=verbose, knots=knots)
+            FS_statespace.expectation_maximization(tol, max_iter, nb_basis=nb_basis, regularization_parameter=x_log, init_params=init_params, method=method, order=order, verbose=verbose, knots=knots)
             
             Z_reconst = solve_FrenetSerret_ODE_SE(FS_statespace.theta, grid_test, Z0=FS_statespace.mu0, timeout_seconds=120)
             X_reconst_test = Z_reconst[1:,:3,3]
@@ -933,7 +935,7 @@ def bayesian_CV_optimization_regularization_parameter(n_CV, n_call_bayopt, lambd
                     random_state=1,       # the random seed
                     n_jobs=1,            # use all the cores for parallel calculation
                     verbose=True)
-    lbda_opt = res_bayopt.x
+    lbda_opt = 10 ** res_bayopt.x
     # print(res_bayopt.x_iters)
     # print(res_bayopt.func_vals)
     lbda_opt = np.array([lbda_opt[0], lbda_opt[1]])

@@ -23,7 +23,8 @@ tol_EM = 0.1
 max_iter_EM = 200
 n_splits_CV = 5
 n_call_bayopt = 25
-bounds_lambda = ((1e-09, 1e-05), (1e-09, 1e-05))
+# bounds_lambda = ((1e-09, 1e-05), (1e-09, 1e-05))
+bounds_lambda = ((-9, -5), (-9, -5))
 sigma_init = 0.1
 
 print(" Influence init, simu 2")

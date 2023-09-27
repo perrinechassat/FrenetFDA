@@ -39,4 +39,4 @@ EM_from_init_theta_grid_search(filename, filename_simu, sigma_init, n_splits_CV,
 
 
 
-# Ensuite, lancer l'EM pour chaque (lbda_1, lbda_2) de la grille pour max_iter fixé et sans seuil et voir la convergence dans chaque cas. 
+# Ensuite, lancer l'EM pour chaque (lbda_1, lbda_2) de la grille pour max_iter fixé et sans seuil et voir la convergence dans chaque cas (sans opti). 
