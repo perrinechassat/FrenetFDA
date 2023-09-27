@@ -899,7 +899,7 @@ def bayesian_CV_optimization_regularization_parameter(n_CV, n_call_bayopt, lambd
     ## CV optimization of lambda
     
     def func(x):
-        x_log = 10 ** x
+        x_log = 10 ** np.array(x)
         print(x_log)
         score_lambda = np.zeros(n_CV)
         kf = KFold(n_splits=n_CV, shuffle=True)
@@ -935,7 +935,7 @@ def bayesian_CV_optimization_regularization_parameter(n_CV, n_call_bayopt, lambd
                     random_state=1,       # the random seed
                     n_jobs=1,            # use all the cores for parallel calculation
                     verbose=True)
-    lbda_opt = 10 ** res_bayopt.x
+    lbda_opt = 10 ** np.array(res_bayopt.x)
     # print(res_bayopt.x_iters)
     # print(res_bayopt.func_vals)
     lbda_opt = np.array([lbda_opt[0], lbda_opt[1]])
