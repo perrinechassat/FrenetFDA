@@ -5,7 +5,7 @@ from scipy.integrate import trapz
 from scipy.linalg import svd
 import collections
 import fdasrsf.utility_functions as uf
-from Source import optimum_reparamN2_C as orN2_C
+import optimum_reparam_N_curvatures as orNC
 
 
 def optimum_reparam_curvature_1d(theta1, time, theta2, lam=0.0, grid_dim=7):
@@ -13,7 +13,7 @@ def optimum_reparam_curvature_1d(theta1, time, theta2, lam=0.0, grid_dim=7):
     theta1 = np.array([theta1]).T
     theta2 = np.array([theta2]).T
 
-    gam = orN2_C.coptimum_reparamN2(np.ascontiguousarray(theta1), time, np.ascontiguousarray(theta2), lam, grid_dim)
+    gam = orNC.coptimum_reparamN2(np.ascontiguousarray(theta1), time, np.ascontiguousarray(theta2), lam, grid_dim)
     gam = np.squeeze(gam)
 
     return gam
@@ -34,7 +34,7 @@ def optimum_reparam_curvatures(theta1, time, theta2, lam=0.0, grid_dim=7):
         gam: describing the warping function used to align theta2 with theta1
 
     """
-    gam = orN2_C.coptimum_reparamN2(np.ascontiguousarray(theta1), time,
+    gam = orNC.coptimum_reparamN2(np.ascontiguousarray(theta1), time,
                                           np.ascontiguousarray(theta2), lam, grid_dim)
 
     return gam
@@ -57,7 +57,7 @@ def optimum_reparam_vect_curvatures(theta1, time, theta2, lam=0.0, grid_dim=7):
 
     """
 
-    gam = orN2_C.coptimum_reparam_curve(np.ascontiguousarray(theta1), time,
+    gam = orNC.coptimum_reparam_curve(np.ascontiguousarray(theta1), time,
                                          np.ascontiguousarray(theta2), lam, grid_dim)
 
     return gam
@@ -163,12 +163,14 @@ def align_vect_SRC_fPCA(f, time, weights=None, num_comp=3, cores=-1, MaxItr=1, i
         # Matching Step
 
         if parallel:
-            out = Parallel(n_jobs=cores)(delayed(orN.optimum_reparam_curve)(np.ascontiguousarray(fhat[:, :, k]), time, np.ascontiguousarray(fi[:, :, k, itr]), lam) for k in range(N))
+            out = Parallel(n_jobs=cores)(delayed(orN.coptimum_reparam_curve)(np.ascontiguousarray(fhat[:, :, k]), time, np.ascontiguousarray(fi[:, :, k, itr]), lam) for k in range(N))
             gam_t = np.array(out)
-            gam[:, :, itr] = gam_t.transpose()
+            for k in range(N):
+                gam[:,k,itr] = (gam_t[k] - gam_t[k][0])/(gam_t[k][-1] - gam_t[k][0])
+            # gam[:, :, itr] = gam_t.transpose()
         else:
             for k in range(N):
-                gam[:, k, itr] = orN.optimum_reparam_curve(np.ascontiguousarray(fhat[:, :, k]), time, np.ascontiguousarray(fi[:, :, k, itr]), lam)
+                gam[:, k, itr] = orN.coptimum_reparam_curve(np.ascontiguousarray(fhat[:, :, k]), time, np.ascontiguousarray(fi[:, :, k, itr]), lam)
 
         for kk in range(n):
             for k in range(0, N):
@@ -410,12 +412,14 @@ def align_vect_curvatures_fPCA(f, time, weights=None, num_comp=3, cores=-1, MaxI
         # Matching Step
 
         if parallel:
-            out = Parallel(n_jobs=cores)(delayed(optimum_reparam_vect_curvatures)(fhat[:, :, k], time, fi[:, :, k, itr], lam) for k in range(N))
+            out = Parallel(n_jobs=cores)(delayed(orNC.coptimum_reparam_curve)(np.ascontiguousarray(fhat[:, :, k]), time, np.ascontiguousarray(fi[:, :, k, itr]), lam) for k in range(N))
             gam_t = np.array(out)
-            gam[:, :, itr] = gam_t.transpose()
+            for k in range(N):
+                gam[:,k,itr] = (gam_t[k] - gam_t[k][0])/(gam_t[k][-1] - gam_t[k][0])
+            # gam[:, :, itr] = gam_t.transpose()
         else:
             for k in range(N):
-                gam[:, k, itr] = optimum_reparam_vect_curvatures(fhat[:, :, k], time, fi[:, :, k, itr], lam)
+                gam[:, k, itr] = orNC.coptimum_reparam_curve(np.ascontiguousarray(fhat[:, :, k]), time, np.ascontiguousarray(fi[:, :, k, itr]), lam)
 
         for kk in range(n):
             for k in range(0, N):
@@ -494,6 +498,7 @@ def align_vect_curvatures_fPCA(f, time, weights=None, num_comp=3, cores=-1, MaxI
 
     for k in range(0, N):
         gamf[:, k] = np.interp(time0, time, gamf[:, k])
+        gamf[:,k] = (gamf[:,k] - gamf[0,k])/(gamf[-1,k] - gamf[0,k])
     
     # plt.figure()
     # plt.plot(time, mfn[0])

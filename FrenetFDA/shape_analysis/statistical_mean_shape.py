@@ -5,6 +5,9 @@ from FrenetFDA.utils.Lie_group.SO3_utils import SO3
 from FrenetFDA.utils.Lie_group.SE3_utils import SE3
 from FrenetFDA.utils.alignment_utils import align_vect_curvatures_fPCA, warp_curvatures, align_vect_SRC_fPCA
 from scipy.interpolate import interp1d, InterpolatedUnivariateSpline
+from skopt import gp_minimize
+from joblib import Parallel, delayed
+from sklearn.model_selection import KFold
 
 
 class StatisticalMeanShape:
@@ -20,9 +23,10 @@ class StatisticalMeanShape:
         self.adaptive_ind = adaptive
         self.N, self.dim, _ = list_Frenet_paths[0].shape
         self.dim_theta = len(np.diag(np.eye(self.dim), k=1))
+        self.bounds = np.array([np.min(list_grids), np.max(list_grids)])
 
 
-    def __compute_sort_unique_val(self, S, Omega, Kappa, Tau):
+    def compute_sort_unique_val(self, S, Omega, Kappa, Tau):
         """
         Step of function Compute Raw Curvature, compute the re-ordering of the data.
         ...
@@ -47,21 +51,20 @@ class StatisticalMeanShape:
         return uniqueS, mOmega, mKappa, mTau
     
 
-    def raw_estimates(self, h):
+    def raw_estimates(self, h, sigma=None):
         return np.zeros(self.N), np.zeros((self.N,self.dim_theta)), np.zeros(self.N)
 
     
-    def Bspline_smooth_estimates(self, h, nb_basis, order=4, regularization_parameter=None):
-        grid_theta, raw_theta, weight_theta = self.raw_estimates(h)
+    def Bspline_smooth_estimates(self, h, nb_basis, order=4, regularization_parameter=None, sigma=None):
+        grid_theta, raw_theta, weight_theta = self.raw_estimates(h,sigma=sigma)
         if regularization_parameter is None:
             penalization = False
         else:
             penalization = True
-        Bspline_repres = VectorBSplineSmoothing(self.dim_theta, nb_basis, domain_range=(self.grid[0], self.grid[-1]), order=order, penalization=penalization)
+        Bspline_repres = VectorBSplineSmoothing(self.dim_theta, nb_basis, domain_range=(self.bounds[0], self.bounds[-1]), order=order, penalization=penalization)
         Bspline_repres.fit(grid_theta, raw_theta, weights=weight_theta, regularization_parameter=regularization_parameter)
         cf_limits = Bspline_repres.compute_confidence_limits(0.95)
         return Bspline_repres
-
 
 
 
@@ -71,7 +74,7 @@ class StatisticalMeanShapeV1(StatisticalMeanShape):
         super().__init__(list_grids, list_Frenet_paths, adaptive=False)
 
 
-    def raw_estimates(self, h):
+    def raw_estimates(self, h, sigma=None):
         grid_theta, raw_theta, weight_theta = self.__raw_estimates(h, self.list_grids, self.list_Q)
         return grid_theta, raw_theta, weight_theta
 
@@ -114,7 +117,7 @@ class StatisticalMeanShapeV1(StatisticalMeanShape):
                 Kappa = np.append(Kappa, kappa.tolist())
                 Tau = np.append(Tau, tau.tolist())     
 
-        Ms, Momega, Mkappa, Mtau = self.__compute_sort_unique_val(np.around(S, 8), Omega, Kappa, Tau)
+        Ms, Momega, Mkappa, Mtau = self.compute_sort_unique_val(np.around(S, 8), Omega, Kappa, Tau)
         Mkappa = abs(Mkappa)
 
         # Test pour enlever les valeurs à zeros.
@@ -126,7 +129,121 @@ class StatisticalMeanShapeV1(StatisticalMeanShape):
 
         return grid_theta, raw_theta, weight_theta         
 
-    
+
+    def bayesian_optimization_hyperparameters(self, n_call_bayopt, lambda_bounds, h_bounds, nb_basis, order=4, n_splits=10, verbose=True, return_coefs=False, knots=None, sigma=0.0, list_X=None):
+
+        """ Attention ne marche que si les Q sont tous sur la meme grille ! """
+        
+        self.grid = self.list_grids[0]
+
+        # ## CV optimization of lambda
+        Bspline_repres = VectorBSplineSmoothing(self.dim_theta, nb_basis, domain_range=(self.grid[0], self.grid[-1]), order=order, penalization=True, knots=knots)
+
+        # @profile
+        def func(x):
+            print('x:', x)
+            score = np.zeros(n_splits)
+            kf = KFold(n_splits=n_splits, shuffle=True)
+            grid_split = self.grid[1:-1]
+            ind_CV = 0
+
+            for train_index, test_index in kf.split(grid_split):
+                train_index = train_index+1
+                test_index = test_index+1
+                train_index = np.concatenate((np.array([0]), train_index, np.array([len(self.grid[1:-1])+1])))
+                grid_train = self.grid[train_index]
+                list_Q_train = np.array(self.list_Q)[:,train_index]
+                list_Q_test = np.array(self.list_Q)[:,test_index]
+                grid_theta_train, raw_theta_train, weight_theta_train = self.__raw_estimates(x[0], grid_train, list_Q_train, sigma)
+                lbda = np.array([x[1],x[2]])
+                Bspline_repres.fit(grid_theta_train, raw_theta_train, weights=weight_theta_train, regularization_parameter=lbda)
+
+                if np.isnan(Bspline_repres.coefs).any():
+                    print('NaN in coefficients')
+                    Q_test_pred = np.stack([np.eye(self.dim) for i in range(len(self.grid))])
+                    dist = np.mean([np.mean(SO3.geodesic_distance(list_Q_test[i], Q_test_pred[test_index])) for i in range(self.N_samples)])
+                else:
+                    if list_X is None:
+                        mean_Q0 = SO3.frechet_mean(np.array(self.list_Q)[:,0])
+                        Q_mean_pred = solve_FrenetSerret_ODE_SO(Bspline_repres.evaluate, self.grid, mean_Q0, timeout_seconds=60)
+                        dist = np.mean([np.mean(SO3.geodesic_distance(self.list_Q[i], Q_mean_pred)) for i in range(self.N_samples)])
+                    else:
+                        list_Z = np.zeros((self.N_samples, self.N, self.dim+1, self.dim+1))
+                        list_Z[:,:,:3,:3] = np.array(self.list_Q)
+                        list_Z[:,:,:3,3] = np.array(list_X)
+                        mean_Z0 = SE3.frechet_mean(list_Z[:,0])
+                        Z_mean_pred = solve_FrenetSerret_ODE_SE(Bspline_repres.evaluate, self.grid, mean_Z0, timeout_seconds=60)
+                        dist = np.mean([np.mean(SO3.geodesic_distance(list_Z[i], Z_mean_pred)) for i in range(self.N_samples)])
+
+                score[ind_CV] = dist
+                ind_CV += 1 
+
+            return np.mean(score)
+
+        # Do a bayesian optimisation and return the optimal parameter (lambda_kappa, lambda_tau)
+        
+        bounds = np.array([[h_bounds[0], h_bounds[1]], [lambda_bounds[0,0], lambda_bounds[0,1]], [lambda_bounds[1,0], lambda_bounds[1,1]]])
+        res_bayopt = gp_minimize(func,               # the function to minimize
+                        bounds,        # the bounds on each dimension of x
+                        acq_func="EI",        # the acquisition function
+                        n_calls=n_call_bayopt,       # the number of evaluations of f
+                        n_random_starts=2,    # the number of random initialization points
+                        random_state=1,       # the random seed
+                        n_jobs=1,            # use all the cores for parallel calculation
+                        verbose=verbose)
+        param_opt = res_bayopt.x
+        h_opt = param_opt[0]
+        lbda_opt = np.array([param_opt[1], param_opt[2]])
+
+        if return_coefs:
+            grid_theta, raw_theta, weight_theta = self.raw_estimates(h_opt, sigma=sigma)
+            Bspline_repres.fit(grid_theta, raw_theta, weights=weight_theta, regularization_parameter=lbda_opt)
+            coefs_opt = Bspline_repres.coefs
+            return h_opt, lbda_opt, coefs_opt
+
+        else:
+            return h_opt, lbda_opt
+        
+    # def bayesian_optimization_hyperparameters(self, n_call_bayopt, lambda_bounds, h_bounds, nb_basis, order=4, n_splits=10, verbose=True, return_coefs=False, knots=None):
+
+    #     # ## CV optimization of lambda
+    #     Bspline_repres = VectorBSplineSmoothing(self.dim_theta, nb_basis, domain_range=(self.bounds[0], self.bounds[-1]), order=order, penalization=True, knots=knots)
+
+    #     # @profile
+    #     def func(x):
+    #         print('x:', x)
+    #         score = np.zeros(n_splits)
+    #         kf = KFold(n_splits=n_splits, shuffle=True)
+
+    #         ind_CV = 0
+    #         list_grid_train = np.empty((n_splits, self.N_samples), dtype=object)
+    #         list_Q_train = np.empty((n_splits, self.N_samples), dtype=object)
+    #         list_Q_test = np.empty((n_splits, self.N_samples), dtype=object)
+    #         for i in range(self.N_samples):
+    #             grid_split = self.list_grids[i][1:-1]
+    #             for train_index, test_index in kf.split(grid_split):
+    #                 train_index = train_index+1
+    #                 test_index = test_index+1
+    #                 train_index = np.concatenate((np.array([0]), train_index, np.array([len(self.list_grids[i][1:-1])+1])))
+    #                 grid_train = self.list_grids[i][train_index]
+    #                 Q_train = self.list_Q[i][train_index]
+    #                 Q_test = self.list_Q[i][test_index]
+    #                 list_grid_train[ind_CV, i] = grid_train
+    #                 list_Q_train[ind_CV, i] = Q_train
+    #                 list_Q_test[ind_CV, i] = Q_test
+
+    #         for k in range(n_splits):
+    #             grid_theta_train, raw_theta_train, weight_theta_train = self.__raw_estimates(x[0], list_grid_train[k], list_Q_train[k])
+    #             lbda = np.array([x[1],x[2]])
+    #             Bspline_repres.fit(grid_theta_train, raw_theta_train, weights=weight_theta_train, regularization_parameter=lbda)
+                
+        
+        
+
+
+        
+
+        
     
     
 
@@ -137,9 +254,8 @@ class StatisticalMeanShapeV2(StatisticalMeanShape):
         super().__init__(list_grids, list_Frenet_paths, adaptive=False)
         self.grid = grid
 
-
-    def raw_estimates(self, h):
-        grid_theta, raw_theta, weight_theta, gam_theta, ind_conv, theta_align = self.__raw_estimates(h, self.list_grids, self.list_Q)
+    def raw_estimates(self, h, sigma=1.0):
+        grid_theta, raw_theta, weight_theta, gam_theta, ind_conv, theta_align = self.__raw_estimates(h, self.grid, self.list_Q, sigma=sigma)
         self.gam = gam_theta
         self.theta_align = theta_align
         self.ind_conv = ind_conv
@@ -160,7 +276,7 @@ class StatisticalMeanShapeV2(StatisticalMeanShape):
                 if q==0:
                     s = grid[0]*np.ones(len(neighbor_obs[q]))
                 elif q==len(grid)-1:
-                    s = grid[i][-1]*np.ones(len(neighbor_obs[q]))
+                    s = grid[-1]*np.ones(len(neighbor_obs[q]))
                 else:
                     s = grid_double[q]
                 S_i += list(s)
@@ -186,7 +302,7 @@ class StatisticalMeanShapeV2(StatisticalMeanShape):
                 Kappa_i = np.append(Kappa_i, kappa.tolist())
                 Tau_i = np.append(Tau_i, tau.tolist())     
 
-            Ms_i, Momega_i, Mkappa_i, Mtau_i = self.__compute_sort_unique_val(np.around(S_i, 8), Omega_i, Kappa_i, Tau_i)
+            Ms_i, Momega_i, Mkappa_i, Mtau_i = self.compute_sort_unique_val(np.around(S_i, 8), Omega_i, Kappa_i, Tau_i)
 
             S.append(Ms_i)
             Omega.append(Momega_i)
@@ -209,7 +325,7 @@ class StatisticalMeanShapeV2(StatisticalMeanShape):
         theta[np.isnan(theta)] = 0.0
         theta[np.isinf(theta)] = 0.0
 
-        res = align_vect_curvatures_fPCA(theta, S_grid, np.transpose(Omega), num_comp=3, cores=-1, smoothdata=False, MaxItr=20, lam=sigma)
+        res = align_vect_curvatures_fPCA(theta, S_grid, np.transpose(Omega), num_comp=3, cores=-1, MaxItr=20, lam=sigma)
         theta_align, gam_theta, weighted_mean_theta = res.fn, res.gamf, res.mfn
         # shape theta_align (dim_theta, N, N_samples)
         # shape weighted_mean_theta (dim_theta, N)
@@ -232,6 +348,77 @@ class StatisticalMeanShapeV2(StatisticalMeanShape):
         return S_grid, raw_theta, sum_omega, gam_theta.T, ind_conv, theta_align 
     
 
+    def bayesian_optimization_hyperparameters(self, n_call_bayopt, lambda_bounds, h_bounds, nb_basis, order=4, n_splits=10, verbose=True, return_coefs=False, knots=None, sigma=0.0, list_X=None):
+
+        # ## CV optimization of lambda
+        Bspline_repres = VectorBSplineSmoothing(self.dim_theta, nb_basis, domain_range=(self.grid[0], self.grid[-1]), order=order, penalization=True, knots=knots)
+
+        # @profile
+        def func(x):
+            print('x:', x)
+            score = np.zeros(n_splits)
+            kf = KFold(n_splits=n_splits, shuffle=True)
+            grid_split = self.grid[1:-1]
+            ind_CV = 0
+
+            for train_index, test_index in kf.split(grid_split):
+                train_index = train_index+1
+                test_index = test_index+1
+                train_index = np.concatenate((np.array([0]), train_index, np.array([len(self.grid[1:-1])+1])))
+                grid_train = self.grid[train_index]
+                list_Q_train = np.array(self.list_Q)[:,train_index]
+                list_Q_test = np.array(self.list_Q)[:,test_index]
+                grid_theta_train, raw_theta_train, weight_theta_train = self.__raw_estimates(x[0], grid_train, list_Q_train, sigma)
+                lbda = np.array([x[1],x[2]])
+                Bspline_repres.fit(grid_theta_train, raw_theta_train, weights=weight_theta_train, regularization_parameter=lbda)
+
+                if np.isnan(Bspline_repres.coefs).any():
+                    print('NaN in coefficients')
+                    Q_test_pred = np.stack([np.eye(self.dim) for i in range(len(self.grid))])
+                    dist = np.mean([np.mean(SO3.geodesic_distance(list_Q_test[i], Q_test_pred[test_index])) for i in range(self.N_samples)])
+                else:
+                    if list_X is None:
+                        mean_Q0 = SO3.frechet_mean(np.array(self.list_Q)[:,0])
+                        Q_mean_pred = solve_FrenetSerret_ODE_SO(Bspline_repres.evaluate, self.grid, mean_Q0, timeout_seconds=60)
+                        dist = np.mean([np.mean(SO3.geodesic_distance(self.list_Q[i], Q_mean_pred)) for i in range(self.N_samples)])
+                    else:
+                        list_Z = np.zeros((self.N_samples, self.N, self.dim+1, self.dim+1))
+                        list_Z[:,:,:3,:3] = np.array(self.list_Q)
+                        list_Z[:,:,:3,3] = np.array(list_X)
+                        mean_Z0 = SE3.frechet_mean(list_Z[:,0])
+                        Z_mean_pred = solve_FrenetSerret_ODE_SE(Bspline_repres.evaluate, self.grid, mean_Z0, timeout_seconds=60)
+                        dist = np.mean([np.mean(SO3.geodesic_distance(list_Z[i], Z_mean_pred)) for i in range(self.N_samples)])
+
+                score[ind_CV] = dist
+                ind_CV += 1 
+
+            return np.mean(score)
+
+        # Do a bayesian optimisation and return the optimal parameter (lambda_kappa, lambda_tau)
+        
+        bounds = np.array([[h_bounds[0], h_bounds[1]], [lambda_bounds[0,0], lambda_bounds[0,1]], [lambda_bounds[1,0], lambda_bounds[1,1]]])
+        res_bayopt = gp_minimize(func,               # the function to minimize
+                        bounds,        # the bounds on each dimension of x
+                        acq_func="EI",        # the acquisition function
+                        n_calls=n_call_bayopt,       # the number of evaluations of f
+                        n_random_starts=2,    # the number of random initialization points
+                        random_state=1,       # the random seed
+                        n_jobs=1,            # use all the cores for parallel calculation
+                        verbose=verbose)
+        param_opt = res_bayopt.x
+        h_opt = param_opt[0]
+        lbda_opt = np.array([param_opt[1], param_opt[2]])
+
+        if return_coefs:
+            grid_theta, raw_theta, weight_theta = self.raw_estimates(h_opt, sigma=sigma)
+            Bspline_repres.fit(grid_theta, raw_theta, weights=weight_theta, regularization_parameter=lbda_opt)
+            coefs_opt = Bspline_repres.coefs
+            return h_opt, lbda_opt, coefs_opt
+
+        else:
+            return h_opt, lbda_opt
+    
+
 
 class StatisticalMeanShapeV3(StatisticalMeanShape):
 
@@ -241,8 +428,8 @@ class StatisticalMeanShapeV3(StatisticalMeanShape):
         self.grid = grid
 
 
-    def raw_estimates(self, h):
-        grid_theta, raw_theta, weight_theta, gam_SRC, ind_conv, SRC_align, theta_align = self.__raw_estimates(h, self.list_grids, self.list_Q)
+    def raw_estimates(self, h, sigma=1.0):
+        grid_theta, raw_theta, weight_theta, gam_SRC, ind_conv, SRC_align, theta_align = self.__raw_estimates(h, self.grid, self.list_Q, sigma=sigma)
         self.gam = gam_SRC
         self.theta_align = theta_align
         self.ind_conv = ind_conv
@@ -264,7 +451,7 @@ class StatisticalMeanShapeV3(StatisticalMeanShape):
                 if q==0:
                     s = grid[0]*np.ones(len(neighbor_obs[q]))
                 elif q==len(grid)-1:
-                    s = grid[i][-1]*np.ones(len(neighbor_obs[q]))
+                    s = grid[-1]*np.ones(len(neighbor_obs[q]))
                 else:
                     s = grid_double[q]
                 S_i += list(s)
@@ -290,7 +477,7 @@ class StatisticalMeanShapeV3(StatisticalMeanShape):
                 Kappa_i = np.append(Kappa_i, kappa.tolist())
                 Tau_i = np.append(Tau_i, tau.tolist())     
 
-            Ms_i, Momega_i, Mkappa_i, Mtau_i = self.__compute_sort_unique_val(np.around(S_i, 8), Omega_i, Kappa_i, Tau_i)
+            Ms_i, Momega_i, Mkappa_i, Mtau_i = self.compute_sort_unique_val(np.around(S_i, 8), Omega_i, Kappa_i, Tau_i)
 
             S.append(Ms_i)
             Omega.append(Momega_i)
@@ -317,7 +504,7 @@ class StatisticalMeanShapeV3(StatisticalMeanShape):
         for i in range(N_samples):
             SRC_tab[:,:,i] = theta[:,:,i]/np.sqrt(np.linalg.norm(theta[:,:,i], axis=0))
         
-        res = align_vect_SRC_fPCA(SRC_tab, S_grid, np.transpose(Omega), num_comp=3, cores=-1, smoothdata=False, MaxItr=20, lam=sigma)
+        res = align_vect_SRC_fPCA(SRC_tab, S_grid, np.transpose(Omega), num_comp=3, cores=-1, MaxItr=20, lam=sigma)
         SRC_align, gam_SRC, weighted_mean_SRC = res.fn.T, res.gamf.T, res.mfn.T
         # shape SRC_align (N_samples, N, dim_theta)
         # shape weighted_mean_SRC (N, dim_theta)
@@ -336,3 +523,74 @@ class StatisticalMeanShapeV3(StatisticalMeanShape):
 
         return S_grid, weighted_mean_theta, sum_omega, gam_SRC, ind_conv, SRC_align, theta_align
     
+
+
+    def bayesian_optimization_hyperparameters(self, n_call_bayopt, lambda_bounds, h_bounds, nb_basis, order=4, n_splits=10, verbose=True, return_coefs=False, knots=None, sigma=0.0, list_X=None):
+
+        # ## CV optimization of lambda
+        Bspline_repres = VectorBSplineSmoothing(self.dim_theta, nb_basis, domain_range=(self.grid[0], self.grid[-1]), order=order, penalization=True, knots=knots)
+
+        # @profile
+        def func(x):
+            print('x:', x)
+            score = np.zeros(n_splits)
+            kf = KFold(n_splits=n_splits, shuffle=True)
+            grid_split = self.grid[1:-1]
+            ind_CV = 0
+
+            for train_index, test_index in kf.split(grid_split):
+                train_index = train_index+1
+                test_index = test_index+1
+                train_index = np.concatenate((np.array([0]), train_index, np.array([len(self.grid[1:-1])+1])))
+                grid_train = self.grid[train_index]
+                list_Q_train = np.array(self.list_Q)[:,train_index]
+                list_Q_test = np.array(self.list_Q)[:,test_index]
+                grid_theta_train, raw_theta_train, weight_theta_train = self.__raw_estimates(x[0], grid_train, list_Q_train, sigma)
+                lbda = np.array([x[1],x[2]])
+                Bspline_repres.fit(grid_theta_train, raw_theta_train, weights=weight_theta_train, regularization_parameter=lbda)
+
+                if np.isnan(Bspline_repres.coefs).any():
+                    print('NaN in coefficients')
+                    Q_test_pred = np.stack([np.eye(self.dim) for i in range(len(self.grid))])
+                    dist = np.mean([np.mean(SO3.geodesic_distance(list_Q_test[i], Q_test_pred[test_index])) for i in range(self.N_samples)])
+                else:
+                    if list_X is None:
+                        mean_Q0 = SO3.frechet_mean(np.array(self.list_Q)[:,0])
+                        Q_mean_pred = solve_FrenetSerret_ODE_SO(Bspline_repres.evaluate, self.grid, mean_Q0, timeout_seconds=60)
+                        dist = np.mean([np.mean(SO3.geodesic_distance(self.list_Q[i], Q_mean_pred)) for i in range(self.N_samples)])
+                    else:
+                        list_Z = np.zeros((self.N_samples, self.N, self.dim+1, self.dim+1))
+                        list_Z[:,:,:3,:3] = np.array(self.list_Q)
+                        list_Z[:,:,:3,3] = np.array(list_X)
+                        mean_Z0 = SE3.frechet_mean(list_Z[:,0])
+                        Z_mean_pred = solve_FrenetSerret_ODE_SE(Bspline_repres.evaluate, self.grid, mean_Z0, timeout_seconds=60)
+                        dist = np.mean([np.mean(SO3.geodesic_distance(list_Z[i], Z_mean_pred)) for i in range(self.N_samples)])
+
+                score[ind_CV] = dist
+                ind_CV += 1 
+
+            return np.mean(score)
+
+        # Do a bayesian optimisation and return the optimal parameter (lambda_kappa, lambda_tau)
+        
+        bounds = np.array([[h_bounds[0], h_bounds[1]], [lambda_bounds[0,0], lambda_bounds[0,1]], [lambda_bounds[1,0], lambda_bounds[1,1]]])
+        res_bayopt = gp_minimize(func,               # the function to minimize
+                        bounds,        # the bounds on each dimension of x
+                        acq_func="EI",        # the acquisition function
+                        n_calls=n_call_bayopt,       # the number of evaluations of f
+                        n_random_starts=2,    # the number of random initialization points
+                        random_state=1,       # the random seed
+                        n_jobs=1,            # use all the cores for parallel calculation
+                        verbose=verbose)
+        param_opt = res_bayopt.x
+        h_opt = param_opt[0]
+        lbda_opt = np.array([param_opt[1], param_opt[2]])
+
+        if return_coefs:
+            grid_theta, raw_theta, weight_theta = self.raw_estimates(h_opt, sigma=sigma)
+            Bspline_repres.fit(grid_theta, raw_theta, weights=weight_theta, regularization_parameter=lbda_opt)
+            coefs_opt = Bspline_repres.coefs
+            return h_opt, lbda_opt, coefs_opt
+
+        else:
+            return h_opt, lbda_opt

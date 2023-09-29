@@ -247,6 +247,8 @@ class ExtrinsicFormulas:
         Bspline_repres = VectorBSplineSmoothing(self.dim-1, nb_basis, domain_range=(self.grid_arc_s[0], self.grid_arc_s[-1]), order=order, penalization=True)
                     
         def func(x):
+            h = x[0]
+            lbda = 10 ** np.array([x[1],x[2]])
             score = np.zeros(n_splits)
             kf = KFold(n_splits=n_splits, shuffle=True)
             grid_split = self.time[1:-1]
@@ -258,8 +260,7 @@ class ExtrinsicFormulas:
                 train_index = np.concatenate((np.array([0]), train_index, np.array([len(self.time[1:-1])+1])))
                 Y_train = self.Y[train_index]
                 Y_test = self.Y[test_index]
-                raw_theta_train = self.__raw_estimates(self.time[train_index], Y_train, x[0])
-                lbda = np.array([x[1],x[2]])
+                raw_theta_train = self.__raw_estimates(self.time[train_index], Y_train, h)
                 Bspline_repres.fit(self.grid_arc_s[train_index], raw_theta_train, regularization_parameter=lbda)
                 # try:
                 #     Z_test_pred = solve_FrenetSerret_ODE_SE(Bspline_repres.evaluate, self.grid_arc_s[test_index], method='Linearized')
@@ -290,7 +291,7 @@ class ExtrinsicFormulas:
                                 verbose=verbose)
         param_opt = res_bayopt.x
         h_opt = param_opt[0]
-        lbda_opt = np.array([param_opt[1], param_opt[2]])
+        lbda_opt = 10 ** np.array([param_opt[1], param_opt[2]])
 
         if return_coefs:
             theta = self.raw_estimates(h_opt)

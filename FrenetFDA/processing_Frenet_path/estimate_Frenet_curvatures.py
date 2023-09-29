@@ -364,7 +364,8 @@ class LocalApproxFrenetODE:
 
         # @profile
         def func(x):
-            print('x:', x)
+            h = x[0]
+            lbda = 10 ** np.array([x[1],x[2]])
             score = np.zeros(n_splits)
             kf = KFold(n_splits=n_splits, shuffle=True)
             grid_split = self.grid[1:-1]
@@ -377,8 +378,7 @@ class LocalApproxFrenetODE:
                 grid_train = self.grid[train_index]
                 Q_train = self.Q[train_index]
                 Q_test = self.Q[test_index]
-                grid_theta_train, raw_theta_train, weight_theta_train = self.__raw_estimates(x[0], grid_train, Q_train)
-                lbda = np.array([x[1],x[2]])
+                grid_theta_train, raw_theta_train, weight_theta_train = self.__raw_estimates(h, grid_train, Q_train)
                 Bspline_repres.fit(grid_theta_train, raw_theta_train, weights=weight_theta_train, regularization_parameter=lbda)
 
                 if np.isnan(Bspline_repres.coefs).any():
@@ -415,7 +415,7 @@ class LocalApproxFrenetODE:
                         verbose=verbose)
         param_opt = res_bayopt.x
         h_opt = param_opt[0]
-        lbda_opt = np.array([param_opt[1], param_opt[2]])
+        lbda_opt = 10 ** np.array([param_opt[1], param_opt[2]])
 
         if return_coefs:
             grid_theta, raw_theta, weight_theta = self.raw_estimates(h_opt)
