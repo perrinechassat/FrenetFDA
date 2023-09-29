@@ -49,8 +49,8 @@ list_Y_7 = compute_list_Y_from_group(df, group_7)
 # trial_04 : un noeud tous les 3 points
 
 
-directory = r"results/trial_04/"
-filename_base = "results/trial_04/"
+directory = r"results/trial_05/"
+filename_base = "results/trial_05/"
 current_directory = os.getcwd()
 final_directory = os.path.join(current_directory, directory)
 if not os.path.exists(final_directory):
@@ -60,7 +60,7 @@ if not os.path.exists(final_directory):
 n_call_bayopt_der = 30
 # bounds_lbda = np.array([[1e-09, 1e-05], [1e-09, 1e-05]]) # trial_01
 # bounds_lbda = np.array([[1e-12, 1e-06], [1e-12, 1e-06]]) # trial_02
-bounds_lbda = np.array([[-12, -6], [-12, -6]]) # trial_03
+bounds_lbda = np.array([[-12, -6], [-12, -6]]) # trial_05
 n_call_bayopt_theta = 30
 
 #### 1
