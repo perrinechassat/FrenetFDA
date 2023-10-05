@@ -43,7 +43,7 @@ max_iter_EM = 200
 n_splits_CV = 5
 n_call_bayopt = 25
 # bounds_lambda = ((1e-15, 1e-06), (1e-15, 1e-06))
-bounds_lambda = np.array([[-15, -6], [-15, -6]]) 
+bounds_lambda = np.array([[-15.0, -6.0], [-15.0, -6.0]]) 
 sigma_init = 3
 
 print(" EM Group 1 ")
