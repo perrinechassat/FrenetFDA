@@ -4,6 +4,7 @@ import sys
 stderr = sys.stderr
 sys.stderr = open(os.devnull, 'w')
 from geomstats.geometry.special_orthogonal import SpecialOrthogonal
+from geomstats.geometry.discrete_curves import DiscreteCurves, SRVMetric
 from geomstats.learning.frechet_mean import FrechetMean
 from geomstats.geometry.matrices import Matrices
 sys.stderr = stderr
@@ -274,6 +275,20 @@ class SO3:
         gdist = SO3.metric.dist(Q1, Q2)
         return gdist
     
+
+    @classmethod
+    def srv_distance(self, Q1, Q2):
+        so3 = SpecialOrthogonal(3, point_type='vector')
+        Q1_vec = so3.rotation_vector_from_matrix(Q1)
+        Q2_vec = so3.rotation_vector_from_matrix(Q2)
+        N = Q1.shape[0]
+        dc = DiscreteCurves(so3, k_sampling_points=N, start_at_the_origin=False)
+        srv_Q1 = SRVMetric(dc).f_transform(Q1_vec)
+        srv_Q2 = SRVMetric(dc).f_transform(Q2_vec)
+        dist = np.sqrt(self.geodesic_distance(Q1[0],Q2[0])**2 + np.linalg.norm(srv_Q1-srv_Q2)**2)
+        return dist 
+
+
     @classmethod
     def frechet_mean(self, arr_R, weights=None):
         """ pointwise distance 

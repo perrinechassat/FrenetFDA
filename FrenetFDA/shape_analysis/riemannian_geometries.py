@@ -332,6 +332,7 @@ class SRC:
         temp_error = np.linalg.norm((mean_c - temp_mean_c)) + lam*Sphere.dist(mean_psi, temp_mean_psi) 
         up_err = temp_error
         k = 0
+        arr_h = []
         print('Iteration ', k, '/', max_iter, ': error ', temp_error)
         while up_err > tol and k < max_iter:
             arr_c_align = np.zeros((n,self.dim-1,T))
@@ -343,6 +344,7 @@ class SRC:
                 else:
                     h_opt = time
                 h_opt = (h_opt - h_opt.min())/(h_opt.max() - h_opt.min())
+                arr_h.append(h_opt)
                 si_h = np.interp(h_opt, time, arr_arc_s[i])
                 arr_arc_align[i] = (si_h - si_h.min())/(si_h.max() - si_h.min())
                 arr_psi_align[i] = np.sqrt(np.gradient(arr_arc_align[i],binsize))
@@ -372,7 +374,7 @@ class SRC:
         Q = solve_FrenetSerret_ODE_SO(theta, mean_s)
         mean_x = cumtrapz(Q[:,0,:], mean_s, initial=0).T
 
-        return mean_x, theta, mean_s
+        return mean_x, theta, mean_s, arr_h
     
 
 

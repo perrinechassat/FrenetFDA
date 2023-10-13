@@ -3,6 +3,7 @@ import numpy as np
 from joblib import Parallel, delayed
 from scipy.integrate import trapz
 from scipy.linalg import svd
+from scipy.interpolate import interp1d
 import collections
 import fdasrsf.utility_functions as uf
 import optimum_reparam_N_curvatures as orNC
@@ -249,6 +250,12 @@ def align_vect_SRC_fPCA(f, time, weights=None, num_comp=3, cores=-1, MaxItr=1, i
 
     for k in range(0, N):
         gamf[:, k] = np.interp(time0, time, gamf[:, k])
+        gamf[:,k] = (gamf[:,k] - gamf[0,k])/(gamf[-1,k] - gamf[0,k])
+
+    gamf_inv = np.zeros(gamf.shape)
+    for k in range(N):
+        gamf_inv[:,k] = interp1d(gamf[:,k], time)(time)
+        gamf_inv[:,k] = (gamf_inv[:,k] - gamf_inv[0,k])/(gamf_inv[-1,k] - gamf_inv[0,k])
     
     # plt.figure()
     # plt.plot(time, mfn[0])
@@ -274,12 +281,12 @@ def align_vect_SRC_fPCA(f, time, weights=None, num_comp=3, cores=-1, MaxItr=1, i
     #     plt.plot(time, fn[1, :, i])
     # plt.show()
 
-    align_results = collections.namedtuple('align_fPCA', ['fn', 'gamf', 'mfn', 'fi', 'gam', 'mf', 'nb_itr', 'convergence'])
+    align_results = collections.namedtuple('align_fPCA', ['fn', 'gamf', 'mfn', 'fi', 'gam', 'mf', 'nb_itr', 'convergence', 'gamf_inv'])
 
     if itr==MaxItr:
-        out = align_results(fn, gamf, mfn, fi_cent[:,:,:,0:itrf+1], gam[:,:,0:itrf+1], mf_cent[:,:,0:itrf+1], itr, False)
+        out = align_results(fn, gamf, mfn, fi_cent[:,:,:,0:itrf+1], gam[:,:,0:itrf+1], mf_cent[:,:,0:itrf+1], itr, False, gamf_inv)
     else:
-        out = align_results(fn, gamf, mfn, fi_cent[:,:,:,0:itrf+1], gam[:,:,0:itrf+1], mf_cent[:,:,0:itrf+1], itr, True)
+        out = align_results(fn, gamf, mfn, fi_cent[:,:,:,0:itrf+1], gam[:,:,0:itrf+1], mf_cent[:,:,0:itrf+1], itr, True, gamf_inv)
 
     return out
 
@@ -499,6 +506,11 @@ def align_vect_curvatures_fPCA(f, time, weights=None, num_comp=3, cores=-1, MaxI
     for k in range(0, N):
         gamf[:, k] = np.interp(time0, time, gamf[:, k])
         gamf[:,k] = (gamf[:,k] - gamf[0,k])/(gamf[-1,k] - gamf[0,k])
+
+    gamf_inv = np.zeros(gamf.shape)
+    for k in range(N):
+        gamf_inv[:,k] = interp1d(gamf[:,k], time)(time)
+        gamf_inv[:,k] = (gamf_inv[:,k] - gamf_inv[0,k])/(gamf_inv[-1,k] - gamf_inv[0,k])
     
     # plt.figure()
     # plt.plot(time, mfn[0])
@@ -524,12 +536,12 @@ def align_vect_curvatures_fPCA(f, time, weights=None, num_comp=3, cores=-1, MaxI
     #     plt.plot(time, fn[1, :, i])
     # plt.show()
 
-    align_results = collections.namedtuple('align_fPCA', ['fn', 'gamf', 'mfn', 'fi', 'gam', 'mf', 'nb_itr', 'convergence'])
+    align_results = collections.namedtuple('align_fPCA', ['fn', 'gamf', 'mfn', 'fi', 'gam', 'mf', 'nb_itr', 'convergence', 'gamf_inv'])
 
     if itr==MaxItr:
-        out = align_results(fn, gamf, mfn, fi_cent[:,:,:,0:itrf+1], gam[:,:,0:itrf+1], mf_cent[:,:,0:itrf+1], itr, False)
+        out = align_results(fn, gamf, mfn, fi_cent[:,:,:,0:itrf+1], gam[:,:,0:itrf+1], mf_cent[:,:,0:itrf+1], itr, False, gamf_inv)
     else:
-        out = align_results(fn, gamf, mfn, fi_cent[:,:,:,0:itrf+1], gam[:,:,0:itrf+1], mf_cent[:,:,0:itrf+1], itr, True)
+        out = align_results(fn, gamf, mfn, fi_cent[:,:,:,0:itrf+1], gam[:,:,0:itrf+1], mf_cent[:,:,0:itrf+1], itr, True, gamf_inv)
 
     return out
 
