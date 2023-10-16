@@ -106,6 +106,10 @@ fil.close()
 
 """ _________________ Amplitude and phase variability on theta and with noise on x _________________ """
 
+nb_basis = 20
+h_bounds = np.array([0.05,0.3])
+h_deriv_bounds = np.array([0.1,0.3])
+lbda_bounds = np.array([[-15.0,-5.0],[-15.0,-5.0]])
 
 """ sig_x = 0.01 """
 sig_x = 0.01
