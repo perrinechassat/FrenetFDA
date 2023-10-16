@@ -4,6 +4,8 @@ from scipy import interpolate
 from scipy.integrate import cumtrapz, solve_ivp
 import optimum_reparamN2 as orN2
 from FrenetFDA.utils.Frenet_Serret_utils import solve_FrenetSerret_ODE_SO, solve_FrenetSerret_ODE_SE
+import FrenetFDA.utils.visualization as visu
+from joblib import Parallel, delayed
 
 class SRVF:
 
@@ -216,8 +218,8 @@ class SRC:
 
         dist = np.linalg.norm(np.sqrt(s0_dot(time))*(c0_theta(s0(time))-c1_theta_align(s0(time)))) + lam*dist_gam
 
-        path_theta = np.zeros((k, self.dim-1, len(time)))
-        path_Q = np.zeros((k, self.dim, self.dim, len(time)))
+        path_theta = np.zeros((k, len(time), self.dim-1))
+        path_Q = np.zeros((k, len(time), self.dim, self.dim))
         path_curves = np.zeros((k, len(time), self.dim))
         for tau in range(0, k):
             if tau == 0:
@@ -227,13 +229,13 @@ class SRC:
             theta_tau = lambda s: ((1-tau1)*c0_theta(s) + tau1*c1_theta_align(s))*np.linalg.norm(((1-tau1)*c0_theta(s) + tau1*c1_theta_align(s)))
             sdot_theta_tau = lambda t: theta_tau(s0(t))*s0_dot(t)
             for i in range(len(time)):
-                path_theta[tau, :, i] = sdot_theta_tau(time[i])/(path_psi[tau][i]**2)
+                path_theta[tau, i, :] = sdot_theta_tau(time[i])/(path_psi[tau][i]**2)
 
             if arr_Q0 is None:
                 Q = solve_FrenetSerret_ODE_SO(sdot_theta_tau, time)
             else:
                 Q = solve_FrenetSerret_ODE_SO(sdot_theta_tau, time, Q0=arr_Q0[tau])
-            path_curves[tau] = cumtrapz(Q[:,0,:], path_arc_s[tau], initial=0).T
+            path_curves[tau] = cumtrapz(Q[:,:,0].T, path_arc_s[tau], initial=0).T
             path_Q[tau] = Q
 
         return dist, path_curves, path_Q, path_theta, path_arc_s, path_psi, gamma_opt
@@ -254,7 +256,7 @@ class SRC:
         theta_warp = lambda t: theta(gam_smooth(t))*gam_warp_fct(t,1)
         time = np.linspace(0,1,len(gam))
         Q = solve_FrenetSerret_ODE_SO(theta_warp, time)
-        X = cumtrapz(Q[:,0,:], time, initial=0).T
+        X = cumtrapz(Q[:,:,0].T, time, initial=0).T
         return X
     
     def dist(self, theta0, theta1, s0, s1, time, align=True, smooth=True, lam=1):
@@ -291,7 +293,7 @@ class SRC:
         dist = np.linalg.norm(psi0*(c0_theta(s0(time))-c1_theta_align_s0)) + lam*dist_gam    
         return dist
     
-    def karcher_mean(self, arr_theta, arr_arc_s, tol, max_iter, lam=1):
+    def karcher_mean_old(self, arr_theta, arr_arc_s, tol, max_iter, lam=1):
         """
             Karcher mean under the square-root curvature transform framework. 
 
@@ -307,8 +309,8 @@ class SRC:
               Parameter used to add a ponteration in the SRC distance. 
 
         """
-        print('Computing Karcher Mean of 20 curves in SRC space.. \n')
         n = len(arr_theta)
+        print('Computing Karcher Mean of %d curves in SRC space.. \n' % (n))
         T = len(arr_arc_s[0])
         time = np.linspace(0,1,T)
         binsize = np.mean(np.diff(time))
@@ -322,6 +324,9 @@ class SRC:
         mean_c = np.mean(arr_c, axis=0)
         mean_psi = np.mean(arr_psi, axis=0)
         
+        visu.plot_array_2D(time, arr_c[:,0,:], 'c 0')
+        visu.plot_array_2D(time, arr_c[:,1,:], 'c 1')
+
         dist_arr = np.zeros(n)
         for i in range(n):
             dist_arr[i] = np.linalg.norm(mean_c - arr_c[i]) + lam*Sphere.dist(mean_psi, arr_psi[i]) 
@@ -362,6 +367,10 @@ class SRC:
             temp_mean_c = mean_c
         
         print('Number of iterations', k, '\n')
+
+        visu.plot_2D(time, mean_psi)
+        visu.plot_array_2D(time, arr_c_align[:,0,:], 'c 0')
+        visu.plot_array_2D(time, arr_c_align[:,1,:], 'c 1')
         
         mean_s = cumtrapz(temp_mean_psi*temp_mean_psi, time, initial=0)
         mean_s = (mean_s - mean_s.min())/(mean_s.max() - mean_s.min())
@@ -370,11 +379,111 @@ class SRC:
             x = mean_c[:,j]/mean_psi[j]
             mean_theta[:,j] = x*np.linalg.norm(x)
 
-        theta = lambda t: interpolate.griddata(mean_s, mean_theta.T, t, method='cubic').T
+        theta = lambda t: interpolate.griddata(mean_s, mean_theta.T, t, method='cubic')
         Q = solve_FrenetSerret_ODE_SO(theta, mean_s)
-        mean_x = cumtrapz(Q[:,0,:], mean_s, initial=0).T
+        mean_x = cumtrapz(Q[:,:,0].T, mean_s, initial=0).T
 
-        return mean_x, theta, mean_s, arr_h
+        return mean_x, theta, mean_s, mean_c, arr_h
+
+    def karcher_mean(self, arr_theta, arr_arc_s, tol, max_iter, lam=1, parallel=False):
+        """
+            Karcher mean under the square-root curvature transform framework. 
+
+            Input:
+            - arr_theta: array of K Frenet curvatures functions such that arr_theta[k](s) is a numpy array of size (dim-1) (the number of Frenet curvatures)
+              Set of Frenet curvature functions of the arc-length parameter (not of the time) of the Euclidean curves considered for computing the mean.
+            - arr_arc_s: numpy array of size (K,N) of the K arc-length functions of the considered curves, with N samples points. 
+            - tol: float 
+              tolerance for the difference between iterative error. If |error_k - error_{k-1}| < tol, the iteration is stop. 
+            - max_iter: int
+              Number of maximum iterations to find the optimal mean.
+            - lam: float
+              Parameter used to add a ponteration in the SRC distance. 
+
+        """
+        N_samples = len(arr_theta)
+        print("Computing Karcher Mean of %d curves in SRC space.. \n" % (N_samples))
+        T = len(arr_arc_s[0])
+        time = np.linspace(0,1,T)
+
+        arr_src_theta = np.zeros((N_samples,T,self.dim-1))
+        for i in range(N_samples):
+            for j in range(T):
+                arr_src_theta[i,j,:] = arr_theta[i](time[j])/np.sqrt(np.linalg.norm(arr_theta[i](time[j])))
+        mean_src_theta = np.mean(arr_src_theta, axis=0)
+
+        dist_arr = np.zeros(N_samples)
+        for i in range(N_samples):
+            dist_arr[i] = np.linalg.norm(mean_src_theta - arr_src_theta[i])
+        ind = np.argmin(dist_arr)
+
+        temp_mean_src_theta = arr_src_theta[ind]
+        temp_error = np.linalg.norm((mean_src_theta - temp_mean_src_theta)) 
+        up_err = temp_error
+        k = 0
+        
+        print("Aligning %d functions in maximum %d iterations..."
+            % (N_samples, max_iter))
+        while up_err > tol and k < max_iter:
+            arr_src_align = np.zeros((N_samples, T, self.dim-1))
+            arr_gam = np.zeros((N_samples, T))
+
+            if parallel:
+
+                def to_run(m_src, src, grid_ptn, param):
+                    if np.linalg.norm(m_src - src,'fro') > 0.0001:
+                        gam = orN2.coptimum_reparam_curve(np.ascontiguousarray(m_src.T), grid_ptn, np.ascontiguousarray(src.T), param)
+                    else:
+                        gam = grid_ptn
+                    return gam
+                
+                out = Parallel(n_jobs=-1)(delayed(to_run)(temp_mean_src_theta, arr_src_theta[i], time, lam) for i in range(N_samples))
+                gam_t = np.array(out)
+                for i in range(N_samples):
+                    arr_gam[i] = (gam_t[i] - gam_t[i][0])/(gam_t[i][-1] - gam_t[i][0])
+                    for j in range(0, self.dim-1):
+                        time0 = (time[-1] - time[0]) * arr_gam[i] + time[0]
+                        arr_src_align[i,:,j] = np.interp(time0, time, arr_src_theta[i, :, j]) * np.sqrt(np.gradient(arr_gam[i], time))
+
+            else:
+                for i in range(N_samples):
+                    if np.linalg.norm(temp_mean_src_theta - arr_src_theta[i],'fro') > 0.0001:
+                        gam = orN2.coptimum_reparam_curve(np.ascontiguousarray(temp_mean_src_theta.T), time, np.ascontiguousarray(arr_src_theta[i].T), lam)
+                    else:
+                        gam = time
+                    gam = (gam - gam.min())/(gam.max() - gam.min())
+                    arr_gam[i] = gam
+
+                    for j in range(0, self.dim-1):
+                        time0 = (time[-1] - time[0]) * gam + time[0]
+                        arr_src_align[i,:,j] = np.interp(time0, time, arr_src_theta[i, :, j]) * np.sqrt(np.gradient(gam, time))
+
+            mean_src_theta = np.mean(arr_src_align, axis=0)
+            error = np.linalg.norm((mean_src_theta - temp_mean_src_theta))  
+            up_err = abs(temp_error - error)
+            temp_error = error
+            k += 1
+            temp_mean_src_theta = mean_src_theta
+            
+        print("Alignment in %d iterations" % (k))
+        
+        # mean_s = mean of gam_inv_i circ s_i 
+        gami_inv_si = np.zeros(arr_gam.shape)
+        for k in range(N_samples):
+            gami_inv_si[k] = interpolate.interp1d(arr_gam[k], time)(arr_arc_s[k])
+            gami_inv_si[k] = (gami_inv_si[k] - gami_inv_si[k,0])/(gami_inv_si[k,-1] - gami_inv_si[k,0])
+        mean_psi, mean_s, psi_tab, vec = fs.utility_functions.SqrtMean(gami_inv_si.T)
+        mean_s = (mean_s - mean_s.min())/(mean_s.max() - mean_s.min())
+
+        mean_theta = np.zeros(temp_mean_src_theta.shape)
+        for j in range(T):
+            mean_theta[j] = mean_src_theta[j]*np.linalg.norm(mean_src_theta[j])
+
+        theta = lambda t: interpolate.griddata(time, mean_theta, t, method='cubic')
+        Z = solve_FrenetSerret_ODE_SE(theta, mean_s)
+        mean_x = Z[:,:3,3]
+
+        return mean_x, theta, mean_s, mean_src_theta, arr_gam
     
 
 
@@ -404,9 +513,9 @@ class Frenet_Curvatures:
         """
         s1_inv = fs.utility_functions.invertGamma(s1)
         h_opt = np.interp(s0, time, s1_inv)
-        path_theta = np.zeros((k, self.dim-1, len(time)))
+        path_theta = np.zeros((k, len(time), self.dim-1))
         path_theta_fct = np.empty((k), dtype=object)
-        path_Q = np.zeros((k, self.dim, self.dim, len(time)))
+        path_Q = np.zeros((k, len(time), self.dim, self.dim))
         path_curves = np.zeros((k, len(time), self.dim))
 
         dist = np.linalg.norm((theta0(time)-theta1(time)))
@@ -423,7 +532,7 @@ class Frenet_Curvatures:
                 Q = solve_FrenetSerret_ODE_SO(theta_tau, time)
             else:
                 Q = solve_FrenetSerret_ODE_SO(theta_tau, time, Q0=arr_Q0[tau])
-            path_curves[tau] = cumtrapz(Q[:,0,:], time, initial=0).T
+            path_curves[tau] = cumtrapz(Q[:,:,0].T, time, initial=0).T
             path_Q[tau] = Q
 
         return dist, path_curves, path_Q, path_theta, path_theta_fct, h_opt
@@ -455,7 +564,7 @@ class Frenet_Curvatures:
         mean_theta = lambda s: np.mean([arr_theta[i](s) for i in range(n)], axis=0)
         psi_mu, gam_mu, psi_arr, vec = fs.utility_functions.SqrtMean(arr_arc_s.T)
         Q = solve_FrenetSerret_ODE_SO(mean_theta, gam_mu)
-        mean_x = cumtrapz(Q[:,0,:], gam_mu, initial=0).T
+        mean_x = cumtrapz(Q[:,:,0].T, gam_mu, initial=0).T
         return mean_x, mean_theta, gam_mu
     
 

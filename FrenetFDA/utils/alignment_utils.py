@@ -1,4 +1,5 @@
 import optimum_reparam_N as orN
+import optimum_reparamN2 as orN2
 import numpy as np
 from joblib import Parallel, delayed
 from scipy.integrate import trapz
@@ -123,6 +124,7 @@ def align_vect_SRC_fPCA(f, time, weights=None, num_comp=3, cores=-1, MaxItr=1, i
     print("Aligning %d functions to %d fPCA components..."
           % (N, num_comp))
 
+
     while itr < MaxItr:
         # print("updating step: r=%d" % (itr + 1))
 
@@ -164,19 +166,19 @@ def align_vect_SRC_fPCA(f, time, weights=None, num_comp=3, cores=-1, MaxItr=1, i
         # Matching Step
 
         if parallel:
-            out = Parallel(n_jobs=cores)(delayed(orN.coptimum_reparam_curve)(np.ascontiguousarray(fhat[:, :, k]), time, np.ascontiguousarray(fi[:, :, k, itr]), lam) for k in range(N))
+            out = Parallel(n_jobs=cores)(delayed(orN2.coptimum_reparam_curve)(np.ascontiguousarray(fhat[:, :, k]), time, np.ascontiguousarray(fi[:, :, k, itr]), lam) for k in range(N))
             gam_t = np.array(out)
             for k in range(N):
                 gam[:,k,itr] = (gam_t[k] - gam_t[k][0])/(gam_t[k][-1] - gam_t[k][0])
             # gam[:, :, itr] = gam_t.transpose()
         else:
             for k in range(N):
-                gam[:, k, itr] = orN.coptimum_reparam_curve(np.ascontiguousarray(fhat[:, :, k]), time, np.ascontiguousarray(fi[:, :, k, itr]), lam)
+                gam[:, k, itr] = orN2.coptimum_reparam_curve(np.ascontiguousarray(fhat[:, :, k]), time, np.ascontiguousarray(fi[:, :, k, itr]), lam)
 
         for kk in range(n):
             for k in range(0, N):
                 time0 = (time[-1] - time[0]) * gam[:, k, itr] + time[0]
-                fi[kk, :, k, itr + 1] = np.interp(time0, time, fi[kk, :, k, itr]) * np.gradient(gam[:, k, itr], 1 / float(M - 1))
+                fi[kk, :, k, itr + 1] = np.interp(time0, time, fi[kk, :, k, itr]) * np.sqrt(np.gradient(gam[:, k, itr], 1 / float(M - 1)))
 
         fi[np.isnan(fi)] = 0.0
         fi[np.isinf(fi)] = 0.0
@@ -208,7 +210,7 @@ def align_vect_SRC_fPCA(f, time, weights=None, num_comp=3, cores=-1, MaxItr=1, i
         # plt.plot(time, mf[1, :, itr + 1])
         # plt.show()
 
-        fi_cent[:, :, :, itr + 1], mf_cent[:, :, itr + 1] = align_and_center(np.copy(gam), np.copy(mf[:, :, itr + 1]), np.copy(ftemp), itr+1, np.copy(time))
+        fi_cent[:, :, :, itr + 1], mf_cent[:, :, itr + 1] = align_and_center_src(np.copy(gam), np.copy(mf[:, :, itr + 1]), np.copy(ftemp), itr+1, np.copy(time))
 
         cost_temp = np.zeros(N)
 
@@ -244,9 +246,9 @@ def align_vect_SRC_fPCA(f, time, weights=None, num_comp=3, cores=-1, MaxItr=1, i
     gamI_dev = np.gradient(gamI, 1 / float(M - 1))
     time0 = (time[-1] - time[0]) * gamI + time[0]
     for kk in range(n):
-        mfn[kk] = np.interp(time0, time, mfn[kk]) * gamI_dev
+        mfn[kk] = np.interp(time0, time, mfn[kk]) * np.sqrt(gamI_dev)
         for k in range(0, N):
-            fn[kk, :, k] = np.interp(time0, time, fn[kk, :, k]) * gamI_dev
+            fn[kk, :, k] = np.interp(time0, time, fn[kk, :, k]) * np.sqrt(gamI_dev)
 
     for k in range(0, N):
         gamf[:, k] = np.interp(time0, time, gamf[:, k])
@@ -618,6 +620,35 @@ def align_and_center(gam, mf, f, itr, time):
     return f, mf
 
 
+
+def align_and_center_src(gam, mf, f, itr, time):
+    """
+    Utility functions for the alignment function, used to aligned functions at the end of the iterations.
+    ...
+
+    """
+    n = f.shape[0]
+    N = gam.shape[1]
+    M = gam.shape[0]
+    gamf = gam[:, :, 0]
+    for k in range(1, itr):
+        gam_k = gam[:, :, k]
+        for l in range(0, N):
+            time0 = (time[-1] - time[0]) * gam_k[:, l] + time[0]
+            gamf[:, l] = np.interp(time0, time, gamf[:, l])
+
+    ## Center Mean
+    gamI = uf.SqrtMeanInverse(gamf)
+    gamI_dev = np.gradient(gamI, 1 / float(M - 1))
+    time0 = (time[-1] - time[0]) * gamI + time[0]
+    for kk in range(n):
+        mf[kk] = np.interp(time0, time, mf[kk]) * np.sqrt(gamI_dev)
+        for k in range(0, N):
+            f[kk, :, k] = np.interp(time0, time, f[kk, :, k]) * np.sqrt(gamI_dev)
+
+    return f, mf
+
+
 def weighted_mean(f, weights):
     """
     Compute the weighted mean of set of functions
@@ -660,7 +691,211 @@ def warp_curvatures(theta_i, gam_fct, time, weights):
     for n in range(N):
         gam[:,n] = gam_fct[n](time)
         time0 = (time[-1] - time[0]) * gam[:, n] + time[0]
-        theta_align[:,n] = np.interp(time0, time, theta[:,n]) * np.gradient(gam[:, n], 1 / float(M - 1))
+        theta_align[:,n] = np.interp(time0, time, theta[:,n]) * np.gradient(gam[:, n], time)
     weighted_mean_theta = weighted_mean(theta_align, weights.T)
 
     return theta_align.T, weighted_mean_theta
+
+
+def warp_src(src, gam_fct, time, weights):
+    """
+    Apply warping on curvatures: theta_align = theta(gam_fct(time))*grad(gam_fct)(time)
+    and compute the weighted mean of the aligned functions
+    ...
+
+    Param:
+        theta: array of curvatures or torsions (N, M, d)
+        gam_fct: functions, array of N warping functions
+        time: array of time points (M)
+        weights: array of weights (M)
+
+    Return:
+        theta align: array of functions theta aligned
+        weighted_mean_theta: weighted mean of the aligned functions (M)
+
+    """
+    N = src.shape[1]
+    K = src.shape[0]
+    d = src.shape[2]
+    src_align = np.zeros(src.shape)
+    gam = np.zeros((time.shape[0], K))
+    for k in range(K):
+        gam[:,k] = gam_fct[k](time)
+        time0 = (time[-1] - time[0]) * gam[:, k] + time[0]
+        sqrt_grad = np.sqrt(np.gradient(gam[:, k], time))
+        for i in range(d):
+            src_align[k,:,i] = np.interp(time0, time, src[k,:,i]) * sqrt_grad
+    
+    weighted_mean_src = []
+    for i in range(d):
+        weighted_mean_src.append(weighted_mean(src_align[:,:,i].T, weights.T))
+    weighted_mean_src = np.stack(weighted_mean_src, axis=-1)
+
+    return src_align, weighted_mean_src
+
+
+def align_src(arr_src, grid, weights=None, max_iter=20, tol=0.01, lam=1.0, parallel=True):
+
+    N_samples, N, d = arr_src.shape
+    if weights is None:
+        mean_src = np.mean(arr_src, axis=0)
+    else:
+        mean_src = weighted_mean_vect(arr_src.T, weights.T).T
+
+    dist_arr = np.zeros(N_samples)
+    for i in range(N_samples):
+        dist_arr[i] = np.linalg.norm(mean_src - arr_src[i])
+    ind = np.argmin(dist_arr)
+
+    temp_mean_src = arr_src[ind]
+    temp_error = np.linalg.norm((mean_src - temp_mean_src)) 
+    up_err = temp_error
+    k = 0
+    
+    # print('Iteration ', k, '/', max_iter, ': error ', temp_error)
+    print("Aligning %d functions in maximum %d iterations..."
+          % (N_samples, max_iter))
+    while up_err > tol and k < max_iter:
+        # arr_c_align = np.zeros((n,self.dim-1,T))
+        arr_src_align = np.zeros((N_samples, N, d))
+        arr_gam = np.zeros((N_samples, N))
+
+        if parallel:
+
+            def to_run(m_src, src, grid_ptn, param):
+                if np.linalg.norm(m_src - src,'fro') > 0.0001:
+                    gam = orN2.coptimum_reparam_curve(np.ascontiguousarray(m_src.T), grid_ptn, np.ascontiguousarray(src.T), param)
+                else:
+                    gam = grid_ptn
+                return gam
+            
+            out = Parallel(n_jobs=-1)(delayed(to_run)(temp_mean_src, arr_src[i], grid, lam) for i in range(N_samples))
+            gam_t = np.array(out)
+            for i in range(N_samples):
+                arr_gam[i] = (gam_t[i] - gam_t[i][0])/(gam_t[i][-1] - gam_t[i][0])
+                for j in range(0, d):
+                    time0 = (grid[-1] - grid[0]) * arr_gam[i] + grid[0]
+                    arr_src_align[i,:,j] = np.interp(time0, grid, arr_src[i, :, j]) * np.sqrt(np.gradient(arr_gam[i], grid))
+
+        else:
+            for i in range(N_samples):
+                if np.linalg.norm(temp_mean_src - arr_src[i],'fro') > 0.0001:
+                    gam = orN2.coptimum_reparam_curve(np.ascontiguousarray(temp_mean_src.T), grid, np.ascontiguousarray(arr_src[i].T), lam)
+                else:
+                    gam = grid
+                gam = (gam - gam.min())/(gam.max() - gam.min())
+                arr_gam[i] = gam
+
+                for j in range(0, d):
+                    time0 = (grid[-1] - grid[0]) * gam + grid[0]
+                    arr_src_align[i,:,j] = np.interp(time0, grid, arr_src[i, :, j]) * np.sqrt(np.gradient(gam, grid))
+
+        if weights is None:
+            mean_src = np.mean(arr_src_align, axis=0)
+        else:
+            mean_src = weighted_mean_vect(arr_src_align.T, weights.T).T
+        error = np.linalg.norm((mean_src - temp_mean_src))  
+        up_err = abs(temp_error - error)
+        temp_error = error
+        k += 1
+        # print('Iteration ', k, '/', max_iter, ': error ', temp_error)
+        temp_mean_src = mean_src
+        
+    print("Alignment in %d iterations" % (k))
+
+    gamf_inv = np.zeros(arr_gam.shape)
+    for k in range(N_samples):
+        gamf_inv[k] = interp1d(arr_gam[k], grid)(grid)
+        gamf_inv[k] = (gamf_inv[k] - gamf_inv[k,0])/(gamf_inv[k,-1] - gamf_inv[k,0])
+
+    # visu.plot_array_2D(grid, arr_src_align[:,:,0], 'c 0')
+    # visu.plot_array_2D(grid, arr_src_align[:,:,1], 'c 1')
+
+    align_results = collections.namedtuple('align_src', ['fn', 'gamf', 'mfn', 'nb_itr', 'gamf_inv'])
+    out = align_results(arr_src_align, arr_gam, mean_src, k, gamf_inv.T)
+
+    return out
+
+
+
+
+def align_curvatures(arr_theta, grid, weights=None, max_iter=20, tol=0.01, lam=1.0, parallel=True):
+
+    N_samples, N, d = arr_theta.shape
+    if weights is None:
+        mean_theta = np.mean(arr_theta, axis=0)
+    else:
+        mean_theta = weighted_mean_vect(arr_theta.T, weights.T).T
+
+    dist_arr = np.zeros(N_samples)
+    for i in range(N_samples):
+        dist_arr[i] = np.linalg.norm(mean_theta - arr_theta[i])
+    ind = np.argmin(dist_arr)
+    temp_mean_theta = arr_theta[ind]
+    temp_error = np.linalg.norm((mean_theta - temp_mean_theta)) 
+    up_err = temp_error
+    k = 0
+    
+    # print('Iteration ', k, '/', max_iter, ': error ', temp_error)
+    print("Aligning %d functions in maximum %d iterations..."
+          % (N_samples, max_iter))
+    while up_err > tol and k < max_iter:
+        
+        arr_theta_align = np.zeros((N_samples, N, d))
+        arr_gam = np.zeros((N_samples, N))
+
+        if parallel:
+
+            def to_run(m_theta, theta, grid_ptn, param):
+                if np.linalg.norm(m_theta - theta,'fro') > 0.0001:
+                    gam = orN2.coptimum_reparam_curve(np.ascontiguousarray(m_theta.T), grid_ptn, np.ascontiguousarray(theta.T), param)
+                else:
+                    gam = grid_ptn
+                return gam
+            
+            out = Parallel(n_jobs=-1)(delayed(to_run)(temp_mean_theta, arr_theta[i], grid, lam) for i in range(N_samples))
+            gam_t = np.array(out)
+            for i in range(N_samples):
+                arr_gam[i] = (gam_t[i] - gam_t[i][0])/(gam_t[i][-1] - gam_t[i][0])
+                for j in range(0, d):
+                    time0 = (grid[-1] - grid[0]) * arr_gam[i] + grid[0]
+                    arr_theta_align[i,:,j] = np.interp(time0, grid, arr_theta[i, :, j]) * np.sqrt(np.gradient(arr_gam[i], grid))
+
+        else:
+            for i in range(N_samples):
+                if np.linalg.norm(temp_mean_theta - arr_theta[i],'fro') > 0.0001:
+                    gam = orN2.coptimum_reparam_curve(np.ascontiguousarray(temp_mean_theta.T), grid, np.ascontiguousarray(arr_theta[i].T), lam)
+                else:
+                    gam = grid
+                gam = (gam - gam.min())/(gam.max() - gam.min())
+                arr_gam[i] = gam
+
+                for j in range(0, d):
+                    time0 = (grid[-1] - grid[0]) * gam + grid[0]
+                    arr_theta_align[i,:,j] = np.interp(time0, grid, arr_theta[i, :, j]) * np.sqrt(np.gradient(gam, grid))
+
+        if weights is None:
+            mean_theta = np.mean(arr_theta_align, axis=0)
+        else:
+            mean_theta = weighted_mean_vect(arr_theta_align.T, weights.T).T
+        error = np.linalg.norm((mean_theta - temp_mean_theta))  
+        up_err = abs(temp_error - error)
+        temp_error = error
+        k += 1
+        # print('Iteration ', k, '/', max_iter, ': error ', temp_error)
+        temp_mean_theta = mean_theta
+        
+    print("Alignment in %d iterations" % (k))
+
+    gamf_inv = np.zeros(arr_gam.shape)
+    for k in range(N_samples):
+        gamf_inv[k] = interp1d(arr_gam[k], grid)(grid)
+        gamf_inv[k] = (gamf_inv[k] - gamf_inv[k,0])/(gamf_inv[k,-1] - gamf_inv[k,0])
+
+    # visu.plot_array_2D(grid, arr_theta_align[:,:,0], '0')
+    # visu.plot_array_2D(grid, arr_theta_align[:,:,1], '1')
+
+    align_results = collections.namedtuple('align_theta', ['fn', 'gamf', 'mfn', 'nb_itr', 'gamf_inv'])
+    out = align_results(arr_theta_align, arr_gam, mean_theta, k, gamf_inv.T)
+
+    return out

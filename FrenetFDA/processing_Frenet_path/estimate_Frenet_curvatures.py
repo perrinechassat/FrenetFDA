@@ -358,15 +358,19 @@ class LocalApproxFrenetODE:
 
     # @profile
     def bayesian_optimization_hyperparameters(self, n_call_bayopt, lambda_bounds, h_bounds, nb_basis=20, order=4, n_splits=10, verbose=True, return_coefs=False, knots=None, Bspline_repres=None):
-
+        
         # ## CV optimization of lambda
         if Bspline_repres is None:
             Bspline_repres = VectorBSplineSmoothing(self.dim_theta, nb_basis, domain_range=(self.grid[0], self.grid[-1]), order=order, penalization=True, knots=knots)
+        # else:
+        #     Bspline_repres = Bspline_repres
 
         # @profile
         def func(x):
             h = x[0]
             lbda = 10 ** np.array([x[1],x[2]])
+            if verbose:
+                print('x', x)
             score = np.zeros(n_splits)
             kf = KFold(n_splits=n_splits, shuffle=True)
             grid_split = self.grid[1:-1]
@@ -422,6 +426,8 @@ class LocalApproxFrenetODE:
             grid_theta, raw_theta, weight_theta = self.raw_estimates(h_opt)
             Bspline_repres.fit(grid_theta, raw_theta, weights=weight_theta, regularization_parameter=lbda_opt)
             coefs_opt = Bspline_repres.coefs
+            # visu.plot_array_2D(grid_theta, [raw_theta[:,0], Bspline_repres.evaluate_coefs(coefs_opt)(grid_theta)[:,0]], 'curv')
+            # visu.plot_array_2D(grid_theta, [raw_theta[:,1], Bspline_repres.evaluate_coefs(coefs_opt)(grid_theta)[:,1]], 'tors')
             return h_opt, lbda_opt, coefs_opt
 
         else:
