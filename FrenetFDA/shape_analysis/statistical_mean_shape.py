@@ -167,14 +167,14 @@ class StatisticalMeanShapeV1(StatisticalMeanShape):
                 else:
                     if list_X is None:
                         mean_Q0 = SO3.frechet_mean(np.array(self.list_Q)[:,0])
-                        Q_mean_pred = solve_FrenetSerret_ODE_SO(Bspline_repres.evaluate, self.grid, mean_Q0, timeout_seconds=60)
+                        Q_mean_pred = solve_FrenetSerret_ODE_SO(Bspline_repres.evaluate, self.grid, mean_Q0, timeout_seconds=30)
                         dist = np.mean([np.mean(SO3.geodesic_distance(self.list_Q[i], Q_mean_pred)) for i in range(self.N_samples)])
                     else:
                         list_Z = np.zeros((self.N_samples, self.N, self.dim+1, self.dim+1))
                         list_Z[:,:,:3,:3] = np.array(self.list_Q)
                         list_Z[:,:,:3,3] = np.array(list_X)
                         mean_Z0 = SE3.frechet_mean(list_Z[:,0])
-                        Z_mean_pred = solve_FrenetSerret_ODE_SE(Bspline_repres.evaluate, self.grid, mean_Z0, timeout_seconds=60)
+                        Z_mean_pred = solve_FrenetSerret_ODE_SE(Bspline_repres.evaluate, self.grid, mean_Z0, timeout_seconds=30)
                         dist = np.mean([np.mean(SE3.geodesic_distance(list_Z[i], Z_mean_pred)) for i in range(self.N_samples)])
 
                 score[ind_CV] = dist
@@ -410,7 +410,7 @@ class StatisticalMeanShapeV2(StatisticalMeanShape):
                         # dist = np.mean([np.mean(SO3.geodesic_distance(self.list_Q[i], Q_mean_pred)) for i in range(self.N_samples)])
                         dist = 0
                         for i in range(self.N_samples):
-                            Q_mean_pred = solve_FrenetSerret_ODE_SO(Bspline_repres.evaluate, gam_inv[i], mean_Q0, timeout_seconds=60)
+                            Q_mean_pred = solve_FrenetSerret_ODE_SO(Bspline_repres.evaluate, gam_inv[i], mean_Q0, timeout_seconds=30)
                             dist += np.mean(SO3.geodesic_distance(self.list_Q[i], Q_mean_pred))
                         dist = dist/self.N_samples
 
@@ -423,7 +423,7 @@ class StatisticalMeanShapeV2(StatisticalMeanShape):
                         # dist = np.mean([np.mean(SE3.geodesic_distance(list_Z[i], Z_mean_pred)) for i in range(self.N_samples)])
                         dist = 0
                         for i in range(self.N_samples):
-                            Z_mean_pred = solve_FrenetSerret_ODE_SE(Bspline_repres.evaluate, gam_inv[i], mean_Z0, timeout_seconds=60)
+                            Z_mean_pred = solve_FrenetSerret_ODE_SE(Bspline_repres.evaluate, gam_inv[i], mean_Z0, timeout_seconds=30)
                             dist += np.mean(SE3.geodesic_distance(list_Z[i], Z_mean_pred))
                         dist = dist/self.N_samples
 
@@ -631,7 +631,7 @@ class StatisticalMeanShapeV3(StatisticalMeanShape):
                         # dist = np.mean([np.mean(SO3.geodesic_distance(self.list_Q[i], Q_mean_pred)) for i in range(self.N_samples)])
                         dist = 0
                         for i in range(self.N_samples):
-                            Q_mean_pred = solve_FrenetSerret_ODE_SO(Bspline_repres.evaluate, gam_inv[i], mean_Q0, timeout_seconds=60)
+                            Q_mean_pred = solve_FrenetSerret_ODE_SO(Bspline_repres.evaluate, gam_inv[i], mean_Q0, timeout_seconds=30)
                             dist += np.mean(SO3.srv_distance(self.list_Q[i], Q_mean_pred))
                         dist = dist/self.N_samples
 
@@ -644,7 +644,7 @@ class StatisticalMeanShapeV3(StatisticalMeanShape):
                         # dist = np.mean([np.mean(SE3.geodesic_distance(list_Z[i], Z_mean_pred)) for i in range(self.N_samples)])
                         dist = 0
                         for i in range(self.N_samples):
-                            Z_mean_pred = solve_FrenetSerret_ODE_SE(Bspline_repres.evaluate, gam_inv[i], mean_Z0, timeout_seconds=60)
+                            Z_mean_pred = solve_FrenetSerret_ODE_SE(Bspline_repres.evaluate, gam_inv[i], mean_Z0, timeout_seconds=30)
                             dist += np.mean(SE3.srv_distance(list_Z[i], Z_mean_pred))
                         dist = dist/self.N_samples
 
