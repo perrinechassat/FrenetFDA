@@ -707,7 +707,24 @@ class VectorConstantBSplineSmoothing:
 
         return data, weights_matrix
     
+    def check_regularization_parameter(self, regularization_parameter):
 
+        if regularization_parameter is None:
+                regularization_parameter = np.repeat(1, self.dim)
+        else:
+            regularization_parameter = np.squeeze(regularization_parameter)
+            if isinstance(regularization_parameter, int) or isinstance(regularization_parameter, float):
+                regularization_parameter = np.repeat(regularization_parameter, self.dim)
+            elif regularization_parameter.ndim==0 and (isinstance(regularization_parameter.item(), int) or isinstance(regularization_parameter.item(), float)):
+                regularization_parameter = np.repeat(regularization_parameter.item(), self.dim)
+            elif len(regularization_parameter)==self.dim:
+                regularization_parameter = regularization_parameter
+            else:
+                raise Exception("Invalide value of regularization parameter.")
+        regularization_parameter_matrix = np.diag(np.concatenate([np.repeat(regularization_parameter[i], self.nb_basis[i]) for i in range(self.dim)]))
+
+        return regularization_parameter, regularization_parameter_matrix
+    
     def check_regularization_parameter(self, regularization_parameter):
 
         if regularization_parameter is None:
@@ -718,6 +735,8 @@ class VectorConstantBSplineSmoothing:
                 regularization_parameter = np.array([0,regularization_parameter])
             elif regularization_parameter.ndim==0 and (isinstance(regularization_parameter.item(), int) or isinstance(regularization_parameter.item(), float)):
                 regularization_parameter = np.array([0,regularization_parameter.item()]) 
+            elif regularization_parameter.ndim > 0:
+                regularization_parameter = np.array([0,regularization_parameter[1]]) 
             else:
                 raise Exception("Invalide value of regularization parameter.")
         regularization_parameter_matrix = np.diag(np.concatenate([np.array([0]), np.repeat(regularization_parameter[1], self.nb_basis)]))

@@ -240,14 +240,8 @@ class StatisticalMeanShapeV1(StatisticalMeanShape):
     #             lbda = np.array([x[1],x[2]])
     #             Bspline_repres.fit(grid_theta_train, raw_theta_train, weights=weight_theta_train, regularization_parameter=lbda)
                 
-        
-        
 
-
-        
-
-        
-    
+                
     
 
 class StatisticalMeanShapeV2(StatisticalMeanShape):
