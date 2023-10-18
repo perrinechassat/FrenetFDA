@@ -182,17 +182,18 @@ class LocalApproxFrenetODE:
         return uniqueS, mOmega, mKappa, mTau
     
 
-    def Bspline_smooth_estimates(self, h, nb_basis, order=4, regularization_parameter=None):
+    def Bspline_smooth_estimates(self, h, nb_basis=None, order=4, regularization_parameter=None, basis_repres=None):
 
         grid_theta, raw_theta, weight_theta = self.raw_estimates(h)
         if regularization_parameter is None:
             penalization = False
         else:
             penalization = True
-        Bspline_repres = VectorBSplineSmoothing(self.dim_theta, nb_basis, domain_range=(self.grid[0], self.grid[-1]), order=order, penalization=penalization)
-        Bspline_repres.fit(grid_theta, raw_theta, weights=weight_theta, regularization_parameter=regularization_parameter)
-        cf_limits = Bspline_repres.compute_confidence_limits(0.95)
-        return Bspline_repres
+        if basis_repres is None:
+            basis_repres = VectorBSplineSmoothing(self.dim_theta, nb_basis, domain_range=(self.grid[0], self.grid[-1]), order=order, penalization=penalization)
+        basis_repres.fit(grid_theta, raw_theta, weights=weight_theta, regularization_parameter=regularization_parameter)
+        # cf_limits = basis_repres.compute_confidence_limits(0.95)
+        return basis_repres
 
 
 
@@ -362,8 +363,7 @@ class LocalApproxFrenetODE:
         # ## CV optimization of lambda
         if Bspline_repres is None:
             Bspline_repres = VectorBSplineSmoothing(self.dim_theta, nb_basis, domain_range=(self.grid[0], self.grid[-1]), order=order, penalization=True, knots=knots)
-        # else:
-        #     Bspline_repres = Bspline_repres
+
 
         # @profile
         def func(x):

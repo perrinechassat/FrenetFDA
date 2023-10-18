@@ -1,7 +1,7 @@
 import numpy as np
 from sklearn.preprocessing import PolynomialFeatures
 from sklearn.linear_model import LinearRegression
-from skfda.representation.basis import VectorValued, BSpline
+from skfda.representation.basis import VectorValued, BSpline, Constant
 from skfda.misc.regularization import TikhonovRegularization, compute_penalty_matrix
 from skfda.misc.operators import LinearDifferentialOperator
 from scipy.linalg import block_diag
@@ -592,3 +592,277 @@ class VectorBSplineSmoothing:
                 fig.update_xaxes(showline=True, showgrid=False, linewidth=1, linecolor='black')
                 fig.update_yaxes(showline=True, showgrid=False, linewidth=1, linecolor='black')
                 fig.show()
+
+
+
+
+
+
+class VectorConstantBSplineSmoothing:
+
+    def __init__(self, nb_basis=None, domain_range=(0,1), order=4, penalization=True, knots=None):
+
+        self.dim = 2
+        
+        if (nb_basis is None) and (knots is None):
+            raise Exception("Either nb_basis or knots must be set.")
+        
+        if knots is not None:
+            nb_basis = len(knots)+2
+        self.nb_basis = int(nb_basis)
+        self.domain_range = domain_range
+        self.order = order
+        if knots is not None:
+            list_basis = [Constant(domain_range=self.domain_range), BSpline(domain_range=self.domain_range, order=order, knots=knots)]
+        else:
+            list_basis = [Constant(domain_range=self.domain_range), BSpline(domain_range=self.domain_range, n_basis=self.nb_basis, order=order)]
+        self.basis = VectorValued(list_basis)
+        def basis_fct(s):
+            return np.squeeze(self.basis.evaluate(s))
+        self.basis_fct = basis_fct
+        if penalization:
+            self.penalty_matrix = compute_penalty_matrix(basis_iterable=(self.basis,),regularization_parameter=1,regularization=TikhonovRegularization(LinearDifferentialOperator(2)))
+        else:
+            self.penalty_matrix = np.zeros((nb_basis+1, nb_basis+1))
+
+
+    def fit(self, grid, data=None, weights=None, regularization_parameter=None):
+        """
+            grid: dimension N
+            data: dimension (N, self.dim), or (N,) if dim=1
+            weights: dimension (N, self.dim) or (N*self.dim, N*self.dim) or (N,) if dim=1
+
+        """
+        N = len(grid)
+        V = np.expand_dims(grid, 1)
+        self.basis_matrix = self.basis(V,).reshape((self.basis.n_basis, -1)).T # shape (self.dim*N, np.sum(self.nb_basis))
+        if data is not None: 
+            self.data, self.weights_matrix = self.check_data(grid, data, weights)
+            self.grid = grid
+            self.regularization_parameter, self.regularization_parameter_matrix = self.check_regularization_parameter(regularization_parameter)
+            left = self.basis_matrix.T @ self.weights_matrix @ self.basis_matrix + self.regularization_parameter_matrix @ self.penalty_matrix
+            right = self.basis_matrix.T @ self.weights_matrix @ np.reshape(self.data, (N*self.dim,))
+            self.coefs = np.linalg.solve(left, right)
+
+
+    def evaluate(self, s):
+        if isinstance(s, int) or isinstance(s, float):
+            return np.squeeze(self.basis_fct(s).T @ self.coefs)
+        elif isinstance(s, np.ndarray):
+            return np.squeeze((self.basis_fct(s).T @ self.coefs).T)
+        else:
+            raise ValueError('Variable is not a float, a int or a NumPy array.')
+        
+    def evaluate_coefs(self, coefs_test):
+        def func(s):
+            if isinstance(s, int) or isinstance(s, float):
+                return np.squeeze(self.basis_fct(s).T @ coefs_test)
+            elif isinstance(s, np.ndarray):
+                return np.squeeze((self.basis_fct(s).T @ coefs_test).T)
+            else:
+                raise ValueError('Variable is not a float, a int or a NumPy array.')
+        return func
+
+    def GCV_score(self, basis_matrix, data, weights_matrix, regularization_parameter):
+        
+        regularization_parameter, regularization_parameter_matrix = self.check_regularization_parameter(regularization_parameter)
+        N = data.shape[0]
+        left = basis_matrix.T @ weights_matrix @ basis_matrix + regularization_parameter_matrix @ self.penalty_matrix
+        right = basis_matrix.T @ weights_matrix @ np.reshape(data, (N*self.dim,))
+        coefs = np.linalg.solve(left, right)
+        err = np.reshape((np.reshape(basis_matrix @ coefs, (-1,self.dim)) - data), (N*self.dim,))
+        SSE = np.diag(np.reshape(err @ weights_matrix, (-1,self.dim)).T @ (np.reshape(basis_matrix @ coefs, (-1,self.dim)) - data))
+        df_lbda = basis_matrix @ np.linalg.inv(basis_matrix.T @ weights_matrix @ basis_matrix + regularization_parameter_matrix @ self.penalty_matrix) @ basis_matrix.T @ weights_matrix
+        df_lbda = np.sum(np.reshape(np.diag(df_lbda), (-1,self.dim)), axis=0)
+        GCV_score = np.array([(N*SSE[i])/((N - df_lbda[i])**2) for i in range(self.dim)])
+        # GCV_score = np.sum(np.array([(N*SSE[i])/((N - df_lbda[i])**2) for i in range(self.dim)]))
+    
+        return GCV_score
+    
+
+    def check_data(self, grid, data, weights=None):
+    
+        N = len(grid)
+        if N!=data.shape[0]:
+            raise Exception("Dimensions of grid and data do not match.")
+        if data.ndim > 2:
+            raise Exception("Data must be a 1d or 2d numpy array.")
+        if data.ndim==1:
+            data = data[:,np.newaxis]
+        if self.dim!=1 and self.dim!=data.shape[1]:
+            raise Exception("Invalide second dimension of data, do not correspond to the dimension of the basis defined.")
+
+        if weights is None:
+            weights_matrix = np.eye(N*self.dim)
+        elif weights.ndim==1 and len(weights)==N:
+            if self.dim==1:
+                weights_matrix = np.diag(weights)
+            else:
+                weights = np.stack([weights for i in range(self.dim)], axis=-1)
+                weights_matrix = block_diag(*np.apply_along_axis(np.diag, 1, weights))
+        elif weights.ndim==2 and (weights.shape[0]==self.dim*N and weights.shape[1]==self.dim*N):
+            weights_matrix = weights
+        elif weights.ndim==2 and (weights.shape[0]==N and weights.shape[1]==self.dim):
+            weights_matrix = block_diag(*np.apply_along_axis(np.diag, 1, weights))
+
+        return data, weights_matrix
+    
+
+    def check_regularization_parameter(self, regularization_parameter):
+
+        if regularization_parameter is None:
+                regularization_parameter = np.array([0,1])
+        else:
+            regularization_parameter = np.squeeze(regularization_parameter)
+            if isinstance(regularization_parameter, int) or isinstance(regularization_parameter, float):
+                regularization_parameter = np.array([0,regularization_parameter])
+            elif regularization_parameter.ndim==0 and (isinstance(regularization_parameter.item(), int) or isinstance(regularization_parameter.item(), float)):
+                regularization_parameter = np.array([0,regularization_parameter.item()]) 
+            else:
+                raise Exception("Invalide value of regularization parameter.")
+        regularization_parameter_matrix = np.diag(np.concatenate([np.array([0]), np.repeat(regularization_parameter[1], self.nb_basis)]))
+
+        return regularization_parameter, regularization_parameter_matrix
+    
+
+    
+    def grid_search_optimization_regularization_parameter(self, grid, data, regularization_parameter_list, weights=None, parallel=False):
+        
+        V = np.expand_dims(grid, 1)
+        basis_matrix = self.basis(V,).reshape((self.basis.n_basis, -1)).T # shape (self.dim*N, np.sum(self.nb_basis))
+        data, weights_matrix = self.check_data(grid, data, weights)
+
+        n_param = len(regularization_parameter_list)
+        if regularization_parameter_list.ndim==1:
+            regularization_parameter_list = np.stack([regularization_parameter_list for i in range(self.dim)], axis=-1)
+        # print('Begin grid search optimisation with', n_param, 'combinations of parameters...')
+
+        if parallel:
+            func = lambda lbda: self.GCV_score(basis_matrix, data, weights_matrix, lbda)
+            out = Parallel(n_jobs=-1)(delayed(func)(regularization_parameter_list[i]) for i in range(n_param))
+            res = np.zeros((self.dim))
+            for i in range(self.dim):
+                ind = np.argmin(out[:,i])
+                res[i] = regularization_parameter_list[ind][i]
+            # ind = np.argmin(out, axis=0)
+            # res = regularization_parameter_list[ind]
+        else:
+            GCV_scores = np.zeros((n_param, self.dim))
+            for i in range(n_param):
+                GCV_scores[i] = self.GCV_score(basis_matrix, data, weights_matrix, regularization_parameter_list[i])
+            res = np.zeros((self.dim))
+            for i in range(self.dim):
+                ind = np.argmin(GCV_scores[:,i])
+                res[i] = regularization_parameter_list[ind][i]
+            # res = regularization_parameter_list[ind] 
+        
+        # print('Optimal regularization parameter selected by grid search optimisation: ', res)
+        return res
+
+
+
+    def bayesian_optimization_regularization_parameter(self, grid, data, n_calls, regularization_parameter_bounds, weights=None, verbose=True):
+        """
+            Do a bayesian optimisation and return the optimal parameter (lambda_1, ..., lambda_dim)
+        ...
+        """
+
+        V = np.expand_dims(grid, 1)
+        basis_matrix = self.basis(V,).reshape((self.basis.n_basis, -1)).T # shape (self.dim*N, np.sum(self.nb_basis))
+        data, weights_matrix = self.check_data(grid, data, weights)
+
+        func = lambda lbda: self.GCV_score(basis_matrix, data, weights_matrix, lbda)
+
+        res = gp_minimize(func,               # the function to minimize
+                    regularization_parameter_bounds,    # the bounds on each dimension of x
+                    acq_func="EI",        # the acquisition function
+                    n_calls=n_calls,       # the number of evaluations of f
+                    n_random_starts=2,    # the number of random initialization points
+                    random_state=1,       # the random seed
+                    n_jobs=-1,            # use all the cores for parallel calculation
+                    verbose=verbose)
+        x = res.x
+        # print('Optimal regularization parameter selected by bayesian optimization: ', x)
+        return x
+
+
+    # def compute_confidence_limits(self, pourcentage):
+
+    #     self.sampling_variance()
+
+    #     def confidence_limits(s):
+    #         val = self.evaluate(s)
+    #         basis_fct_arr = self.basis_fct(s).T 
+    #         if self.dim==1:
+    #             if isinstance(s, int) or isinstance(s, float):
+    #                 error = 0
+    #             elif isinstance(s, np.ndarray):
+    #                 error = np.zeros((len(s)))
+    #             else:
+    #                 raise ValueError('Variable is not a float, a int or a NumPy array.')
+    #             error = pourcentage*np.sqrt(np.diag(basis_fct_arr @ self.sampling_variance_coeffs @ basis_fct_arr.T))
+    #         else:
+    #             if isinstance(s, int) or isinstance(s, float):
+    #                 error = np.zeros((self.dim))
+    #             elif isinstance(s, np.ndarray):
+    #                 error = np.zeros((self.dim, len(s)))
+    #             else:
+    #                 raise ValueError('Variable is not a float, a int or a NumPy array.')
+    #             for i in range(self.dim):
+    #                 error[i] = pourcentage*np.sqrt(np.diag(basis_fct_arr[i] @ self.sampling_variance_coeffs @ basis_fct_arr[i].T))
+    #         upper_limit = val + error.T
+    #         lower_limit = val - error.T
+    #         return lower_limit, upper_limit
+        
+    #     self.confidence_limits = confidence_limits
+    #     return confidence_limits
+    
+
+    # def sampling_variance(self):
+    #     N = len(self.grid)
+    #     y_hat = self.evaluate(self.grid)
+    #     if self.dim==1:
+    #         err = np.reshape(y_hat - self.data[:,0], (N*self.dim,))
+    #         self.residuals_error = np.squeeze((1/(N-self.nb_basis[0]))*err[np.newaxis,:] @ self.weights_matrix @ err[:,np.newaxis])
+    #         res_mat = np.diag(np.repeat(self.residuals_error, N)) 
+    #     else:
+    #         err = np.reshape((y_hat - self.data), (N*self.dim,))
+    #         SSE = np.diag(np.reshape(err @ self.weights_matrix, (-1,self.dim)).T @ (y_hat - self.data))
+    #         self.residuals_error = np.array([SSE[i]/(N-self.nb_basis[i]) for i in range(self.dim)])
+    #         res_mat = block_diag(*np.apply_along_axis(np.diag, 1, np.array([self.residuals_error for i in range(N)])))
+    #     S = np.linalg.inv(self.basis_matrix.T @ self.weights_matrix @ self.basis_matrix + self.regularization_parameter_matrix @ self.penalty_matrix) @ self.basis_matrix.T @ self.weights_matrix
+    #     self.sampling_variance_coeffs = S @ res_mat @ S.T 
+    #     self.sampling_variance_yhat = self.basis_matrix @ self.sampling_variance_coeffs @ self.basis_matrix.T
+        
+
+    # def plot(self):
+        
+    #     if hasattr(self, 'confidence_limits'):
+    #         lower_limits, upper_limits = self.confidence_limits(self.grid)
+    #     y_hat = self.evaluate(self.grid)
+    #     layout = go.Layout(plot_bgcolor='rgba(0,0,0,0)')
+    #     if self.dim==1:
+    #         fig = go.Figure(layout=layout)
+    #         fig.add_trace(go.Scatter(x=self.grid, y=y_hat, mode='lines', name='Smooth estimate'))
+    #         fig.add_trace(go.Scatter(x=self.grid, y=self.data[:,0], mode='lines', name='Observations'))
+    #         if hasattr(self, 'confidence_limits'):
+    #             fig.add_trace(go.Scatter(x=self.grid, y=upper_limits, mode='lines', line=dict(width=0), showlegend=False))
+    #             fig.add_trace(go.Scatter(x=self.grid, y=lower_limits, mode='lines', line=dict(width=0), showlegend=False, fillcolor='rgba(99, 110, 250, 0.2)', fill='tonexty'))
+        
+    #         fig.update_layout(title='Smoothing results')
+    #         fig.update_xaxes(showline=True, showgrid=False, linewidth=1, linecolor='black')
+    #         fig.update_yaxes(showline=True, showgrid=False, linewidth=1, linecolor='black')
+    #         fig.show()
+    #     else:
+    #         for i in range(self.dim):
+    #             fig = go.Figure(layout=layout)
+    #             fig.add_trace(go.Scatter(x=self.grid, y=y_hat[:,i], mode='lines', name='Smooth estimate'))
+    #             fig.add_trace(go.Scatter(x=self.grid, y=self.data[:,i], mode='lines', name='Observations'))
+    #             if hasattr(self, 'confidence_limits'):
+    #                 fig.add_trace(go.Scatter(x=self.grid, y=upper_limits[:,i], mode='lines', line=dict(width=0), showlegend=False))
+    #                 fig.add_trace(go.Scatter(x=self.grid, y=lower_limits[:,i], mode='lines', line=dict(width=0), showlegend=False, fillcolor='rgba(99, 110, 250, 0.2)', fill='tonexty'))
+            
+    #             fig.update_layout(title='Smoothing results dimension '+str(i+1))
+    #             fig.update_xaxes(showline=True, showgrid=False, linewidth=1, linecolor='black')
+    #             fig.update_yaxes(showline=True, showgrid=False, linewidth=1, linecolor='black')
+    #             fig.show()
