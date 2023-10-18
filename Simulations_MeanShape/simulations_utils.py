@@ -194,12 +194,15 @@ def compute_all_means(pop_x, h_deriv_bounds, h_bounds, lbda_bounds, nb_basis, po
     mu_s_arithm, mu_Z_arithm, coefs_opt_arithm, knots_arithm = mean_theta_from_mean_shape(mu_arithm, h_deriv_bounds, h_bounds, lbda_bounds, n_call_bayopt, nb_basis=None, knots_step=3)
     # mu_theta_arithm = VectorBSplineSmoothing(2, domain_range=(0, 1), order=4, penalization=False, knots=knots_arithm).evaluate_coefs(coefs_opt_arithm)
 
-    mu_arithm_arclgth = np.mean(pop_X, axis=0)
-    mu_s_arithm_arclgth, mu_Z_arithm_arclgth, coefs_opt_arithm_arclgth, knots_arithm_arclgth = mean_theta_from_mean_shape(mu_arithm_arclgth, h_deriv_bounds, h_bounds, lbda_bounds, n_call_bayopt, nb_basis=None, knots_step=3)
-    # mu_theta_arithm_arclgth = VectorBSplineSmoothing(2, domain_range=(0, 1), order=4, penalization=False, knots=knots_arithm_arclgth).evaluate_coefs(coefs_opt_arithm_arclgth)
+    # mu_arithm_arclgth = np.mean(pop_X, axis=0)
+    # mu_s_arithm_arclgth, mu_Z_arithm_arclgth, coefs_opt_arithm_arclgth, knots_arithm_arclgth = mean_theta_from_mean_shape(mu_arithm_arclgth, h_deriv_bounds, h_bounds, lbda_bounds, n_call_bayopt, nb_basis=None, knots_step=3)
+    # # mu_theta_arithm_arclgth = VectorBSplineSmoothing(2, domain_range=(0, 1), order=4, penalization=False, knots=knots_arithm_arclgth).evaluate_coefs(coefs_opt_arithm_arclgth)
 
-    res_mean_arithm = collections.namedtuple('res_mean_arithm', ['mu', 'mu_X_arclength', 'mu_s_arclgth', 'mu_s', 'mu_Z', 'mu_Z_arclgth', 'knots_arithm', 'coefs_opt_arithm', 'knots_arithm_arclgth', 'coefs_opt_arithm_arclgth'])
-    out_arithm = res_mean_arithm(mu_arithm, mu_arithm_arclgth, mu_s_arithm_arclgth, mu_s_arithm, mu_Z_arithm, mu_Z_arithm_arclgth, knots_arithm, coefs_opt_arithm, knots_arithm_arclgth, coefs_opt_arithm_arclgth)
+    # res_mean_arithm = collections.namedtuple('res_mean_arithm', ['mu', 'mu_X_arclength', 'mu_s_arclgth', 'mu_s', 'mu_Z', 'mu_Z_arclgth', 'knots_arithm', 'coefs_opt_arithm', 'knots_arithm_arclgth', 'coefs_opt_arithm_arclgth'])
+    # out_arithm = res_mean_arithm(mu_arithm, mu_arithm_arclgth, mu_s_arithm_arclgth, mu_s_arithm, mu_Z_arithm, mu_Z_arithm_arclgth, knots_arithm, coefs_opt_arithm, knots_arithm_arclgth, coefs_opt_arithm_arclgth)
+
+    res_mean_arithm = collections.namedtuple('res_mean_arithm', ['mu', 'mu_s', 'mu_Z', 'knots_arithm', 'coefs_opt_arithm'])
+    out_arithm = res_mean_arithm(mu_arithm, mu_s_arithm, mu_Z_arithm, knots_arithm, coefs_opt_arithm)
 
     """ SRVF mean """
     print('computation SRVF mean...')
@@ -208,12 +211,15 @@ def compute_all_means(pop_x, h_deriv_bounds, h_bounds, lbda_bounds, nb_basis, po
     mu_s_srvf, mu_Z_srvf, coefs_opt_srvf, knots_srvf = mean_theta_from_mean_shape(mu_srvf, h_deriv_bounds, h_bounds, lbda_bounds, n_call_bayopt, nb_basis=None, knots_step=3)
     # mu_theta_srvf = VectorBSplineSmoothing(2, domain_range=(0, 1), order=4, penalization=False, knots=knots_srvf).evaluate_coefs(coefs_opt_srvf)
 
-    mu_srvf_arclgth = SRVF(3).karcher_mean(pop_X)
-    mu_s_srvf_arclgth, mu_Z_srvf_arclgth, coefs_opt_srvf_arclgth, knots_srvf_arclgth = mean_theta_from_mean_shape(mu_srvf_arclgth, h_deriv_bounds, h_bounds, lbda_bounds, n_call_bayopt, nb_basis=None, knots_step=3)
-    # mu_theta_srvf_arclgth = VectorBSplineSmoothing(2, domain_range=(0, 1), order=4, penalization=False, knots=knots_srvf_arclgth).evaluate_coefs(coefs_opt_srvf_arclgth)
+    # mu_srvf_arclgth = SRVF(3).karcher_mean(pop_X)
+    # mu_s_srvf_arclgth, mu_Z_srvf_arclgth, coefs_opt_srvf_arclgth, knots_srvf_arclgth = mean_theta_from_mean_shape(mu_srvf_arclgth, h_deriv_bounds, h_bounds, lbda_bounds, n_call_bayopt, nb_basis=None, knots_step=3)
+    # # mu_theta_srvf_arclgth = VectorBSplineSmoothing(2, domain_range=(0, 1), order=4, penalization=False, knots=knots_srvf_arclgth).evaluate_coefs(coefs_opt_srvf_arclgth)
 
-    res_mean_SRVF = collections.namedtuple('res_mean_SRVF', ['mu', 'mu_X_arclength', 'mu_s_arclgth', 'mu_s', 'mu_Z', 'mu_Z_arclgth', 'knots_srvf', 'coefs_opt_srvf', 'knots_srvf_arclgth', 'coefs_opt_srvf_arclgth'])
-    out_SRVF = res_mean_SRVF(mu_srvf, mu_srvf_arclgth, mu_s_srvf_arclgth, mu_s_srvf, mu_Z_srvf, mu_Z_srvf_arclgth, knots_srvf, coefs_opt_srvf, knots_srvf_arclgth, coefs_opt_srvf_arclgth)
+    # res_mean_SRVF = collections.namedtuple('res_mean_SRVF', ['mu', 'mu_X_arclength', 'mu_s_arclgth', 'mu_s', 'mu_Z', 'mu_Z_arclgth', 'knots_srvf', 'coefs_opt_srvf', 'knots_srvf_arclgth', 'coefs_opt_srvf_arclgth'])
+    # out_SRVF = res_mean_SRVF(mu_srvf, mu_srvf_arclgth, mu_s_srvf_arclgth, mu_s_srvf, mu_Z_srvf, mu_Z_srvf_arclgth, knots_srvf, coefs_opt_srvf, knots_srvf_arclgth, coefs_opt_srvf_arclgth)
+
+    res_mean_SRVF = collections.namedtuple('res_mean_SRVF', ['mu', 'mu_s', 'mu_Z', 'knots_srvf', 'coefs_opt_srvf'])
+    out_SRVF = res_mean_SRVF(mu_srvf, mu_s_srvf, mu_Z_srvf, knots_srvf, coefs_opt_srvf)
 
     """ SRC mean """
     print('computation SRC mean...')

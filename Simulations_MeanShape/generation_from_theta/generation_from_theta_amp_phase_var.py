@@ -29,18 +29,30 @@ final_directory = os.path.join(current_directory, directory)
 if not os.path.exists(final_directory):
    os.makedirs(final_directory)
 
-curv_ref = lambda s : 1.2*np.exp(3*np.sin(s*5))
-tors_ref = lambda s : 5*(0.3*s*5 - 0.5)
+# curv_ref = lambda s : 1.2*np.exp(3*np.sin(s*5))
+# tors_ref = lambda s : 5*(0.3*s*5 - 0.5)
+curv_ref = lambda s : np.exp(4*np.sin((s-0.15)*5)+0.25)/3
+tors_ref = lambda s : 8*s - 3
 
 n_samples = 20
-sig_curv, sig_tors, sig_warp = 0.2, 1, 2
+
 n_MC = 80
 n_call_bayopt = 30
 lam = 1.0
 
-a_curv = np.random.normal(1,sig_curv,n_samples)
-a_tors = np.random.normal(0,sig_tors,n_samples)
-b = np.random.normal(0,sig_warp,n_samples)
+# sig_curv, sig_tors, sig_warp = 0.2, 1.5, 2
+# a_curv = np.random.normal(1,sig_curv,n_samples)
+# a_tors = np.random.normal(0,sig_tors,n_samples)
+# b = np.random.normal(0,sig_warp,n_samples)
+
+filename = "/home/pchassat/FrenetFDA/Simulations_MeanShape/generation_from_theta/param_PhaseAmp_var_0"
+fil = open(filename,"rb")
+dic_pop = pickle.load(fil)
+fil.close()
+a_curv = dic_pop["a_curv"]
+a_tors = dic_pop["a_tors"]
+b = dic_pop["b"]
+
 
 def theta(s, curv, tors, a_kappa=1, a_tau=1, b=0):
     def warping(t):
