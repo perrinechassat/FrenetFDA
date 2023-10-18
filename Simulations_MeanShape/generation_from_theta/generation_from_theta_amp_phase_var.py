@@ -96,23 +96,23 @@ pop_x_scale = pop_X
 pop_arclgth = np.array([arclgth for i in range(n_samples)])
 
 
-""" _________________ Amplitude and phase variability on theta and WITHOUT noise on x _________________ """
+# """ _________________ Amplitude and phase variability on theta and WITHOUT noise on x _________________ """
 
-time_init = time.time()
-out_arithm, out_srvf, out_SRC, out_FC, out_V1, out_V2, out_V3 = compute_all_means_known_param(pop_x_scale, pop_Z, pop_theta_func, h_deriv_bounds, h_bounds, lbda_bounds, nb_basis, pop_arclgth, n_call_bayopt=n_call_bayopt, sigma=lam)
-time_end = time.time()
-duration = time_end - time_init
+# time_init = time.time()
+# out_arithm, out_srvf, out_SRC, out_FC, out_V1, out_V2, out_V3 = compute_all_means_known_param(pop_x_scale, pop_Z, pop_theta_func, h_deriv_bounds, h_bounds, lbda_bounds, nb_basis, pop_arclgth, n_call_bayopt=n_call_bayopt, sigma=lam)
+# time_end = time.time()
+# duration = time_end - time_init
 
-# SAVE
-filename = filename_base + "without_noise_N_100" 
-dic = {"duration":duration, "res_arithm":out_arithm, "res_SRVF":out_srvf, "res_SRC":out_SRC, "res_FC":out_FC, "res_V1":out_V1, "res_V2":out_V2, "res_V3":out_V3}
+# # SAVE
+# filename = filename_base + "without_noise_N_100" 
+# dic = {"duration":duration, "res_arithm":out_arithm, "res_SRVF":out_srvf, "res_SRC":out_SRC, "res_FC":out_FC, "res_V1":out_V1, "res_V2":out_V2, "res_V3":out_V3}
 
-if os.path.isfile(filename):
-    print("Le fichier ", filename, " existe déjà.")
-    filename = filename + '_bis'
-fil = open(filename,"xb")
-pickle.dump(dic,fil)
-fil.close()
+# if os.path.isfile(filename):
+#     print("Le fichier ", filename, " existe déjà.")
+#     filename = filename + '_bis'
+# fil = open(filename,"xb")
+# pickle.dump(dic,fil)
+# fil.close()
 
 
 
