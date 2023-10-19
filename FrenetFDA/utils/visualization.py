@@ -141,7 +141,7 @@ def plot_results_curvature(grid, list_tab_curvature, mean_curvature, list_legend
     return fig
 
 
-def plot_compare_results_curvature(grid, list_tab_curvature, mean_curvature, list_legend, yaxis_legend='', xaxis_legend=''):
+def plot_compare_results_curvature(grid, list_tab_curvature, mean_curvature, list_legend, yaxis_legend='', xaxis_legend='', k_color=0):
     
     nb_tab = len(list_tab_curvature)
     nb_curves = len(list_tab_curvature[0])
@@ -150,11 +150,11 @@ def plot_compare_results_curvature(grid, list_tab_curvature, mean_curvature, lis
 
     for k in range(nb_tab):
         fig.add_trace(go.Scatter(x=grid, y=list_tab_curvature[k][0], mode='lines', name=list_legend[k], opacity=0.8, line=dict(
-                width=2, dash='solid', color=color_list[k+1],),showlegend=True), row=1, col=k+1)
+                width=2, dash='solid', color=color_list[k_color+k+1],),showlegend=True), row=1, col=k+1)
 
         for i in range(1,len(list_tab_curvature[k])):
             fig.add_trace(go.Scatter(x=grid, y=list_tab_curvature[k][i], mode='lines', opacity=0.7, line=dict(
-                    width=2,dash='solid',color=color_list[k+1],),showlegend=False), row=1, col=k+1)
+                    width=2,dash='solid',color=color_list[k_color+k+1],),showlegend=False), row=1, col=k+1)
 
         if k==0:
             fig.add_trace(go.Scatter(x=grid, y=mean_curvature, mode='lines', name='true', line=dict(width=3, color='black'), showlegend=True), row=1, col=k+1)

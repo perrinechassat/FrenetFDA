@@ -421,6 +421,8 @@ class SRC:
         temp_error = np.linalg.norm((mean_src_theta - temp_mean_src_theta)) 
         up_err = temp_error
         k = 0
+
+        arr_gam = np.array([np.linspace(0,1,T) for i in range(N_samples)])
         
         print("Aligning %d functions in maximum %d iterations..."
             % (N_samples, max_iter))
