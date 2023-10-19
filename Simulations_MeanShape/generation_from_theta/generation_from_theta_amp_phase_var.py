@@ -7,7 +7,7 @@ import FrenetFDA.utils.visualization as visu
 from FrenetFDA.shape_analysis.statistical_mean_shape import StatisticalMeanShapeV1, StatisticalMeanShapeV2, StatisticalMeanShapeV3
 from FrenetFDA.processing_Frenet_path.estimate_Frenet_curvatures import LocalApproxFrenetODE
 from FrenetFDA.shape_analysis.riemannian_geometries import SRVF, SRC, Frenet_Curvatures
-from simulations_utils import compute_all_means, mean_theta_from_mean_shape, compute_all_means_known_param, add_noise_pop
+from simulations_utils import *
 from FrenetFDA.processing_Euclidean_curve.estimate_Frenet_path import GramSchmidtOrthogonalization
 from FrenetFDA.processing_Frenet_path.estimate_Frenet_curvatures import LocalApproxFrenetODE
 from FrenetFDA.processing_Euclidean_curve.preprocessing import *
@@ -130,25 +130,25 @@ arr_noisy_x = np.zeros((n_MC, n_samples, N, 3))
 for k in range(n_MC):
     arr_noisy_x[k] = add_noise_pop(pop_X, sig_x)
 
+
 time_init = time.time()
-res = Parallel(n_jobs=n_MC)(delayed(compute_all_means)(arr_noisy_x[k], h_deriv_bounds, h_bounds, lbda_bounds, nb_basis, n_call_bayopt=n_call_bayopt, sigma=lam) for k in range(n_MC))
+res = Parallel(n_jobs=n_MC)(delayed(compute_pop_artihm_SRVF)(arr_noisy_x[k], h_deriv_bounds, h_bounds, lbda_bounds, nb_basis, n_call_bayopt=n_call_bayopt, sigma=lam) for k in range(n_MC))
 time_end = time.time()
 duration = time_end - time_init
 
-out_pop, out_arithm, out_srvf, out_SRC, out_FC, out_V1, out_V2, out_V3 = [], [], [], [], [], [], [], []
+Bspline_decom = VectorBSplineSmoothing(2, nb_basis, domain_range=(0, 1), order=4, penalization=False)
+out_pop, out_arithm, out_srvf = [], [], []
+pop_theta_fct = np.empty((n_MC, n_samples), dtype=object)
 for k in range(n_MC):
     out_pop.append(res[k][0])
     out_arithm.append(res[k][1])
     out_srvf.append(res[k][2])
-    out_SRC.append(res[k][3])
-    out_FC.append(res[k][4])
-    out_V1.append(res[k][5])
-    out_V2.append(res[k][6])
-    out_V3.append(res[k][7])
+    for i in range(n_samples):
+        pop_theta_fct[k][i] = Bspline_decom.evaluate_coefs(out_pop[k].pop_theta_coefs[i])
 
 # SAVE
-filename = filename_base + "without_noise_N_100_sig_01" 
-dic = {"duration":duration, "arr_noisy_x":arr_noisy_x, "res_pop":out_pop, "res_arithm":out_arithm, "res_SRVF":out_srvf, "res_SRC":out_SRC, "res_FC":out_FC, "res_V1":out_V1, "res_V2":out_V2, "res_V3":out_V3}
+filename = filename_base + "pop_Arithm_SRVF_without_noise_N_100_sig_01" 
+dic = {"duration":duration, "arr_noisy_x":arr_noisy_x, "res_pop":out_pop, "res_arithm":out_arithm, "res_SRVF":out_srvf}
 
 if os.path.isfile(filename):
     print("Le fichier ", filename, " existe déjà.")
@@ -156,6 +156,60 @@ if os.path.isfile(filename):
 fil = open(filename,"xb")
 pickle.dump(dic,fil)
 fil.close()
+
+
+time_init = time.time()
+res = Parallel(n_jobs=n_MC)(delayed(compute_SRC_FC_StatMeans)(out_pop[k].pop_Q, pop_theta_fct[k], out_pop[k].pop_arclgth, out_pop[k].mu_Z0, h_bounds, lbda_bounds, nb_basis, n_call_bayopt=n_call_bayopt, sigma=lam) for k in range(n_MC))
+time_end = time.time()
+duration = time_end - time_init
+
+out_SRC, out_FC, out_V1, out_V2, out_V3 = [], [], [], [], []
+for k in range(n_MC):
+    out_SRC.append(res[k][0])
+    out_FC.append(res[k][1])
+    out_V1.append(res[k][2])
+    out_V2.append(res[k][3])
+    out_V3.append(res[k][4])
+
+# SAVE
+filename = filename_base + "pop_other_means_without_noise_N_100_sig_01" 
+dic = {"duration":duration, "res_SRC":out_SRC, "res_FC":out_FC, "res_V1":out_V1, "res_V2":out_V2, "res_V3":out_V3}
+
+if os.path.isfile(filename):
+    print("Le fichier ", filename, " existe déjà.")
+    filename = filename + '_bis'
+fil = open(filename,"xb")
+pickle.dump(dic,fil)
+fil.close()
+
+
+
+# time_init = time.time()
+# res = Parallel(n_jobs=n_MC)(delayed(compute_all_means)(arr_noisy_x[k], h_deriv_bounds, h_bounds, lbda_bounds, nb_basis, n_call_bayopt=n_call_bayopt, sigma=lam) for k in range(n_MC))
+# time_end = time.time()
+# duration = time_end - time_init
+
+# out_pop, out_arithm, out_srvf, out_SRC, out_FC, out_V1, out_V2, out_V3 = [], [], [], [], [], [], [], []
+# for k in range(n_MC):
+#     out_pop.append(res[k][0])
+#     out_arithm.append(res[k][1])
+#     out_srvf.append(res[k][2])
+#     out_SRC.append(res[k][3])
+#     out_FC.append(res[k][4])
+#     out_V1.append(res[k][5])
+#     out_V2.append(res[k][6])
+#     out_V3.append(res[k][7])
+
+# # SAVE
+# filename = filename_base + "without_noise_N_100_sig_01" 
+# dic = {"duration":duration, "arr_noisy_x":arr_noisy_x, "res_pop":out_pop, "res_arithm":out_arithm, "res_SRVF":out_srvf, "res_SRC":out_SRC, "res_FC":out_FC, "res_V1":out_V1, "res_V2":out_V2, "res_V3":out_V3}
+
+# if os.path.isfile(filename):
+#     print("Le fichier ", filename, " existe déjà.")
+#     filename = filename + '_bis'
+# fil = open(filename,"xb")
+# pickle.dump(dic,fil)
+# fil.close()
 
 
 """ sig_x = 0.005 """
@@ -165,25 +219,25 @@ arr_noisy_x = np.zeros((n_MC, n_samples, N, 3))
 for k in range(n_MC):
     arr_noisy_x[k] = add_noise_pop(pop_X, sig_x)
 
+
 time_init = time.time()
-res = Parallel(n_jobs=n_MC)(delayed(compute_all_means)(arr_noisy_x[k], h_deriv_bounds, h_bounds, lbda_bounds, nb_basis, n_call_bayopt=n_call_bayopt, sigma=lam) for k in range(n_MC))
+res = Parallel(n_jobs=n_MC)(delayed(compute_pop_artihm_SRVF)(arr_noisy_x[k], h_deriv_bounds, h_bounds, lbda_bounds, nb_basis, n_call_bayopt=n_call_bayopt, sigma=lam) for k in range(n_MC))
 time_end = time.time()
 duration = time_end - time_init
 
-out_pop, out_arithm, out_srvf, out_SRC, out_FC, out_V1, out_V2, out_V3 = [], [], [], [], [], [], [], []
+Bspline_decom = VectorBSplineSmoothing(2, nb_basis, domain_range=(0, 1), order=4, penalization=False)
+out_pop, out_arithm, out_srvf = [], [], []
+pop_theta_fct = np.empty((n_MC, n_samples), dtype=object)
 for k in range(n_MC):
     out_pop.append(res[k][0])
     out_arithm.append(res[k][1])
     out_srvf.append(res[k][2])
-    out_SRC.append(res[k][3])
-    out_FC.append(res[k][4])
-    out_V1.append(res[k][5])
-    out_V2.append(res[k][6])
-    out_V3.append(res[k][7])
+    for i in range(n_samples):
+        pop_theta_fct[k][i] = Bspline_decom.evaluate_coefs(out_pop[k].pop_theta_coefs[i])
 
 # SAVE
-filename = filename_base + "without_noise_N_100_sig_005" 
-dic = {"duration":duration, "arr_noisy_x":arr_noisy_x, "res_pop":out_pop, "res_arithm":out_arithm, "res_SRVF":out_srvf, "res_SRC":out_SRC, "res_FC":out_FC, "res_V1":out_V1, "res_V2":out_V2, "res_V3":out_V3}
+filename = filename_base + "pop_Arithm_SRVF_without_noise_N_100_sig_005" 
+dic = {"duration":duration, "arr_noisy_x":arr_noisy_x, "res_pop":out_pop, "res_arithm":out_arithm, "res_SRVF":out_srvf}
 
 if os.path.isfile(filename):
     print("Le fichier ", filename, " existe déjà.")
@@ -191,6 +245,59 @@ if os.path.isfile(filename):
 fil = open(filename,"xb")
 pickle.dump(dic,fil)
 fil.close()
+
+
+time_init = time.time()
+res = Parallel(n_jobs=n_MC)(delayed(compute_SRC_FC_StatMeans)(out_pop[k].pop_Q, pop_theta_fct[k], out_pop[k].pop_arclgth, out_pop[k].mu_Z0, h_bounds, lbda_bounds, nb_basis, n_call_bayopt=n_call_bayopt, sigma=lam) for k in range(n_MC))
+time_end = time.time()
+duration = time_end - time_init
+
+out_SRC, out_FC, out_V1, out_V2, out_V3 = [], [], [], [], []
+for k in range(n_MC):
+    out_SRC.append(res[k][0])
+    out_FC.append(res[k][1])
+    out_V1.append(res[k][2])
+    out_V2.append(res[k][3])
+    out_V3.append(res[k][4])
+
+# SAVE
+filename = filename_base + "pop_other_means_without_noise_N_100_sig_005" 
+dic = {"duration":duration, "res_SRC":out_SRC, "res_FC":out_FC, "res_V1":out_V1, "res_V2":out_V2, "res_V3":out_V3}
+
+if os.path.isfile(filename):
+    print("Le fichier ", filename, " existe déjà.")
+    filename = filename + '_bis'
+fil = open(filename,"xb")
+pickle.dump(dic,fil)
+fil.close()
+
+
+# time_init = time.time()
+# res = Parallel(n_jobs=n_MC)(delayed(compute_all_means)(arr_noisy_x[k], h_deriv_bounds, h_bounds, lbda_bounds, nb_basis, n_call_bayopt=n_call_bayopt, sigma=lam) for k in range(n_MC))
+# time_end = time.time()
+# duration = time_end - time_init
+
+# out_pop, out_arithm, out_srvf, out_SRC, out_FC, out_V1, out_V2, out_V3 = [], [], [], [], [], [], [], []
+# for k in range(n_MC):
+#     out_pop.append(res[k][0])
+#     out_arithm.append(res[k][1])
+#     out_srvf.append(res[k][2])
+#     out_SRC.append(res[k][3])
+#     out_FC.append(res[k][4])
+#     out_V1.append(res[k][5])
+#     out_V2.append(res[k][6])
+#     out_V3.append(res[k][7])
+
+# # SAVE
+# filename = filename_base + "without_noise_N_100_sig_005" 
+# dic = {"duration":duration, "arr_noisy_x":arr_noisy_x, "res_pop":out_pop, "res_arithm":out_arithm, "res_SRVF":out_srvf, "res_SRC":out_SRC, "res_FC":out_FC, "res_V1":out_V1, "res_V2":out_V2, "res_V3":out_V3}
+
+# if os.path.isfile(filename):
+#     print("Le fichier ", filename, " existe déjà.")
+#     filename = filename + '_bis'
+# fil = open(filename,"xb")
+# pickle.dump(dic,fil)
+# fil.close()
 
 
 
