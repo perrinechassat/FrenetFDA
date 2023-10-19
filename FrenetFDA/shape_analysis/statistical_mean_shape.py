@@ -251,8 +251,8 @@ class StatisticalMeanShapeV2(StatisticalMeanShape):
         super().__init__(list_grids, list_Frenet_paths, adaptive=False)
         self.grid = grid
 
-    def raw_estimates(self, h, sigma=1.0, sphericalcurve=False):
-        grid_theta, raw_theta, weight_theta, gam_theta, ind_conv, theta_align, res, gam_fct = self.__raw_estimates(h, self.grid, self.list_Q, sigma=sigma, sphericalcurve=sphericalcurve)
+    def raw_estimates(self, h, sigma=1.0):
+        grid_theta, raw_theta, weight_theta, gam_theta, ind_conv, theta_align, res, gam_fct = self.__raw_estimates(h, self.grid, self.list_Q, sigma=sigma)
         self.gam = gam_theta
         self.gam_fct = gam_fct
         self.theta_align = theta_align
@@ -261,7 +261,7 @@ class StatisticalMeanShapeV2(StatisticalMeanShape):
         return grid_theta, raw_theta, weight_theta
     
 
-    def __raw_estimates(self, h, grid, list_Q, sigma=1.0, gam_fct=None, sphericalcurve=False):
+    def __raw_estimates(self, h, grid, list_Q, sigma=1.0, gam_fct=None):
 
         N_samples = len(list_Q)
         
@@ -330,12 +330,12 @@ class StatisticalMeanShapeV2(StatisticalMeanShape):
             # theta_align, gam_theta, weighted_mean_theta = res.fn.T, res.gamf, res.mfn
             # ind_conv = res.convergence
             
-            if sphericalcurve:
-                pass
-            else:
-                res = align_curvatures(theta.T, S_grid, Omega, lam=sigma, parallel=True)
-                theta_align, gam_theta, weighted_mean_theta = res.fn, res.gamf, res.mfn
-                ind_conv = True
+            # if sphericalcurve:
+            #     pass
+            # else:
+            res = align_curvatures(theta.T, S_grid, Omega, lam=sigma, parallel=True)
+            theta_align, gam_theta, weighted_mean_theta = res.fn, res.gamf, res.mfn
+            ind_conv = True
 
             gam_fct = np.empty((gam_theta.shape[0]), dtype=object)
             for i in range(gam_theta.shape[0]):
@@ -354,25 +354,25 @@ class StatisticalMeanShapeV2(StatisticalMeanShape):
 
         else:
 
-            if sphericalcurve:
-                pass
-                tau_align, weighted_mean_tau = warp_curvatures(theta[1].T, gam_fct, S_grid, Omega)
-                theta_align = np.zeros((self.N_samples, len(S_grid), 2))
-                theta_align[:,:,1] = tau_align
+            # if sphericalcurve:
+            #     pass
+            #     tau_align, weighted_mean_tau = warp_curvatures(theta[1].T, gam_fct, S_grid, Omega)
+            #     theta_align = np.zeros((self.N_samples, len(S_grid), 2))
+            #     theta_align[:,:,1] = tau_align
 
-            else:
-                kappa_align, weighted_mean_kappa = warp_curvatures(theta[0].T, gam_fct, S_grid, Omega)
-                tau_align, weighted_mean_tau = warp_curvatures(theta[1].T, gam_fct, S_grid, Omega)
-                theta_align = np.zeros((self.N_samples, len(S_grid), 2))
-                theta_align[:,:,0] = kappa_align
-                theta_align[:,:,1] = tau_align
-                raw_theta = np.stack((np.squeeze(weighted_mean_kappa),np.squeeze(weighted_mean_tau)), axis=1)
+            # else:
+            kappa_align, weighted_mean_kappa = warp_curvatures(theta[0].T, gam_fct, S_grid, Omega)
+            tau_align, weighted_mean_tau = warp_curvatures(theta[1].T, gam_fct, S_grid, Omega)
+            theta_align = np.zeros((self.N_samples, len(S_grid), 2))
+            theta_align[:,:,0] = kappa_align
+            theta_align[:,:,1] = tau_align
+            raw_theta = np.stack((np.squeeze(weighted_mean_kappa),np.squeeze(weighted_mean_tau)), axis=1)
 
             return S_grid, raw_theta, sum_omega, theta_align
         
     
 
-    def bayesian_optimization_hyperparameters(self, n_call_bayopt, lambda_bounds, h_bounds, nb_basis, order=4, n_splits=10, verbose=True, return_coefs=False, knots=None, sigma=0.0, list_X=None, Bspline_repres=None, sphericalcurve=False):
+    def bayesian_optimization_hyperparameters(self, n_call_bayopt, lambda_bounds, h_bounds, nb_basis, order=4, n_splits=10, verbose=True, return_coefs=False, knots=None, sigma=0.0, list_X=None, Bspline_repres=None):
 
         # ## CV optimization of lambda
         if Bspline_repres is None:
@@ -401,7 +401,7 @@ class StatisticalMeanShapeV2(StatisticalMeanShape):
                 grid_train = self.grid[train_index]
                 list_Q_train = np.array(self.list_Q)[:,train_index]
                 list_Q_test = np.array(self.list_Q)[:,test_index]
-                grid_theta_train, raw_theta_train, weight_theta_train, theta_align_train = self.__raw_estimates(h, grid_train, list_Q_train, sigma, gam_fct=gam_fct, sphericalcurve=sphericalcurve)
+                grid_theta_train, raw_theta_train, weight_theta_train, theta_align_train = self.__raw_estimates(h, grid_train, list_Q_train, sigma, gam_fct=gam_fct)
                 lbda = np.array([x[1],x[2]])
                 Bspline_repres.fit(grid_theta_train, raw_theta_train, weights=weight_theta_train, regularization_parameter=lbda)
 
