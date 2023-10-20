@@ -552,7 +552,7 @@ def compute_pop_artihm_SRVF(pop_x, h_deriv_bounds, h_bounds, lbda_bounds, nb_bas
 
 
 
-def compute_SRC_FC_StatMeans(pop_Q, pop_theta_fct, pop_arclgth, mu_Z0, h_bounds, lbda_bounds, nb_basis, n_call_bayopt=20, sigma=0.0):
+def compute_SRC_FC_StatMeans(pop_Q, pop_theta_coefs, pop_arclgth, mu_Z0, h_bounds, lbda_bounds, nb_basis, n_call_bayopt=20, sigma=0.0):
 
     n_samples = len(pop_arclgth)
     N = len(pop_arclgth[0])
@@ -562,7 +562,7 @@ def compute_SRC_FC_StatMeans(pop_Q, pop_theta_fct, pop_arclgth, mu_Z0, h_bounds,
     """ SRC mean """
     print('computation SRC mean...')
   
-    mu_SRC, mu_theta_SRC, mu_s_SRC, mu_src_theta, gam_SRC = SRC(3).karcher_mean(pop_theta_fct, pop_arclgth, 0.01, 20, lam=1, parallel=True)
+    mu_SRC, mu_theta_SRC, mu_s_SRC, mu_src_theta, gam_SRC = SRC(3).karcher_mean_bspline(pop_theta_coefs, pop_arclgth, 0.01, 20, nb_basis, lam=1, parallel=True)
 
     res_mean_SRC = collections.namedtuple('res_mean_SRC', ['mu', 'mu_theta', 'gam', 'mu_arclength', 'mu_src'])
     out_SRC = res_mean_SRC(mu_SRC, mu_theta_SRC, gam_SRC, mu_s_SRC, mu_src_theta)
@@ -570,7 +570,7 @@ def compute_SRC_FC_StatMeans(pop_Q, pop_theta_fct, pop_arclgth, mu_Z0, h_bounds,
     """ FC mean """
     print('computation FC mean...')
 
-    mu_FC, mu_theta_FC, gam_mu_FC = Frenet_Curvatures(3).karcher_mean(pop_theta_fct, pop_arclgth)
+    mu_FC, mu_theta_FC, gam_mu_FC = Frenet_Curvatures(3).karcher_mean_bspline(pop_theta_coefs, pop_arclgth, nb_basis)
 
     res_mean_FC = collections.namedtuple('res_mean_FC', ['mu', 'mu_theta', 'gam'])
     out_FC = res_mean_FC(mu_FC, mu_theta_FC, gam_mu_FC)

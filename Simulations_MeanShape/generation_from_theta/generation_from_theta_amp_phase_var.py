@@ -118,6 +118,12 @@ pop_arclgth = np.array([arclgth for i in range(n_samples)])
 
 """ _________________ Amplitude and phase variability on theta and with noise on x _________________ """
 
+
+""" TEST """
+n_MC = 5
+n_call_bayopt = 5
+""" ____ """
+
 nb_basis = 20
 h_bounds = np.array([0.05,0.3])
 h_deriv_bounds = np.array([0.1,0.3])
@@ -147,7 +153,7 @@ for k in range(n_MC):
         pop_theta_fct[k][i] = Bspline_decom.evaluate_coefs(out_pop[k].pop_theta_coefs[i])
 
 # SAVE
-filename = filename_base + "pop_Arithm_SRVF_without_noise_N_100_sig_01" 
+filename = filename_base + "pop_Arithm_SRVF_with_noise_N_100_sig_01" + '_test' 
 dic = {"duration":duration, "arr_noisy_x":arr_noisy_x, "res_pop":out_pop, "res_arithm":out_arithm, "res_SRVF":out_srvf}
 
 if os.path.isfile(filename):
@@ -159,7 +165,7 @@ fil.close()
 
 
 time_init = time.time()
-res = Parallel(n_jobs=n_MC)(delayed(compute_SRC_FC_StatMeans)(out_pop[k].pop_Q, pop_theta_fct[k], out_pop[k].pop_arclgth, out_pop[k].mu_Z0, h_bounds, lbda_bounds, nb_basis, n_call_bayopt=n_call_bayopt, sigma=lam) for k in range(n_MC))
+res = Parallel(n_jobs=n_MC)(delayed(compute_SRC_FC_StatMeans)(out_pop[k].pop_Q, out_pop[k].pop_theta_coefs[i], out_pop[k].pop_arclgth, out_pop[k].mu_Z0, h_bounds, lbda_bounds, nb_basis, n_call_bayopt=n_call_bayopt, sigma=lam) for k in range(n_MC))
 time_end = time.time()
 duration = time_end - time_init
 
@@ -172,7 +178,7 @@ for k in range(n_MC):
     out_V3.append(res[k][4])
 
 # SAVE
-filename = filename_base + "pop_other_means_without_noise_N_100_sig_01" 
+filename = filename_base + "pop_other_means_with_noise_N_100_sig_01" + '_test' 
 dic = {"duration":duration, "res_SRC":out_SRC, "res_FC":out_FC, "res_V1":out_V1, "res_V2":out_V2, "res_V3":out_V3}
 
 if os.path.isfile(filename):
@@ -236,7 +242,7 @@ for k in range(n_MC):
         pop_theta_fct[k][i] = Bspline_decom.evaluate_coefs(out_pop[k].pop_theta_coefs[i])
 
 # SAVE
-filename = filename_base + "pop_Arithm_SRVF_without_noise_N_100_sig_005" 
+filename = filename_base + "pop_Arithm_SRVF_with_noise_N_100_sig_005" 
 dic = {"duration":duration, "arr_noisy_x":arr_noisy_x, "res_pop":out_pop, "res_arithm":out_arithm, "res_SRVF":out_srvf}
 
 if os.path.isfile(filename):
@@ -261,7 +267,7 @@ for k in range(n_MC):
     out_V3.append(res[k][4])
 
 # SAVE
-filename = filename_base + "pop_other_means_without_noise_N_100_sig_005" 
+filename = filename_base + "pop_other_means_with_noise_N_100_sig_005" 
 dic = {"duration":duration, "res_SRC":out_SRC, "res_FC":out_FC, "res_V1":out_V1, "res_V2":out_V2, "res_V3":out_V3}
 
 if os.path.isfile(filename):
