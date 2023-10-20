@@ -147,8 +147,8 @@ out_pop, out_arithm, out_srvf = [], [], []
 pop_theta_fct = np.empty((n_MC, n_samples), dtype=object)
 for k in range(n_MC):
     out_pop.append(res[k][0])
-    out_arithm.append(res[k][1])
-    out_srvf.append(res[k][2])
+    # out_arithm.append(res[k][1])
+    # out_srvf.append(res[k][2])
     for i in range(n_samples):
         pop_theta_fct[k][i] = Bspline_decom.evaluate_coefs(out_pop[k].pop_theta_coefs[i])
 
@@ -170,11 +170,14 @@ duration = time_end - time_init
 
 out_SRC, out_FC, out_V1, out_V2, out_V3 = [], [], [], [], []
 for k in range(n_MC):
-    out_SRC.append(res[k][0])
-    out_FC.append(res[k][1])
-    out_V1.append(res[k][2])
-    out_V2.append(res[k][3])
-    out_V3.append(res[k][4])
+    # out_SRC.append(res[k][0])
+    # out_FC.append(res[k][1])
+    # out_V1.append(res[k][2])
+    # out_V2.append(res[k][3])
+    # out_V3.append(res[k][4])
+    out_V1.append(res[k][0])
+    out_V2.append(res[k][1])
+    out_V3.append(res[k][2])
 
 # SAVE
 filename = filename_base + "pop_other_means_with_noise_N_100_sig_01" + '_test' 

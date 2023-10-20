@@ -249,6 +249,8 @@ class ExtrinsicFormulas:
         def func(x):
             h = x[0]
             lbda = 10 ** np.array([x[1],x[2]])
+            if verbose:
+                print('h:', h, ' lbda:', lbda)
             score = np.zeros(n_splits)
             kf = KFold(n_splits=n_splits, shuffle=True)
             grid_split = self.time[1:-1]

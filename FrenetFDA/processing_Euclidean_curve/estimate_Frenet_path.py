@@ -279,6 +279,8 @@ class ConstrainedLocalPolynomialRegression:
     def bayesian_optimization_hyperparameters(self, n_call_bayopt, h_bounds, n_splits=10, verbose=True):
 
         def func(x):
+            if verbose: 
+                print('x:', x)
             score = np.zeros(n_splits)
             kf = KFold(n_splits=n_splits, shuffle=True)
             grid_split = self.grid_arc_s[1:-1]
