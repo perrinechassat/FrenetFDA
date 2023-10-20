@@ -119,11 +119,6 @@ pop_arclgth = np.array([arclgth for i in range(n_samples)])
 """ _________________ Amplitude and phase variability on theta and with noise on x _________________ """
 
 
-""" TEST """
-n_MC = 5
-n_call_bayopt = 5
-""" ____ """
-
 nb_basis = 20
 h_bounds = np.array([0.03,0.15])
 h_deriv_bounds = np.array([0.1,0.3])
@@ -137,81 +132,24 @@ for k in range(n_MC):
     arr_noisy_x[k] = add_noise_pop(pop_X, sig_x)
 
 
-time_init = time.time()
-res = Parallel(n_jobs=n_MC)(delayed(compute_pop_artihm_SRVF)(arr_noisy_x[k], h_deriv_bounds, h_bounds, lbda_bounds, nb_basis, n_call_bayopt=n_call_bayopt, sigma=lam) for k in range(n_MC))
-time_end = time.time()
-duration = time_end - time_init
-
-Bspline_decom = VectorBSplineSmoothing(2, nb_basis, domain_range=(0, 1), order=4, penalization=False)
-out_pop, out_arithm, out_srvf = [], [], []
-# pop_theta_fct = np.empty((n_MC, n_samples), dtype=object)
-for k in range(n_MC):
-    out_pop.append(res[k])
-    # out_pop.append(res[k][0])
-    # out_arithm.append(res[k][1])
-    # out_srvf.append(res[k][2])
-    # for i in range(n_samples):
-    #     pop_theta_fct[k][i] = Bspline_decom.evaluate_coefs(out_pop[k].pop_theta_coefs[i])
-
-# SAVE
-filename = filename_base + "pop_Arithm_SRVF_with_noise_N_100_sig_01" + '_test' 
-dic = {"duration":duration, "arr_noisy_x":arr_noisy_x, "res_pop":out_pop, "res_arithm":out_arithm, "res_SRVF":out_srvf}
-
-if os.path.isfile(filename):
-    print("Le fichier ", filename, " existe déjà.")
-    filename = filename + '_bis'
-fil = open(filename,"xb")
-pickle.dump(dic,fil)
-fil.close()
-
-time_init = time.time()
-res = Parallel(n_jobs=n_MC)(delayed(compute_SRC_FC_StatMeans)(out_pop[k].pop_Q, out_pop[k].pop_theta_coefs, out_pop[k].pop_arclgth, out_pop[k].mu_Z0, h_bounds, lbda_bounds, nb_basis, n_call_bayopt=n_call_bayopt, sigma=lam) for k in range(n_MC))
-time_end = time.time()
-duration = time_end - time_init
-
-out_SRC, out_FC, out_V1, out_V2, out_V3 = [], [], [], [], []
-for k in range(n_MC):
-    # out_SRC.append(res[k][0])
-    # out_FC.append(res[k][1])
-    # out_V1.append(res[k][2])
-    # out_V2.append(res[k][3])
-    # out_V3.append(res[k][4])
-    out_V1.append(res[k][0])
-    out_V2.append(res[k][1])
-    out_V3.append(res[k][2])
-
-# SAVE
-filename = filename_base + "pop_other_means_with_noise_N_100_sig_01" + '_test' 
-dic = {"duration":duration, "res_SRC":out_SRC, "res_FC":out_FC, "res_V1":out_V1, "res_V2":out_V2, "res_V3":out_V3}
-
-if os.path.isfile(filename):
-    print("Le fichier ", filename, " existe déjà.")
-    filename = filename + '_bis'
-fil = open(filename,"xb")
-pickle.dump(dic,fil)
-fil.close()
-
-
-
 # time_init = time.time()
-# res = Parallel(n_jobs=n_MC)(delayed(compute_all_means)(arr_noisy_x[k], h_deriv_bounds, h_bounds, lbda_bounds, nb_basis, n_call_bayopt=n_call_bayopt, sigma=lam) for k in range(n_MC))
+# res = Parallel(n_jobs=n_MC)(delayed(compute_pop_artihm_SRVF)(arr_noisy_x[k], h_deriv_bounds, h_bounds, lbda_bounds, nb_basis, n_call_bayopt=n_call_bayopt, sigma=lam) for k in range(n_MC))
 # time_end = time.time()
 # duration = time_end - time_init
 
-# out_pop, out_arithm, out_srvf, out_SRC, out_FC, out_V1, out_V2, out_V3 = [], [], [], [], [], [], [], []
+# Bspline_decom = VectorBSplineSmoothing(2, nb_basis, domain_range=(0, 1), order=4, penalization=False)
+# out_pop, out_arithm, out_srvf = [], [], []
+# # pop_theta_fct = np.empty((n_MC, n_samples), dtype=object)
 # for k in range(n_MC):
 #     out_pop.append(res[k][0])
 #     out_arithm.append(res[k][1])
 #     out_srvf.append(res[k][2])
-#     out_SRC.append(res[k][3])
-#     out_FC.append(res[k][4])
-#     out_V1.append(res[k][5])
-#     out_V2.append(res[k][6])
-#     out_V3.append(res[k][7])
+#     # for i in range(n_samples):
+#     #     pop_theta_fct[k][i] = Bspline_decom.evaluate_coefs(out_pop[k].pop_theta_coefs[i])
 
 # # SAVE
-# filename = filename_base + "without_noise_N_100_sig_01" 
-# dic = {"duration":duration, "arr_noisy_x":arr_noisy_x, "res_pop":out_pop, "res_arithm":out_arithm, "res_SRVF":out_srvf, "res_SRC":out_SRC, "res_FC":out_FC, "res_V1":out_V1, "res_V2":out_V2, "res_V3":out_V3}
+# filename = filename_base + "pop_Arithm_SRVF_with_noise_N_100_sig_01" 
+# dic = {"duration":duration, "arr_noisy_x":arr_noisy_x, "res_pop":out_pop, "res_arithm":out_arithm, "res_SRVF":out_srvf}
 
 # if os.path.isfile(filename):
 #     print("Le fichier ", filename, " existe déjà.")
@@ -219,6 +157,60 @@ fil.close()
 # fil = open(filename,"xb")
 # pickle.dump(dic,fil)
 # fil.close()
+
+# time_init = time.time()
+# res = Parallel(n_jobs=n_MC)(delayed(compute_SRC_FC_StatMeans)(out_pop[k].pop_Q, out_pop[k].pop_theta_coefs, out_pop[k].pop_arclgth, out_pop[k].mu_Z0, h_bounds, lbda_bounds, nb_basis, n_call_bayopt=n_call_bayopt, sigma=lam) for k in range(n_MC))
+# time_end = time.time()
+# duration = time_end - time_init
+
+# out_SRC, out_FC, out_V1, out_V2, out_V3 = [], [], [], [], []
+# for k in range(n_MC):
+#     out_SRC.append(res[k][0])
+#     out_FC.append(res[k][1])
+#     out_V1.append(res[k][2])
+#     out_V2.append(res[k][3])
+#     out_V3.append(res[k][4])
+
+# # SAVE
+# filename = filename_base + "pop_other_means_with_noise_N_100_sig_01" 
+# dic = {"duration":duration, "res_SRC":out_SRC, "res_FC":out_FC, "res_V1":out_V1, "res_V2":out_V2, "res_V3":out_V3}
+
+# if os.path.isfile(filename):
+#     print("Le fichier ", filename, " existe déjà.")
+#     filename = filename + '_bis'
+# fil = open(filename,"xb")
+# pickle.dump(dic,fil)
+# fil.close()
+
+
+time_init = time.time()
+res = Parallel(n_jobs=n_MC)(delayed(compute_all_means)(arr_noisy_x[k], h_deriv_bounds, h_bounds, lbda_bounds, nb_basis, n_call_bayopt=n_call_bayopt, sigma=lam) for k in range(n_MC))
+time_end = time.time()
+duration = time_end - time_init
+
+out_pop, out_arithm, out_srvf, out_SRC, out_FC, out_V1, out_V2, out_V3 = [], [], [], [], [], [], [], []
+for k in range(n_MC):
+    out_pop.append(res[k][0])
+    out_arithm.append(res[k][1])
+    out_srvf.append(res[k][2])
+    out_SRC.append(res[k][3])
+    out_FC.append(res[k][4])
+    out_V1.append(res[k][5])
+    out_V2.append(res[k][6])
+    out_V3.append(res[k][7])
+
+# SAVE
+filename = filename_base + "with_noise_N_100_sig_01" 
+dic = {"duration":duration, "arr_noisy_x":arr_noisy_x, "res_pop":out_pop, "res_arithm":out_arithm, "res_SRVF":out_srvf, "res_SRC":out_SRC, "res_FC":out_FC, "res_V1":out_V1, "res_V2":out_V2, "res_V3":out_V3}
+
+if os.path.isfile(filename):
+    print("Le fichier ", filename, " existe déjà.")
+    filename = filename + '_bis'
+fil = open(filename,"xb")
+pickle.dump(dic,fil)
+fil.close()
+
+
 
 
 """ sig_x = 0.005 """
@@ -229,77 +221,24 @@ for k in range(n_MC):
     arr_noisy_x[k] = add_noise_pop(pop_X, sig_x)
 
 
-time_init = time.time()
-res = Parallel(n_jobs=n_MC)(delayed(compute_pop_artihm_SRVF)(arr_noisy_x[k], h_deriv_bounds, h_bounds, lbda_bounds, nb_basis, n_call_bayopt=n_call_bayopt, sigma=lam) for k in range(n_MC))
-time_end = time.time()
-duration = time_end - time_init
-
-Bspline_decom = VectorBSplineSmoothing(2, nb_basis, domain_range=(0, 1), order=4, penalization=False)
-out_pop, out_arithm, out_srvf = [], [], []
-pop_theta_fct = np.empty((n_MC, n_samples), dtype=object)
-for k in range(n_MC):
-    out_pop.append(res[k][0])
-    out_arithm.append(res[k][1])
-    out_srvf.append(res[k][2])
-    for i in range(n_samples):
-        pop_theta_fct[k][i] = Bspline_decom.evaluate_coefs(out_pop[k].pop_theta_coefs[i])
-
-# SAVE
-filename = filename_base + "pop_Arithm_SRVF_with_noise_N_100_sig_005" 
-dic = {"duration":duration, "arr_noisy_x":arr_noisy_x, "res_pop":out_pop, "res_arithm":out_arithm, "res_SRVF":out_srvf}
-
-if os.path.isfile(filename):
-    print("Le fichier ", filename, " existe déjà.")
-    filename = filename + '_bis'
-fil = open(filename,"xb")
-pickle.dump(dic,fil)
-fil.close()
-
-
-time_init = time.time()
-res = Parallel(n_jobs=n_MC)(delayed(compute_SRC_FC_StatMeans)(out_pop[k].pop_Q, pop_theta_fct[k], out_pop[k].pop_arclgth, out_pop[k].mu_Z0, h_bounds, lbda_bounds, nb_basis, n_call_bayopt=n_call_bayopt, sigma=lam) for k in range(n_MC))
-time_end = time.time()
-duration = time_end - time_init
-
-out_SRC, out_FC, out_V1, out_V2, out_V3 = [], [], [], [], []
-for k in range(n_MC):
-    out_SRC.append(res[k][0])
-    out_FC.append(res[k][1])
-    out_V1.append(res[k][2])
-    out_V2.append(res[k][3])
-    out_V3.append(res[k][4])
-
-# SAVE
-filename = filename_base + "pop_other_means_with_noise_N_100_sig_005" 
-dic = {"duration":duration, "res_SRC":out_SRC, "res_FC":out_FC, "res_V1":out_V1, "res_V2":out_V2, "res_V3":out_V3}
-
-if os.path.isfile(filename):
-    print("Le fichier ", filename, " existe déjà.")
-    filename = filename + '_bis'
-fil = open(filename,"xb")
-pickle.dump(dic,fil)
-fil.close()
-
-
 # time_init = time.time()
-# res = Parallel(n_jobs=n_MC)(delayed(compute_all_means)(arr_noisy_x[k], h_deriv_bounds, h_bounds, lbda_bounds, nb_basis, n_call_bayopt=n_call_bayopt, sigma=lam) for k in range(n_MC))
+# res = Parallel(n_jobs=n_MC)(delayed(compute_pop_artihm_SRVF)(arr_noisy_x[k], h_deriv_bounds, h_bounds, lbda_bounds, nb_basis, n_call_bayopt=n_call_bayopt, sigma=lam) for k in range(n_MC))
 # time_end = time.time()
 # duration = time_end - time_init
 
-# out_pop, out_arithm, out_srvf, out_SRC, out_FC, out_V1, out_V2, out_V3 = [], [], [], [], [], [], [], []
+# Bspline_decom = VectorBSplineSmoothing(2, nb_basis, domain_range=(0, 1), order=4, penalization=False)
+# out_pop, out_arithm, out_srvf = [], [], []
+# pop_theta_fct = np.empty((n_MC, n_samples), dtype=object)
 # for k in range(n_MC):
 #     out_pop.append(res[k][0])
 #     out_arithm.append(res[k][1])
 #     out_srvf.append(res[k][2])
-#     out_SRC.append(res[k][3])
-#     out_FC.append(res[k][4])
-#     out_V1.append(res[k][5])
-#     out_V2.append(res[k][6])
-#     out_V3.append(res[k][7])
+#     for i in range(n_samples):
+#         pop_theta_fct[k][i] = Bspline_decom.evaluate_coefs(out_pop[k].pop_theta_coefs[i])
 
 # # SAVE
-# filename = filename_base + "without_noise_N_100_sig_005" 
-# dic = {"duration":duration, "arr_noisy_x":arr_noisy_x, "res_pop":out_pop, "res_arithm":out_arithm, "res_SRVF":out_srvf, "res_SRC":out_SRC, "res_FC":out_FC, "res_V1":out_V1, "res_V2":out_V2, "res_V3":out_V3}
+# filename = filename_base + "pop_Arithm_SRVF_with_noise_N_100_sig_005" 
+# dic = {"duration":duration, "arr_noisy_x":arr_noisy_x, "res_pop":out_pop, "res_arithm":out_arithm, "res_SRVF":out_srvf}
 
 # if os.path.isfile(filename):
 #     print("Le fichier ", filename, " existe déjà.")
@@ -307,6 +246,59 @@ fil.close()
 # fil = open(filename,"xb")
 # pickle.dump(dic,fil)
 # fil.close()
+
+
+# time_init = time.time()
+# res = Parallel(n_jobs=n_MC)(delayed(compute_SRC_FC_StatMeans)(out_pop[k].pop_Q, pop_theta_fct[k], out_pop[k].pop_arclgth, out_pop[k].mu_Z0, h_bounds, lbda_bounds, nb_basis, n_call_bayopt=n_call_bayopt, sigma=lam) for k in range(n_MC))
+# time_end = time.time()
+# duration = time_end - time_init
+
+# out_SRC, out_FC, out_V1, out_V2, out_V3 = [], [], [], [], []
+# for k in range(n_MC):
+#     out_SRC.append(res[k][0])
+#     out_FC.append(res[k][1])
+#     out_V1.append(res[k][2])
+#     out_V2.append(res[k][3])
+#     out_V3.append(res[k][4])
+
+# # SAVE
+# filename = filename_base + "pop_other_means_with_noise_N_100_sig_005" 
+# dic = {"duration":duration, "res_SRC":out_SRC, "res_FC":out_FC, "res_V1":out_V1, "res_V2":out_V2, "res_V3":out_V3}
+
+# if os.path.isfile(filename):
+#     print("Le fichier ", filename, " existe déjà.")
+#     filename = filename + '_bis'
+# fil = open(filename,"xb")
+# pickle.dump(dic,fil)
+# fil.close()
+
+
+time_init = time.time()
+res = Parallel(n_jobs=n_MC)(delayed(compute_all_means)(arr_noisy_x[k], h_deriv_bounds, h_bounds, lbda_bounds, nb_basis, n_call_bayopt=n_call_bayopt, sigma=lam) for k in range(n_MC))
+time_end = time.time()
+duration = time_end - time_init
+
+out_pop, out_arithm, out_srvf, out_SRC, out_FC, out_V1, out_V2, out_V3 = [], [], [], [], [], [], [], []
+for k in range(n_MC):
+    out_pop.append(res[k][0])
+    out_arithm.append(res[k][1])
+    out_srvf.append(res[k][2])
+    out_SRC.append(res[k][3])
+    out_FC.append(res[k][4])
+    out_V1.append(res[k][5])
+    out_V2.append(res[k][6])
+    out_V3.append(res[k][7])
+
+# SAVE
+filename = filename_base + "with_noise_N_100_sig_005" 
+dic = {"duration":duration, "arr_noisy_x":arr_noisy_x, "res_pop":out_pop, "res_arithm":out_arithm, "res_SRVF":out_srvf, "res_SRC":out_SRC, "res_FC":out_FC, "res_V1":out_V1, "res_V2":out_V2, "res_V3":out_V3}
+
+if os.path.isfile(filename):
+    print("Le fichier ", filename, " existe déjà.")
+    filename = filename + '_bis'
+fil = open(filename,"xb")
+pickle.dump(dic,fil)
+fil.close()
 
 
 
@@ -324,7 +316,8 @@ fil.close()
 N = 200
 
 nb_basis = 25
-h_bounds = np.array([0.02,0.1])
+
+h_bounds = np.array([0.015,0.1])
 h_deriv_bounds = np.array([0.05,0.12])
 lbda_bounds = np.array([[-15.0,-8.0],[-15.0,-8.0]])
 
@@ -367,6 +360,11 @@ fil.close()
 """ _________________ Amplitude and phase variability on theta and with noise on x _________________ """
 
 
+h_bounds = np.array([0.02,0.15])
+h_deriv_bounds = np.array([0.05,0.3])
+lbda_bounds = np.array([[-15.0,-5.0],[-15.0,-5.0]])
+
+
 """ sig_x = 0.01 """
 sig_x = 0.01
 
@@ -391,7 +389,7 @@ for k in range(n_MC):
     out_V3.append(res[k][7])
 
 # SAVE
-filename = filename_base + "without_noise_N_200_sig_01"
+filename = filename_base + "with_noise_N_200_sig_01"
 dic = {"duration":duration, "arr_noisy_x":arr_noisy_x, "res_pop":out_pop, "res_arithm":out_arithm, "res_SRVF":out_srvf, "res_SRC":out_SRC, "res_FC":out_FC, "res_V1":out_V1, "res_V2":out_V2, "res_V3":out_V3}
 
 if os.path.isfile(filename):
@@ -426,7 +424,7 @@ for k in range(n_MC):
     out_V3.append(res[k][7])
 
 # SAVE
-filename = filename_base + "without_noise_N_200_sig_005"
+filename = filename_base + "with_noise_N_200_sig_005"
 dic = {"duration":duration, "arr_noisy_x":arr_noisy_x, "res_pop":out_pop, "res_arithm":out_arithm, "res_SRVF":out_srvf, "res_SRC":out_SRC, "res_FC":out_FC, "res_V1":out_V1, "res_V2":out_V2, "res_V3":out_V3}
 
 if os.path.isfile(filename):
