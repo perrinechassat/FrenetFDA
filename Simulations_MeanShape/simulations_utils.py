@@ -507,6 +507,8 @@ def compute_pop_artihm_SRVF(pop_x, h_deriv_bounds, h_bounds, lbda_bounds, nb_bas
         # except:
         #     pop_theta_fct[k] = lambda s: 0*s
         #     pop_theta[k] = np.zeros((N,2))
+
+    pop_theta_coefs = np.array(pop_theta_coefs)
     
     mu_Z0 = SE3.frechet_mean(pop_Z[:,0,:,:])
 

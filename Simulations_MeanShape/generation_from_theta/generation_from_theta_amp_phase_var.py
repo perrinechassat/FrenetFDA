@@ -163,9 +163,8 @@ fil = open(filename,"xb")
 pickle.dump(dic,fil)
 fil.close()
 
-
 time_init = time.time()
-res = Parallel(n_jobs=n_MC)(delayed(compute_SRC_FC_StatMeans)(out_pop[k].pop_Q, out_pop[k].pop_theta_coefs[i], out_pop[k].pop_arclgth, out_pop[k].mu_Z0, h_bounds, lbda_bounds, nb_basis, n_call_bayopt=n_call_bayopt, sigma=lam) for k in range(n_MC))
+res = Parallel(n_jobs=n_MC)(delayed(compute_SRC_FC_StatMeans)(out_pop[k].pop_Q, out_pop[k].pop_theta_coefs, out_pop[k].pop_arclgth, out_pop[k].mu_Z0, h_bounds, lbda_bounds, nb_basis, n_call_bayopt=n_call_bayopt, sigma=lam) for k in range(n_MC))
 time_end = time.time()
 duration = time_end - time_init
 

@@ -515,7 +515,7 @@ class SRC:
 
         arr_src_theta = np.zeros((N_samples,T,self.dim-1))
         for i in range(N_samples):
-            theta_i = bspline_decomp.evaluate_coefs(arr_theta_coefs[i])(time)
+            theta_i = np.squeeze((bspline_decomp.basis_fct(time).T @ arr_theta_coefs[i]).T)
             for j in range(T):
                 arr_src_theta[i,j,:] = theta_i[j]/np.sqrt(np.linalg.norm(theta_i[j]))
         mean_src_theta = np.mean(arr_src_theta, axis=0)
