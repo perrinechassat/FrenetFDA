@@ -125,7 +125,7 @@ n_call_bayopt = 5
 """ ____ """
 
 nb_basis = 20
-h_bounds = np.array([0.05,0.3])
+h_bounds = np.array([0.03,0.15])
 h_deriv_bounds = np.array([0.1,0.3])
 lbda_bounds = np.array([[-15.0,-5.0],[-15.0,-5.0]])
 
@@ -144,13 +144,14 @@ duration = time_end - time_init
 
 Bspline_decom = VectorBSplineSmoothing(2, nb_basis, domain_range=(0, 1), order=4, penalization=False)
 out_pop, out_arithm, out_srvf = [], [], []
-pop_theta_fct = np.empty((n_MC, n_samples), dtype=object)
+# pop_theta_fct = np.empty((n_MC, n_samples), dtype=object)
 for k in range(n_MC):
-    out_pop.append(res[k][0])
+    out_pop.append(res[k])
+    # out_pop.append(res[k][0])
     # out_arithm.append(res[k][1])
     # out_srvf.append(res[k][2])
-    for i in range(n_samples):
-        pop_theta_fct[k][i] = Bspline_decom.evaluate_coefs(out_pop[k].pop_theta_coefs[i])
+    # for i in range(n_samples):
+    #     pop_theta_fct[k][i] = Bspline_decom.evaluate_coefs(out_pop[k].pop_theta_coefs[i])
 
 # SAVE
 filename = filename_base + "pop_Arithm_SRVF_with_noise_N_100_sig_01" + '_test' 
