@@ -256,7 +256,7 @@ def compute_all_means(pop_x, h_deriv_bounds, h_bounds, lbda_bounds, nb_basis, po
         elif isinstance(s, np.ndarray):
             return np.squeeze((Bspline_decom.basis_fct(s).T @ coefs_opt).T)
     mu_theta_V1 = np.squeeze((Bspline_decom.basis_fct(time).T @ coefs_opt).T)
-    mu_Z_V1 = solve_FrenetSerret_ODE_SE(mu_theta_V1_func, time, Z0=mu_Z0)
+    mu_Z_V1 = solve_FrenetSerret_ODE_SE(mu_theta_V1_func, time, Z0=mu_Z0, timeout_second=60)
     mu_V1 = mu_Z_V1[:,:3,3]
 
     res_mean_V1 = collections.namedtuple('res_mean_V1', ['h_opt', 'lbda_opt', 'mu', 'mu_Z', 'mu_theta', 'coefs_opt'])
@@ -273,7 +273,7 @@ def compute_all_means(pop_x, h_deriv_bounds, h_bounds, lbda_bounds, nb_basis, po
         elif isinstance(s, np.ndarray):
             return np.squeeze((Bspline_decom.basis_fct(s).T @ coefs_opt).T)
     mu_theta_V2 =  np.squeeze((Bspline_decom.basis_fct(time).T @ coefs_opt).T)
-    mu_Z_V2 = solve_FrenetSerret_ODE_SE(mu_theta_V2_func, time, Z0=mu_Z0)
+    mu_Z_V2 = solve_FrenetSerret_ODE_SE(mu_theta_V2_func, time, Z0=mu_Z0, timeout_second=60)
     mu_V2 = mu_Z_V2[:,:3,3]
 
     res_mean_V2 = collections.namedtuple('res_mean_V2', ['h_opt', 'lbda_opt', 'mu', 'mu_Z', 'mu_theta', 'coefs_opt', 'gam', 'results_alignment'])
@@ -290,7 +290,7 @@ def compute_all_means(pop_x, h_deriv_bounds, h_bounds, lbda_bounds, nb_basis, po
         elif isinstance(s, np.ndarray):
             return np.squeeze((Bspline_decom.basis_fct(s).T @ coefs_opt).T)
     mu_theta_V3 =  np.squeeze((Bspline_decom.basis_fct(time).T @ coefs_opt).T)
-    mu_Z_V3 = solve_FrenetSerret_ODE_SE(mu_theta_V3_func, time, Z0=mu_Z0)
+    mu_Z_V3 = solve_FrenetSerret_ODE_SE(mu_theta_V3_func, time, Z0=mu_Z0, timeout_second=60)
     mu_V3 = mu_Z_V3[:,:3,3]
 
     res_mean_V3 = collections.namedtuple('res_mean_V3', ['h_opt', 'lbda_opt', 'mu', 'mu_Z', 'mu_theta', 'coefs_opt', 'gam', 'results_alignment'])
@@ -590,7 +590,7 @@ def compute_SRC_FC_StatMeans(pop_Q, pop_theta_coefs, pop_arclgth, mu_Z0, h_bound
         elif isinstance(s, np.ndarray):
             return np.squeeze((Bspline_decom.basis_fct(s).T @ coefs_opt).T)
     mu_theta_V1 =  np.squeeze((Bspline_decom.basis_fct(time).T @ coefs_opt).T)
-    mu_Z_V1 = solve_FrenetSerret_ODE_SE(mu_theta_V1_func, time, Z0=mu_Z0)
+    mu_Z_V1 = solve_FrenetSerret_ODE_SE(mu_theta_V1_func, time, Z0=mu_Z0, timeout_second=60)
     mu_V1 = mu_Z_V1[:,:3,3]
 
     res_mean_V1 = collections.namedtuple('res_mean_V1', ['h_opt', 'lbda_opt', 'mu', 'mu_Z', 'mu_theta', 'coefs_opt'])
@@ -607,7 +607,7 @@ def compute_SRC_FC_StatMeans(pop_Q, pop_theta_coefs, pop_arclgth, mu_Z0, h_bound
         elif isinstance(s, np.ndarray):
             return np.squeeze((Bspline_decom.basis_fct(s).T @ coefs_opt).T)
     mu_theta_V2 =  np.squeeze((Bspline_decom.basis_fct(time).T @ coefs_opt).T)
-    mu_Z_V2 = solve_FrenetSerret_ODE_SE(mu_theta_V2_func, time, Z0=mu_Z0)
+    mu_Z_V2 = solve_FrenetSerret_ODE_SE(mu_theta_V2_func, time, Z0=mu_Z0, timeout_second=60)
     mu_V2 = mu_Z_V2[:,:3,3]
 
     res_mean_V2 = collections.namedtuple('res_mean_V2', ['h_opt', 'lbda_opt', 'mu', 'mu_Z', 'mu_theta', 'coefs_opt', 'gam', 'results_alignment'])
@@ -624,7 +624,7 @@ def compute_SRC_FC_StatMeans(pop_Q, pop_theta_coefs, pop_arclgth, mu_Z0, h_bound
         elif isinstance(s, np.ndarray):
             return np.squeeze((Bspline_decom.basis_fct(s).T @ coefs_opt).T)
     mu_theta_V3 =  np.squeeze((Bspline_decom.basis_fct(time).T @ coefs_opt).T)
-    mu_Z_V3 = solve_FrenetSerret_ODE_SE(mu_theta_V3_func, time, Z0=mu_Z0)
+    mu_Z_V3 = solve_FrenetSerret_ODE_SE(mu_theta_V3_func, time, Z0=mu_Z0, timeout_second=60)
     mu_V3 = mu_Z_V3[:,:3,3]
 
     res_mean_V3 = collections.namedtuple('res_mean_V3', ['h_opt', 'lbda_opt', 'mu', 'mu_Z', 'mu_theta', 'coefs_opt', 'gam', 'results_alignment'])
