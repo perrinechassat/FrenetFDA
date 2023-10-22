@@ -127,36 +127,44 @@ lbda_bounds = np.array([[-15.0,-5.0],[-15.0,-5.0]])
 """ sig_x = 0.01 """
 sig_x = 0.01
 
-arr_noisy_x = np.zeros((n_MC, n_samples, N, 3))
-for k in range(n_MC):
-    arr_noisy_x[k] = add_noise_pop(pop_X, sig_x)
+# arr_noisy_x = np.zeros((n_MC, n_samples, N, 3))
+# for k in range(n_MC):
+#     arr_noisy_x[k] = add_noise_pop(pop_X, sig_x)
 
 
-time_init = time.time()
-res = Parallel(n_jobs=n_MC)(delayed(compute_pop_artihm_SRVF)(arr_noisy_x[k], h_deriv_bounds, h_bounds, lbda_bounds, nb_basis, n_call_bayopt=n_call_bayopt, sigma=lam) for k in range(n_MC))
-time_end = time.time()
-duration = time_end - time_init
+# time_init = time.time()
+# res = Parallel(n_jobs=n_MC)(delayed(compute_pop_artihm_SRVF)(arr_noisy_x[k], h_deriv_bounds, h_bounds, lbda_bounds, nb_basis, n_call_bayopt=n_call_bayopt, sigma=lam) for k in range(n_MC))
+# time_end = time.time()
+# duration = time_end - time_init
 
-# Bspline_decom = VectorBSplineSmoothing(2, nb_basis, domain_range=(0, 1), order=4, penalization=False)
-out_pop, out_arithm, out_srvf = [], [], []
-# pop_theta_fct = np.empty((n_MC, n_samples), dtype=object)
-for k in range(n_MC):
-    out_pop.append(res[k][0])
-    out_arithm.append(res[k][1])
-    out_srvf.append(res[k][2])
-    # for i in range(n_samples):
-    #     pop_theta_fct[k][i] = Bspline_decom.evaluate_coefs(out_pop[k].pop_theta_coefs[i])
+# # Bspline_decom = VectorBSplineSmoothing(2, nb_basis, domain_range=(0, 1), order=4, penalization=False)
+# out_pop, out_arithm, out_srvf = [], [], []
+# # pop_theta_fct = np.empty((n_MC, n_samples), dtype=object)
+# for k in range(n_MC):
+#     out_pop.append(res[k][0])
+#     out_arithm.append(res[k][1])
+#     out_srvf.append(res[k][2])
+#     # for i in range(n_samples):
+#     #     pop_theta_fct[k][i] = Bspline_decom.evaluate_coefs(out_pop[k].pop_theta_coefs[i])
 
-# SAVE
+# # SAVE
+# filename = filename_base + "pop_Arithm_SRVF_with_noise_N_100_sig_01" 
+# dic = {"duration":duration, "arr_noisy_x":arr_noisy_x, "res_pop":out_pop, "res_arithm":out_arithm, "res_SRVF":out_srvf}
+
+# if os.path.isfile(filename):
+#     print("Le fichier ", filename, " existe déjà.")
+#     filename = filename + '_bis'
+# fil = open(filename,"xb")
+# pickle.dump(dic,fil)
+# fil.close()
+
+
 filename = filename_base + "pop_Arithm_SRVF_with_noise_N_100_sig_01" 
-dic = {"duration":duration, "arr_noisy_x":arr_noisy_x, "res_pop":out_pop, "res_arithm":out_arithm, "res_SRVF":out_srvf}
-
-if os.path.isfile(filename):
-    print("Le fichier ", filename, " existe déjà.")
-    filename = filename + '_bis'
-fil = open(filename,"xb")
-pickle.dump(dic,fil)
+fil = open(filename,"rb")
+dic = pickle.load(fil)
 fil.close()
+out_pop = dic["res_pop"]
+
 
 time_init = time.time()
 res = Parallel(n_jobs=n_MC)(delayed(compute_SRC_FC_StatMeans)(out_pop[k].pop_Q, out_pop[k].pop_theta_coefs, out_pop[k].pop_arclgth, out_pop[k].mu_Z0, h_bounds, lbda_bounds, nb_basis, n_call_bayopt=n_call_bayopt, sigma=lam) for k in range(n_MC))
