@@ -45,7 +45,7 @@ n_call_bayopt = 30
 lam = 1.0
 
 nb_basis = 20
-h_bounds = np.array([0.05,0.15])
+h_bounds = np.array([0.08,0.15])
 h_deriv_bounds = np.array([0.3,0.4])
 lbda_bounds = np.array([[-15.0,-5.0],[-15.0,-5.0]])
 
