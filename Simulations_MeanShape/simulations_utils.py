@@ -536,8 +536,9 @@ def compute_pop_artihm_SRVF(pop_x, h_deriv_bounds, h_bounds, lbda_bounds, nb_bas
     """ SRVF mean """
     print('computation SRVF mean...')
 
+
     mu_srvf = SRVF(3).karcher_mean(pop_x_scale)
-    mu_s_srvf, mu_Z_srvf, coefs_opt_srvf, knots_srvf = mean_theta_from_mean_shape(mu_srvf, h_deriv_bounds, h_bounds, lbda_bounds, n_call_bayopt, nb_basis=None, knots_step=3)
+    mu_s_srvf, mu_Z_srvf, coefs_opt_srvf, knots_srvf = mean_theta_from_mean_shape(mu_srvf, np.array([0.2,0.4]), np.array([0.05,0.15]), lbda_bounds, n_call_bayopt, nb_basis=None, knots_step=3)
     # mu_theta_srvf = VectorBSplineSmoothing(2, domain_range=(0, 1), order=4, penalization=False, knots=knots_srvf).evaluate_coefs(coefs_opt_srvf)
 
     # mu_srvf_arclgth = SRVF(3).karcher_mean(pop_X)
