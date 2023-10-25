@@ -95,7 +95,7 @@ duration = time_end - time_init
 
 # SAVE
 filename = filename_base + "without_noise_N_100" 
-dic = {"duration":duration, "res_arithm":out_arithm, "res_SRVF":out_srvf, "res_SRC":out_SRC, "res_FC":out_FC, "res_V1":out_V1, "res_V2":out_V2, "res_V3":out_V3}
+dic = {"duration":duration, "a_curv":a_curv, "a_tors":a_tors, "b":b, "pop_x_scale":pop_x_scale, "pop_theta":pop_theta, "res_arithm":out_arithm, "res_SRVF":out_srvf, "res_SRC":out_SRC, "res_FC":out_FC, "res_V1":out_V1, "res_V2":out_V2, "res_V3":out_V3}
 
 if os.path.isfile(filename):
     print("Le fichier ", filename, " existe déjà.")
