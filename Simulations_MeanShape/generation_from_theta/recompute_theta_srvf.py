@@ -44,35 +44,35 @@ n_MC = 80
 n_call_bayopt = 30
 lam = 1.0
 
-nb_basis = 20
+nb_basis = 25
 h_bounds = np.array([0.08,0.15])
 h_deriv_bounds = np.array([0.3,0.4])
 lbda_bounds = np.array([[-15.0,-5.0],[-15.0,-5.0]])
 
 """ sig_x = 0.01 """
 
-filename = "/home/pchassat/FrenetFDA/Simulations_MeanShape/generation_from_theta/results/mean_gen_theta_varAmpPhase_pop_Arithm_SRVF_with_noise_N_100_sig_01"
-fil = open(filename,"rb")
-dic_noisy_1 = pickle.load(fil)
-fil.close()
-res_SRVF_noisy = dic_noisy_1["res_SRVF"]
-noisy_means_SRVF = np.array([res_SRVF_noisy[k].mu for k in range(n_MC)])
+# filename = "/home/pchassat/FrenetFDA/Simulations_MeanShape/generation_from_theta/results/mean_gen_theta_varAmpPhase_pop_Arithm_SRVF_with_noise_N_100_sig_01"
+# fil = open(filename,"rb")
+# dic_noisy_1 = pickle.load(fil)
+# fil.close()
+# res_SRVF_noisy = dic_noisy_1["res_SRVF"]
+# noisy_means_SRVF = np.array([res_SRVF_noisy[k].mu for k in range(n_MC)])
 
-time_init = time.time()
-res = Parallel(n_jobs=n_MC)(delayed(compute_theta_srvf)(noisy_means_SRVF[k], h_deriv_bounds, h_bounds, lbda_bounds, n_call_bayopt, nb_basis=None, knots_step=3) for k in range(n_MC))
-time_end = time.time()
-duration = time_end - time_init
+# time_init = time.time()
+# res = Parallel(n_jobs=n_MC)(delayed(compute_theta_srvf)(noisy_means_SRVF[k], h_deriv_bounds, h_bounds, lbda_bounds, n_call_bayopt, nb_basis=None, knots_step=3) for k in range(n_MC))
+# time_end = time.time()
+# duration = time_end - time_init
 
-# SAVE
-filename = filename_base + "pop_SRVF_with_noise_N_100_sig_01_recomputed" 
-dic = {"duration":duration, "res_SRVF":res}
+# # SAVE
+# filename = filename_base + "pop_SRVF_with_noise_N_100_sig_01_recomputed" 
+# dic = {"duration":duration, "res_SRVF":res}
 
-if os.path.isfile(filename):
-    print("Le fichier ", filename, " existe déjà.")
-    filename = filename + '_bis'
-fil = open(filename,"xb")
-pickle.dump(dic,fil)
-fil.close()
+# if os.path.isfile(filename):
+#     print("Le fichier ", filename, " existe déjà.")
+#     filename = filename + '_bis'
+# fil = open(filename,"xb")
+# pickle.dump(dic,fil)
+# fil.close()
 
 
 
@@ -116,6 +116,31 @@ duration = time_end - time_init
 
 # SAVE
 filename = filename_base + "pop_SRVF_with_noise_N_200_sig_01_recomputed" 
+dic = {"duration":duration, "res_SRVF":res}
+
+if os.path.isfile(filename):
+    print("Le fichier ", filename, " existe déjà.")
+    filename = filename + '_bis'
+fil = open(filename,"xb")
+pickle.dump(dic,fil)
+fil.close()
+
+
+
+
+filename = "/home/pchassat/FrenetFDA/Simulations_MeanShape/generation_from_theta/results/mean_gen_theta_varAmpPhase_rand_tranfo"
+fil = open(filename,"rb")
+dic_noisy_1 = pickle.load(fil)
+fil.close()
+res_SRVF_noisy = dic_noisy_1["res_SRVF"]
+noisy_means_SRVF = np.array([res_SRVF_noisy[k].mu for k in range(n_MC)])
+
+time_init = time.time()
+res = Parallel(n_jobs=n_MC)(delayed(compute_theta_srvf)(noisy_means_SRVF[k], h_deriv_bounds, h_bounds, lbda_bounds, n_call_bayopt, nb_basis=None, knots_step=3) for k in range(n_MC))
+time_end = time.time()
+duration = time_end - time_init
+
+filename = filename_base + "pop_SRVF_rand_tranfo_recomputed" 
 dic = {"duration":duration, "res_SRVF":res}
 
 if os.path.isfile(filename):
