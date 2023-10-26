@@ -12,14 +12,17 @@ from FrenetFDA.processing_Euclidean_curve.estimate_Frenet_path import GramSchmid
 from FrenetFDA.processing_Frenet_path.estimate_Frenet_curvatures import LocalApproxFrenetODE
 from FrenetFDA.processing_Euclidean_curve.preprocessing import *
 from FrenetFDA.utils.smoothing_utils import *
-from pickle import *
+from FrenetFDA.utils.smoothing_utils import VectorBSplineSmoothing
+import FrenetFDA.utils.visualization as visu
+from FrenetFDA.utils.Frenet_Serret_utils import solve_FrenetSerret_ODE_SE, solve_FrenetSerret_ODE_SO
+from FrenetFDA.utils.curves_utils import *
 import time 
 import os.path
 import os
+# import warnings
+# warnings.filterwarnings('ignore')
+from pickle import *
 import dill as pickle
-from tqdm import tqdm
-import warnings
-warnings.filterwarnings('ignore')
 
 
 def compute_theta_srvf(mu_srvf, h_deriv_bounds, h_bounds, lbda_bounds, n_call_bayopt, nb_basis=None, knots_step=3):
@@ -30,13 +33,13 @@ def compute_theta_srvf(mu_srvf, h_deriv_bounds, h_bounds, lbda_bounds, n_call_ba
 
 
 
-directory = r"results/"
-filename_base = "results/mean_gen_theta_varAmpPhase_"
+# directory = r"results/"
+# filename_base = "results/mean_gen_theta_varAmpPhase_"
 
-current_directory = os.getcwd()
-final_directory = os.path.join(current_directory, directory)
-if not os.path.exists(final_directory):
-   os.makedirs(final_directory)
+# current_directory = os.getcwd()
+# final_directory = os.path.join(current_directory, directory)
+# if not os.path.exists(final_directory):
+#    os.makedirs(final_directory)
 
 n_samples = 20
 
@@ -102,7 +105,7 @@ lbda_bounds = np.array([[-15.0,-5.0],[-15.0,-5.0]])
 
 
 
-filename = "/home/pchassat/FrenetFDA/Simulations_MeanShape/generation_from_theta/results/mean_gen_theta_varAmpPhase_with_noise_N_200_sig_01"
+filename = "/home/pchassat/FrenetFDA/Simulations_MeanShape/generation_from_theta/results/res_init_SRVF_N_200_sig_01"
 fil = open(filename,"rb")
 dic_noisy_1 = pickle.load(fil)
 fil.close()
@@ -115,7 +118,7 @@ time_end = time.time()
 duration = time_end - time_init
 
 # SAVE
-filename = filename_base + "pop_SRVF_with_noise_N_200_sig_01_recomputed" 
+filename =  "results/mean_gen_theta_varAmpPhase_pop_SRVF_with_noise_N_200_sig_01_recomputed" 
 dic = {"duration":duration, "res_SRVF":res}
 
 if os.path.isfile(filename):
@@ -126,9 +129,7 @@ pickle.dump(dic,fil)
 fil.close()
 
 
-
-
-filename = "/home/pchassat/FrenetFDA/Simulations_MeanShape/generation_from_theta/results/mean_gen_theta_varAmpPhase_rand_tranfo"
+filename = "/home/pchassat/FrenetFDA/Simulations_MeanShape/generation_from_theta/results/res_init_SRVF_rand_transfo"
 fil = open(filename,"rb")
 dic_noisy_1 = pickle.load(fil)
 fil.close()
@@ -140,7 +141,7 @@ res = Parallel(n_jobs=n_MC)(delayed(compute_theta_srvf)(noisy_means_SRVF[k], h_d
 time_end = time.time()
 duration = time_end - time_init
 
-filename = filename_base + "pop_SRVF_rand_tranfo_recomputed" 
+filename = "results/mean_gen_theta_varAmpPhase_pop_SRVF_rand_tranfo_recomputed" 
 dic = {"duration":duration, "res_SRVF":res}
 
 if os.path.isfile(filename):
