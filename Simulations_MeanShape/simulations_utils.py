@@ -316,17 +316,14 @@ def compute_all_means_sphere(pop_x, h_deriv_bounds, h_bounds, lbda_bounds, nb_ba
     time = np.linspace(0,1,N)
     dim = pop_x[0].shape[1]
     
-    if pop_arclgth is None:
-        print('computation arc length...') 
-        pop_arclgth = np.zeros((n_samples,N))
-        pop_L = np.zeros(n_samples)
-        for k in range(n_samples):
-            derivatives, h_opt = compute_derivatives(pop_x[k], time, deg=3, h=None, CV_optimization_h={"flag":True, "h_grid":h_deriv_bounds, "K":10, "method":'bayesian', "n_call":30, "verbose":False})
-            grid_arc_s, L, arc_s, arc_s_dot = compute_arc_length(pop_x[k], time, smooth=True, smoothing_param=h_opt)
-            pop_arclgth[k] = grid_arc_s
-            pop_L[k] = L 
-    else:
-        pop_L = pop_arclgth[:,-1]
+    print('computation arc length...') 
+    pop_arclgth = np.zeros((n_samples,N))
+    pop_L = np.zeros(n_samples)
+    for k in range(n_samples):
+        derivatives, h_opt = compute_derivatives(pop_x[k], time, deg=3, h=None, CV_optimization_h={"flag":True, "h_grid":h_deriv_bounds, "K":10, "method":'bayesian', "n_call":30, "verbose":False})
+        grid_arc_s, L, arc_s, arc_s_dot = compute_arc_length(pop_x[k], time, smooth=True, smoothing_param=h_opt)
+        pop_arclgth[k] = grid_arc_s
+        pop_L[k] = L 
 
     print('computation population parameters...') 
 
