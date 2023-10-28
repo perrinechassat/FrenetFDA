@@ -60,7 +60,7 @@ for i in range(n_samples):
 n_call_bayopt = 30
 lam = 1.0
 nb_basis = 20
-h_bounds = np.array([0.05,0.15])
+h_bounds = np.array([0.05,0.1])
 h_deriv_bounds = np.array([0.1,0.3])
 lbda_bounds = np.array([[-15.0,-8.0],[-15.0,-8.0]])
 
