@@ -4,7 +4,7 @@ from scipy.integrate import cumtrapz
 from FrenetFDA.utils.smoothing_utils import LocalPolynomialSmoothing
 
     
-def compute_arc_length(Y, time, scale=True, smooth=True, smoothing_param=None, CV_optimization={"flag":False, "h_grid":np.array([]), "K":10}):
+def compute_arc_length(Y, time, scale=True, smooth=True, smoothing_param=None, CV_optimization={"flag":False, "h_grid":np.array([]), "K":10}, adaptive=False):
 
     """ 
             Compute the arc length function and its derivative. (In all case the attribute "grid_arc_s" is scaled.)
@@ -19,7 +19,7 @@ def compute_arc_length(Y, time, scale=True, smooth=True, smoothing_param=None, C
     time = (time - time.min()) / (time.max() - time.min())
     
     if smooth==True:
-        derivatives, h_opt = compute_derivatives(Y, time, deg=3, h=smoothing_param, CV_optimization_h=CV_optimization)
+        derivatives, h_opt = compute_derivatives(Y, time, deg=3, h=smoothing_param, CV_optimization_h=CV_optimization, adaptive=adaptive)
         sdot = np.linalg.norm(derivatives[1], axis=1)
     else:
         Ydot = np.gradient(Y, 1./N)
@@ -43,7 +43,7 @@ def compute_arc_length(Y, time, scale=True, smooth=True, smoothing_param=None, C
     
 
 
-def compute_derivatives(Y, time, deg, h=None, CV_optimization_h={"flag":False, "h_grid":np.array([]), "K":10, "method":'bayesian', "n_call":10, "verbose":True}):
+def compute_derivatives(Y, time, deg, h=None, CV_optimization_h={"flag":False, "h_grid":np.array([]), "K":10, "method":'bayesian', "n_call":10, "verbose":True}, adaptive=False):
 
     N, dim = Y.shape
     if dim < 2:
@@ -61,17 +61,17 @@ def compute_derivatives(Y, time, deg, h=None, CV_optimization_h={"flag":False, "
             else:
                 if CV_optimization_h["method"]=='gridsearch':
                     h_grid = CV_optimization_h["h_grid"]
-                    LP = LocalPolynomialSmoothing(deg)
+                    LP = LocalPolynomialSmoothing(deg, adaptive=adaptive)
                     h_opt, err_h = LP.grid_search_CV_optimization_bandwidth(Y, time, time, h_grid, K_split=CV_optimization_h["K"])
                     derivatives = LP.fit(Y, time, time, h_opt)
                 else:
                     h_bounds = np.array([CV_optimization_h["h_grid"][0], CV_optimization_h["h_grid"][-1]])
-                    LP = LocalPolynomialSmoothing(deg)
+                    LP = LocalPolynomialSmoothing(deg, adaptive=adaptive)
                     h_opt = LP.bayesian_optimization_hyperparameters(Y, time, time, CV_optimization_h["n_call"], h_bounds, n_splits=CV_optimization_h["K"], verbose=CV_optimization_h["verbose"])
                     derivatives = LP.fit(Y, time, time, h_opt)
     else:   
         h_opt = h
-        derivatives = LocalPolynomialSmoothing(deg).fit(Y, time, time, h)
+        derivatives = LocalPolynomialSmoothing(deg, adaptive=adaptive).fit(Y, time, time, h)
 
     return derivatives, h_opt
 

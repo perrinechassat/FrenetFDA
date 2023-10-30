@@ -905,7 +905,8 @@ def bayesian_CV_optimization_regularization_parameter(n_CV, n_call_bayopt, lambd
     
     def func(x):
         x_log = 10 ** np.array([x[0],x[1]])
-        print(x_log)
+        if verbose:
+            print(x_log)
         score_lambda = np.zeros(n_CV)
         kf = KFold(n_splits=n_CV, shuffle=True)
         ind_CV = 0

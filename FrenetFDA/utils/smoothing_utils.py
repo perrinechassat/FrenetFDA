@@ -19,6 +19,12 @@ def kernel(t): # Epanechnikov kernel
     return (3/4)*(1-np.power(t,2))*(np.abs(t)<1)
 
 
+def adaptive_kernel_bis(t, ind, K):
+    t_voisin = t[np.max((0,ind-K)):np.min((ind+K,len(t)))]
+    W = np.array([(3/4)*(1-np.power(t_,2))*int(np.abs(t_) in t_voisin) for t_ in t])
+    return (np.abs(W)/np.max(np.abs(W)))
+
+
 def adaptive_kernel(t, delta):
     return np.power((1 - np.power((np.abs(t)/delta),3)), 3)
 
@@ -84,8 +90,9 @@ def compute_weight_neighbors_local_smoothing(grid_in, grid_out, h, adaptive=Fals
 
 class LocalPolynomialSmoothing:
 
-    def __init__(self, deg_polynomial=4):
+    def __init__(self, deg_polynomial=4, adaptive=False):
         self.deg = deg_polynomial
+        self.adaptive = adaptive
 
 
     def fit(self, data, grid_in, grid_out, bandwidth):
@@ -93,12 +100,18 @@ class LocalPolynomialSmoothing:
         N, dim = data.shape
         if N != len(grid_in):
             raise Exception("Number of sample points in attribute data and grid_in must be equal.")
+        
         pre_process = PolynomialFeatures(degree=self.deg)
         N_out = len(grid_out)
         deriv_estim = np.zeros((N_out,(self.deg+1)*dim))
         for i in range(N_out):
-            T = grid_in - grid_out[i]
-            W = kernel(T/bandwidth)
+            if self.adaptive:
+                T = grid_in - grid_out[i]
+                W = adaptive_kernel_bis(T/bandwidth, i, int(N*bandwidth*2))
+            else:
+                T = grid_in - grid_out[i]
+                W = kernel(T/bandwidth)
+
             T_poly = pre_process.fit_transform(T.reshape(-1,1))
             for j in range(self.deg+1):
                 T_poly[:,j] = T_poly[:,j]/np.math.factorial(j)

@@ -8,6 +8,8 @@ from FrenetFDA.processing_Euclidean_curve.preprocessing import *
 from FrenetFDA.processing_Euclidean_curve.estimate_Frenet_path import GramSchmidtOrthogonalization, ConstrainedLocalPolynomialRegression
 from FrenetFDA.processing_Euclidean_curve.estimate_Frenet_curvatures import ExtrinsicFormulas
 from FrenetFDA.processing_Frenet_path.estimate_Frenet_curvatures import ApproxFrenetODE, LocalApproxFrenetODE
+from FrenetFDA.processing_Frenet_path.smoothing import KarcherMeanSmoother, TrackingSmootherLinear
+from FrenetFDA.processing_Frenet_path.estimate_Frenet_curvatures import TwoStepEstimatorKarcherMean, TwoStepEstimatorTracking
 import FrenetFDA.utils.visualization as visu
 from pickle import *
 import time 
@@ -18,100 +20,122 @@ from tqdm import tqdm
 import numpy as np
 
 
-def init_arclength_Q(Y, n_call_bayopt):
+def init_arclength_Q(Y, n_call_bayopt, bounds_h):
 
     grid_time = np.linspace(0,1,Y.shape[0])
-    step = grid_time[1] 
-    bounds_h = [0.05, 0.15]
 
-    # bounds_h[0] = np.max((bounds_h[0],step*3))
     ## Init Gamma and s(t)
     derivatives, h_opt = compute_derivatives(Y, grid_time, deg=3, h=None, CV_optimization_h={"flag":True, "h_grid":np.array([bounds_h[0], bounds_h[-1]]), "K":10, "method":'bayesian', "n_call":n_call_bayopt, "verbose":False})
     grid_arc_s, L, arc_s, arc_s_dot = compute_arc_length(Y, grid_time, smooth=True, smoothing_param=h_opt)
     Y_scale = Y/L
-    # print('fin arc length')
 
     ## Z GramSchmidt
     bounds_h[0] = np.max((bounds_h[0], np.max(grid_arc_s[1:]-grid_arc_s[:-1])*3))
-    # if bounds_h[1] <= bounds_h[0]:
-    #     bounds_h[1] = np.min((3*bounds_h[0], 0.3))
     GS_orthog = GramSchmidtOrthogonalization(Y_scale, grid_arc_s, deg=3)
     h_opt = GS_orthog.bayesian_optimization_hyperparameters(n_call_bayopt, h_bounds=bounds_h, verbose=False)
     Z_hat_GS, Q_hat_GS, X_hat_GS = GS_orthog.fit(h_opt) 
-    # print('fin Z GramSchmidt')
 
     return grid_arc_s, L, Y_scale, Z_hat_GS, bounds_h, derivatives
 
 
 
-def basis_GS_leastsquares(grid_arc_s, Z_hat_GS, bounds_h, bounds_lbda, n_call_bayopt):
+def basis_GS_leastsquares(grid_arc_s, Z_hat_GS, bounds_lbda, n_call_bayopt):
     try:
         local_approx_ode = LocalApproxFrenetODE(grid_arc_s, Z=Z_hat_GS)
+        bounds_h = np.array([np.max(grid_arc_s[1:]-grid_arc_s[:-1])*3, np.min((np.max(grid_arc_s[1:]-grid_arc_s[:-1])*8, 0.1))])
+        print(bounds_h)
 
         knots = [grid_arc_s[0]]
         grid_bis = grid_arc_s[1:-1]
-        for i in range(0,len(grid_bis),3):
+        for i in range(0,len(grid_bis),4):
             knots.append(grid_bis[i])
         knots.append(grid_arc_s[-1])
         nb_basis = len(knots)+2
-        # bounds_h[0] = (bounds_h[0]/3)*5
-        # if bounds_h[1] <= bounds_h[0]:
-        #     bounds_h[1] = np.min((5*bounds_h[0], 0.2))
+
         h_opt, lbda_opt, coefs_opt = local_approx_ode.bayesian_optimization_hyperparameters(n_call_bayopt=n_call_bayopt, lambda_bounds=bounds_lbda, h_bounds=bounds_h, nb_basis=nb_basis, n_splits=5, verbose=True, return_coefs=True, knots=knots)
-        return [coefs_opt, h_opt, lbda_opt, knots, nb_basis]
+        return [coefs_opt, h_opt, lbda_opt, knots, nb_basis, bounds_h]
     except:
         return None
     
 
+def basis_extrins(Y, bounds_h_der, n_call_bayopt_der, bounds_lbda, n_call_bayopt):
 
-def estimation_GS(Y, n_call_bayopt_der, bounds_lbda, n_call_bayopt_theta):
+    grid_time = np.linspace(0,1,Y.shape[0])
 
-    grid_arc_s, L, Y_scale, Z_hat_GS, bounds_h, derivatives = init_arclength_Q(Y, n_call_bayopt_der)
-    nb_basis = int(np.sqrt(Y.shape[0]))
-    res_theta = basis_GS_leastsquares(grid_arc_s, Z_hat_GS, nb_basis, bounds_h, bounds_lbda, n_call_bayopt_theta)
+    ## Init Gamma and s(t)
+    derivatives, h_opt = compute_derivatives(Y, grid_time, deg=3, h=None, CV_optimization_h={"flag":True, "h_grid":np.array([bounds_h_der[0], bounds_h_der[-1]]), "K":10, "method":'bayesian', "n_call":n_call_bayopt_der, "verbose":False})
+    grid_arc_s, L, arc_s, arc_s_dot = compute_arc_length(Y, grid_time, smooth=True, smoothing_param=h_opt)
+    Y_scale = Y/L
 
-    return grid_arc_s, L, Y_scale, Z_hat_GS, res_theta
+    try: 
+        # bounds_h = np.array([np.max(grid_arc_s[1:]-grid_arc_s[:-1])*3, np.min((np.max(grid_arc_s[1:]-grid_arc_s[:-1])*8, 0.1))])
+        knots = [grid_arc_s[0]]
+        grid_bis = grid_arc_s[1:-1]
+        for i in range(0,len(grid_bis),4):
+            knots.append(grid_bis[i])
+        knots.append(grid_arc_s[-1])
+        nb_basis = len(knots)+2
+
+        extrins_model_theta = ExtrinsicFormulas(Y_scale, grid_time, grid_arc_s, deg_polynomial=3)
+        h_opt, lbda_opt, coefs_opt = extrins_model_theta.bayesian_optimization_hyperparameters(n_call_bayopt=n_call_bayopt, lambda_bounds=bounds_lbda, h_bounds=bounds_h_der, nb_basis=nb_basis, n_splits=10, verbose=False, return_coefs=True, knots=knots)
+        return [grid_arc_s, Y_scale, coefs_opt, h_opt, lbda_opt, knots, nb_basis]
+    except:
+        return [grid_arc_s, Y_scale, None]
+
+
+def karcher_mean_smoother(grid_arc_s, Q_noisy, bounds_lbda, n_call_bayopt, tol, max_iter):
+    try:
+        grid_time = np.linspace(0,1,len(grid_arc_s))
+
+        bounds_h = np.array([np.max(grid_arc_s[1:]-grid_arc_s[:-1])*3, np.min((np.max(grid_arc_s[1:]-grid_arc_s[:-1])*8, 0.1))])
+
+        knots = [grid_arc_s[0]]
+        grid_bis = grid_arc_s[1:-1]
+        for i in range(0,len(grid_bis),4):
+            knots.append(grid_bis[i])
+        knots.append(grid_arc_s[-1])
+        nb_basis = len(knots)+2
+
+        karcher_mean_smoother = TwoStepEstimatorKarcherMean(grid_arc_s, Q_noisy)
+        coefs_opt, Q_smooth_opt, nb_iter, h_opt, lbda_opt = karcher_mean_smoother.bayesian_optimization_hyperparameters(n_call_bayopt=n_call_bayopt, lambda_bounds=bounds_lbda, h_bounds=bounds_h, nb_basis=nb_basis, epsilon=tol, max_iter=max_iter, n_splits=5, verbose=False, return_coefs=True, knots=knots)
+    
+        return [coefs_opt, Q_smooth_opt, nb_iter, h_opt, lbda_opt,  knots, nb_basis, bounds_h]
+    except:
+        return None
 
 
 
-def estimation_GS_group(filename_base, list_Y, n_call_bayopt_der, bounds_lbda, n_call_bayopt_theta):
+def tracking_smoother(grid_arc_s, Q_noisy, bounds_lbda, bounds_lbda_track, n_call_bayopt, tol, max_iter):
+    try:
+        grid_time = np.linspace(0,1,len(grid_arc_s))
+
+        bounds_h = np.array([np.max(grid_arc_s[1:]-grid_arc_s[:-1])*3, np.min((np.max(grid_arc_s[1:]-grid_arc_s[:-1])*8, 0.1))])
+
+        knots = [grid_arc_s[0]]
+        grid_bis = grid_arc_s[1:-1]
+        for i in range(0,len(grid_bis),4):
+            knots.append(grid_bis[i])
+        knots.append(grid_arc_s[-1])
+        nb_basis = len(knots)+2
+
+        tracking_smoother = TwoStepEstimatorTracking(grid_arc_s, Q_noisy)
+        coefs_opt, Q_smooth_opt, nb_iter, h_opt, lbda_opt, lbda_track_opt = tracking_smoother.bayesian_optimization_hyperparameters(n_call_bayopt=n_call_bayopt, lambda_track_bounds=bounds_lbda_track, lambda_bounds=bounds_lbda, h_bounds=bounds_h, nb_basis=nb_basis, epsilon=tol, max_iter=max_iter, n_splits=5, verbose=False, return_coefs=True, knots=knots)
+
+        return [coefs_opt, Q_smooth_opt, nb_iter, h_opt, lbda_opt, lbda_track_opt, knots, nb_basis, bounds_h]
+    except:
+        return None
+
+
+
+
+def estimation_GS_group(filename_base, list_Y, n_call_bayopt_der, bounds_h_der, bounds_lbda, n_call_bayopt_theta):
 
     N_curves = len(list_Y)
-
-    # time_init = time.time()
-
-    # with tqdm(total=N_curves) as pbar:
-    #     res = Parallel(n_jobs=N_curves)(delayed(estimation_GS)(list_Y[k], n_call_bayopt_der, bounds_lbda, n_call_bayopt_theta) for k in range(N_curves))
-    # pbar.update()
-
-    # time_end = time.time()
-    # duration = time_end - time_init
-
-    # tab_grid_arc_s = []
-    # tab_L = []
-    # tab_Y_scale = []
-    # tab_Z_hat_GS = []
-    # tab_smooth_theta_coefs = []
-    # tab_h_opt = []
-    # tab_lbda_opt = []
-    # for k in range(N_curves):
-    #     tab_grid_arc_s.append(res[k][0])
-    #     tab_L.append(res[k][1])
-    #     tab_Y_scale.append(res[k][2])
-    #     tab_Z_hat_GS.append(res[k][3])
-    #     if res[k][4] is not None:
-    #         tab_smooth_theta_coefs.append(res[k][4][0])
-    #         tab_h_opt.append(res[k][4][1])
-    #         tab_lbda_opt.append(res[k][4][2])
-    #     else:
-    #         tab_smooth_theta_coefs.append(None)
-    #         tab_h_opt.append(None)
-    #         tab_lbda_opt.append(None)
 
     time_init = time.time()
 
     with tqdm(total=N_curves) as pbar:
-        res = Parallel(n_jobs=N_curves)(delayed(init_arclength_Q)(list_Y[k], n_call_bayopt_der) for k in range(N_curves))
+        res = Parallel(n_jobs=N_curves)(delayed(init_arclength_Q)(list_Y[k], n_call_bayopt_der, bounds_h_der) for k in range(N_curves))
     pbar.update()
 
     time_end = time.time()
@@ -132,8 +156,7 @@ def estimation_GS_group(filename_base, list_Y, n_call_bayopt_der, bounds_lbda, n
         tab_bounds_h.append(res[k][4])
         tab_derivatives.append(res[k][5])
 
-
-    filename = filename_base + "estimations_GS_leastsquares_Z"
+    filename = filename_base + "_Z_GS"
 
     dic = {"duration":duration, "tab_grid_arc_s":tab_grid_arc_s, "tab_L":tab_L, "tab_Y_scale":tab_Y_scale, "tab_Z_hat_GS":tab_Z_hat_GS, "tab_derivatives":tab_derivatives}
            
@@ -146,15 +169,13 @@ def estimation_GS_group(filename_base, list_Y, n_call_bayopt_der, bounds_lbda, n
 
     time_init = time.time()
 
-    # with tqdm(total=N_curves) as pbar:
-    #     res = Parallel(n_jobs=N_curves)(delayed(basis_GS_leastsquares)(tab_grid_arc_s[k], tab_Z_hat_GS[k], int(list_Y[k].shape[0]/3), tab_bounds_h[k], bounds_lbda, n_call_bayopt_theta) for k in range(N_curves))
-    # pbar.update()
     with tqdm(total=N_curves) as pbar:
-        res = Parallel(n_jobs=N_curves)(delayed(basis_GS_leastsquares)(tab_grid_arc_s[k], tab_Z_hat_GS[k], tab_bounds_h[k], bounds_lbda, n_call_bayopt_theta) for k in range(N_curves))
+        res = Parallel(n_jobs=N_curves)(delayed(basis_GS_leastsquares)(tab_grid_arc_s[k], tab_Z_hat_GS[k], bounds_lbda, n_call_bayopt_theta) for k in range(N_curves))
     pbar.update()
 
     time_end = time.time()
     duration = time_end - time_init
+
     print('_____________ END Basis Theta ______________')
 
     tab_smooth_theta_coefs = []
@@ -162,6 +183,7 @@ def estimation_GS_group(filename_base, list_Y, n_call_bayopt_der, bounds_lbda, n
     tab_lbda_opt = []
     tab_nb_basis = []
     tab_knots = []
+    tab_h_bounds = []
     for k in range(N_curves):
         if res[k] is not None:
             tab_smooth_theta_coefs.append(res[k][0])
@@ -169,17 +191,19 @@ def estimation_GS_group(filename_base, list_Y, n_call_bayopt_der, bounds_lbda, n
             tab_lbda_opt.append(res[k][2])
             tab_knots.append(res[k][3])
             tab_nb_basis.append(res[k][4])
+            tab_h_bounds.append(res[k][5])
         else:
             tab_smooth_theta_coefs.append(None)
             tab_h_opt.append(None)
             tab_lbda_opt.append(None)
             tab_knots.append(None)
             tab_nb_basis.append(None)
+            tab_h_bounds.append(None)
 
-    filename = filename_base + "estimations_GS_leastsquares_theta"
+    filename = filename_base + "_theta"
 
     dic = {"duration":duration, "tab_smooth_theta_coefs":tab_smooth_theta_coefs, "tab_h_opt":tab_h_opt, "tab_lbda_opt":tab_lbda_opt, 
-           "tab_grid_arc_s":tab_grid_arc_s, "tab_L":tab_L, "tab_Y_scale":tab_Y_scale, "tab_Z_hat_GS":tab_Z_hat_GS, "tab_knots":tab_knots, "tab_nb_basis":tab_nb_basis}
+           "tab_grid_arc_s":tab_grid_arc_s, "tab_L":tab_L, "tab_Y_scale":tab_Y_scale, "tab_Z_hat_GS":tab_Z_hat_GS, "tab_knots":tab_knots, "tab_nb_basis":tab_nb_basis, "tab_h_bounds":tab_h_bounds}
            
     if os.path.isfile(filename):
         print("Le fichier ", filename, " existe déjà.")
@@ -188,6 +212,7 @@ def estimation_GS_group(filename_base, list_Y, n_call_bayopt_der, bounds_lbda, n
     pickle.dump(dic,fil)
     fil.close()
 
+    return 
 
 
 
@@ -249,8 +274,200 @@ def EM_from_init_theta(filename_save, filename_simu, sigma_init, n_splits_CV, n_
 
     print('___________________________ End EM ___________________________')
 
+    return 
 
 
+
+
+def estimation_extrinsic_formulas(filename_base, list_Y, n_call_bayopt_der, bounds_h_der, bounds_lbda, n_call_bayopt_theta):
+    
+    N_curves = len(list_Y)
+
+    time_init = time.time()
+
+    with tqdm(total=N_curves) as pbar:
+        res = Parallel(n_jobs=N_curves)(delayed(basis_extrins)(list_Y[k], bounds_h_der, n_call_bayopt_der, bounds_lbda, n_call_bayopt_theta) for k in range(N_curves))
+    pbar.update()
+
+    time_end = time.time()
+    duration = time_end - time_init
+    print('_____________ END Extrins ______________')
+
+    tab_grid_arc_s = []
+    tab_Y_scale = []
+    tab_smooth_theta_coefs = []
+    tab_h_opt = []
+    tab_lbda_opt = []
+    tab_nb_basis = []
+    tab_knots = []
+    for k in range(N_curves):
+        tab_grid_arc_s.append(res[k][0])
+        tab_Y_scale.append(res[k][1])
+        if res[k][2] is not None:
+            tab_smooth_theta_coefs.append(res[k][2])
+            tab_h_opt.append(res[k][3])
+            tab_lbda_opt.append(res[k][4])
+            tab_knots.append(res[k][5])
+            tab_nb_basis.append(res[k][6])
+        else:
+            tab_smooth_theta_coefs.append(None)
+            tab_h_opt.append(None)
+            tab_lbda_opt.append(None)
+            tab_knots.append(None)
+            tab_nb_basis.append(None)
+
+    filename = filename_base
+
+    dic = {"duration":duration, "tab_grid_arc_s":tab_grid_arc_s, "tab_Y_scale":tab_Y_scale, "tab_smooth_theta_coefs":tab_smooth_theta_coefs, 
+           "tab_h_opt":tab_h_opt, "tab_lbda_opt":tab_lbda_opt, "tab_knots":tab_knots, "tab_nb_basis":tab_nb_basis}
+           
+    if os.path.isfile(filename):
+        print("Le fichier ", filename, " existe déjà.")
+        filename = filename + '_bis'
+    fil = open(filename,"xb")
+    pickle.dump(dic,fil)
+    fil.close()
+
+    return 
+
+
+
+
+
+def estimation_iteration_Karcher_mean(filename_base, filename_simu, bounds_lbda, n_call_bayopt, tol, max_iter):
+
+    filename = filename_simu 
+    fil = open(filename,"rb")
+    dic_init = pickle.load(fil)
+    fil.close()
+
+    tab_Y_scale = dic_init["tab_Y_scale"]
+    tab_Z_hat_GS = dic_init["tab_Z_hat_GS"]
+    tab_grid_arc_s = dic_init["tab_grid_arc_s"]
+    N_curves = len(tab_Y_scale)
+
+    time_init = time.time()
+
+    with tqdm(total=N_curves) as pbar:
+        res = Parallel(n_jobs=N_curves)(delayed(karcher_mean_smoother)(tab_grid_arc_s[k], tab_Z_hat_GS[k,:,:3,:3], bounds_lbda, n_call_bayopt, tol, max_iter) for k in range(N_curves))
+    pbar.update()
+
+    time_end = time.time()
+    duration = time_end - time_init
+    
+    tab_nb_iter = []
+    tab_Q_smooth = []
+    tab_smooth_theta_coefs = []
+    tab_h_opt = []
+    tab_lbda_opt = []
+    tab_nb_basis = []
+    tab_knots = []
+    tab_h_bounds = []
+    for k in range(N_curves):
+        if res[k] is not None:
+            tab_smooth_theta_coefs.append(res[k][0])
+            tab_Q_smooth.append(res[k][1])
+            tab_nb_iter.append(res[k][2])
+            tab_h_opt.append(res[k][3])
+            tab_lbda_opt.append(res[k][4])
+            tab_knots.append(res[k][6])
+            tab_nb_basis.append(res[k][7])
+            tab_h_bounds.append(res[k][8])
+        else:
+            tab_smooth_theta_coefs.append(None)
+            tab_h_opt.append(None)
+            tab_lbda_opt.append(None)
+            tab_knots.append(None)
+            tab_nb_basis.append(None)
+            tab_h_bounds.append(None)
+            tab_Q_smooth.append(None)
+            tab_nb_iter.append(None)
+
+    filename = filename_base
+
+    dic = {"duration":duration, "tab_grid_arc_s":tab_grid_arc_s, "tab_smooth_theta_coefs":tab_smooth_theta_coefs,
+           "tab_h_opt":tab_h_opt, "tab_lbda_opt":tab_lbda_opt, "tab_knots":tab_knots, "tab_nb_basis":tab_nb_basis, "tab_h_bounds":tab_h_bounds,
+           "tab_Q_smooth":tab_Q_smooth, "tab_nb_iter":tab_nb_iter}
+           
+    if os.path.isfile(filename):
+        print("Le fichier ", filename, " existe déjà.")
+        filename = filename + '_bis'
+    fil = open(filename,"xb")
+    pickle.dump(dic,fil)
+    fil.close()
+
+    return 
+
+
+
+def estimation_iteration_Tracking(filename_base, filename_simu, bounds_lbda, bounds_lbda_track, n_call_bayopt, tol, max_iter):
+
+    filename = filename_simu 
+    fil = open(filename,"rb")
+    dic_init = pickle.load(fil)
+    fil.close()
+
+    tab_Y_scale = dic_init["tab_Y_scale"]
+    tab_Z_hat_GS = dic_init["tab_Z_hat_GS"]
+    tab_grid_arc_s = dic_init["tab_grid_arc_s"]
+    N_curves = len(tab_Y_scale)
+
+    time_init = time.time()
+
+    with tqdm(total=N_curves) as pbar:
+        res = Parallel(n_jobs=N_curves)(delayed(tracking_smoother)(tab_grid_arc_s[k], tab_Z_hat_GS[k,:,:3,:3], bounds_lbda, bounds_lbda_track, n_call_bayopt, tol, max_iter) for k in range(N_curves))
+    pbar.update()
+
+    time_end = time.time()
+    duration = time_end - time_init
+    
+    tab_nb_iter = []
+    tab_Q_smooth = []
+    tab_smooth_theta_coefs = []
+    tab_h_opt = []
+    tab_lbda_opt = []
+    tab_lbda_track_opt = []
+    tab_nb_basis = []
+    tab_knots = []
+    tab_h_bounds = []
+    for k in range(N_curves):
+        if res[k] is not None:
+            tab_smooth_theta_coefs.append(res[k][0])
+            tab_Q_smooth.append(res[k][1])
+            tab_nb_iter.append(res[k][2])
+            tab_h_opt.append(res[k][3])
+            tab_lbda_opt.append(res[k][4])
+            tab_lbda_track_opt.append(res[k][5])
+            tab_knots.append(res[k][6])
+            tab_nb_basis.append(res[k][7])
+            tab_h_bounds.append(res[k][8])
+        else:
+            tab_smooth_theta_coefs.append(None)
+            tab_h_opt.append(None)
+            tab_lbda_opt.append(None)
+            tab_knots.append(None)
+            tab_nb_basis.append(None)
+            tab_h_bounds.append(None)
+            tab_Q_smooth.append(None)
+            tab_nb_iter.append(None)
+            tab_lbda_track_opt.append(None)
+
+    filename = filename_base
+
+    dic = {"duration":duration, "tab_grid_arc_s":tab_grid_arc_s, "tab_smooth_theta_coefs":tab_smooth_theta_coefs, "tab_lbda_track_opt":tab_lbda_track_opt,
+           "tab_h_opt":tab_h_opt, "tab_lbda_opt":tab_lbda_opt, "tab_knots":tab_knots, "tab_nb_basis":tab_nb_basis, "tab_h_bounds":tab_h_bounds,
+           "tab_Q_smooth":tab_Q_smooth, "tab_nb_iter":tab_nb_iter}
+           
+    if os.path.isfile(filename):
+        print("Le fichier ", filename, " existe déjà.")
+        filename = filename + '_bis'
+    fil = open(filename,"xb")
+    pickle.dump(dic,fil)
+    fil.close()
+
+    return 
+
+    
 
 
 

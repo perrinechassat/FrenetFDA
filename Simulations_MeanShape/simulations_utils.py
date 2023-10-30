@@ -493,7 +493,7 @@ def compute_all_means_sphere(pop_x, h_deriv_bounds, h_bounds, lbda_bounds, nb_ba
         elif isinstance(s, np.ndarray):
             return np.squeeze((Bspline_decom_sphere.basis_fct(s).T @ coefs_opt).T)
     mu_kg_V2 =  np.squeeze((Bspline_decom_sphere.basis_fct(time).T @ coefs_opt).T)
-    mu_Q_V2 = solve_FrenetSerret_ODE_SE(mu_theta_V2_func_sphere, time, Q0=mu_Q0_sphere, timeout_seconds=60)
+    mu_Q_V2 = solve_FrenetSerret_ODE_SO(mu_theta_V2_func_sphere, time, Q0=mu_Q0_sphere, timeout_seconds=60)
     mu_V2 = mu_Q_V2[:,:3,0]
 
     res_mean_V2_sphere = collections.namedtuple('res_mean_V2_sphere', ['h_opt', 'lbda_opt', 'mu', 'mu_Q_sphere', 'mu_kg', 'coefs_opt', 'gam', 'results_alignment'])
@@ -510,7 +510,7 @@ def compute_all_means_sphere(pop_x, h_deriv_bounds, h_bounds, lbda_bounds, nb_ba
         elif isinstance(s, np.ndarray):
             return np.squeeze((Bspline_decom_sphere.basis_fct(s).T @ coefs_opt).T)
     mu_kg_V3 =  np.squeeze((Bspline_decom_sphere.basis_fct(time).T @ coefs_opt).T)
-    mu_Q_V3 = solve_FrenetSerret_ODE_SE(mu_theta_V3_func_sphere, time, Q0=mu_Q0_sphere, timeout_seconds=60)
+    mu_Q_V3 = solve_FrenetSerret_ODE_SO(mu_theta_V3_func_sphere, time, Q0=mu_Q0_sphere, timeout_seconds=60)
     mu_V3 = mu_Q_V3[:,:3,0]
 
     res_mean_V3_sphere = collections.namedtuple('res_mean_V3_sphere', ['h_opt', 'lbda_opt', 'mu', 'mu_Q_sphere', 'mu_kg', 'coefs_opt', 'gam', 'results_alignment'])

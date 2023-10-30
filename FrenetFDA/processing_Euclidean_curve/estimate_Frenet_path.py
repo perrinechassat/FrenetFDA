@@ -22,9 +22,9 @@ class GramSchmidtOrthogonalization:
         self.deg = deg
 
 
-    def __compute_arc_length_derivatives(self, h):
+    def __compute_arc_length_derivatives(self, h, adaptive=False):
         
-        arc_length_derivatives = LocalPolynomialSmoothing(self.deg).fit(self.Y, self.grid_arc_s, self.grid_arc_s, h)
+        arc_length_derivatives = LocalPolynomialSmoothing(self.deg, adaptive=adaptive).fit(self.Y, self.grid_arc_s, self.grid_arc_s, h)
 
         return arc_length_derivatives
 
@@ -50,9 +50,9 @@ class GramSchmidtOrthogonalization:
         return np.transpose(Q)
     
 
-    def fit(self, h, reparam_grid=None):
+    def fit(self, h, reparam_grid=None, adaptive=False):
 
-        self.arc_length_derivatives = self.__compute_arc_length_derivatives(h)
+        self.arc_length_derivatives = self.__compute_arc_length_derivatives(h, adaptive=adaptive)
         Q = np.zeros((self.N, self.dim, self.dim)) 
         for i in range(self.N):
             Qi = self.__GramSchmidt(self.arc_length_derivatives[1:,i,:])
@@ -76,16 +76,16 @@ class GramSchmidtOrthogonalization:
         return self.Z, self.Q, self.X
     
 
-    def grid_search_CV_optimization_bandwidth(self, bandwidth_grid=np.array([]), K_split=10):
+    def grid_search_CV_optimization_bandwidth(self, bandwidth_grid=np.array([]), K_split=10, adaptive=False):
         
-        h_opt, err_h = LocalPolynomialSmoothing(self.deg).grid_search_CV_optimization_bandwidth(self.Y, self.grid_arc_s, self.grid_arc_s, bandwidth_grid=bandwidth_grid, K_split=K_split)
+        h_opt, err_h = LocalPolynomialSmoothing(self.deg, adaptive=adaptive).grid_search_CV_optimization_bandwidth(self.Y, self.grid_arc_s, self.grid_arc_s, bandwidth_grid=bandwidth_grid, K_split=K_split)
 
         return h_opt, err_h
     
 
-    def bayesian_optimization_hyperparameters(self, n_call_bayopt, h_bounds, n_splits=10, verbose=True):
+    def bayesian_optimization_hyperparameters(self, n_call_bayopt, h_bounds, n_splits=10, verbose=True, adaptive=False):
 
-        h_opt = LocalPolynomialSmoothing(self.deg).bayesian_optimization_hyperparameters(self.Y, self.grid_arc_s, self.grid_arc_s, n_call_bayopt, h_bounds, n_splits=n_splits, verbose=verbose)
+        h_opt = LocalPolynomialSmoothing(self.deg, adaptive=adaptive).bayesian_optimization_hyperparameters(self.Y, self.grid_arc_s, self.grid_arc_s, n_call_bayopt, h_bounds, n_splits=n_splits, verbose=verbose)
 
         return h_opt
 

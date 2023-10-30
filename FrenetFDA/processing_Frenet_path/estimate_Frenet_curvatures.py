@@ -396,10 +396,10 @@ class LocalApproxFrenetODE:
                         dist = np.mean(SE3.geodesic_distance(self.Z[test_index], Z_test_pred[test_index]))
                 else:
                     if self.Z is None:
-                        Q_test_pred = solve_FrenetSerret_ODE_SO(Bspline_repres.evaluate, self.grid, self.Q[0], timeout_seconds=60)
+                        Q_test_pred = solve_FrenetSerret_ODE_SO(Bspline_repres.evaluate, self.grid, self.Q[0], timeout_seconds=30)
                         dist = np.mean(SO3.geodesic_distance(Q_test, Q_test_pred[test_index]))
                     else:
-                        Z_test_pred = solve_FrenetSerret_ODE_SE(Bspline_repres.evaluate, self.grid, self.Z[0], timeout_seconds=60)
+                        Z_test_pred = solve_FrenetSerret_ODE_SE(Bspline_repres.evaluate, self.grid, self.Z[0], timeout_seconds=30)
                         dist = np.mean(SE3.geodesic_distance(self.Z[test_index], Z_test_pred[test_index]))
 
                 score[ind_CV] = dist
@@ -645,12 +645,16 @@ class TwoStepEstimatorKarcherMean:
         return np.mean(score)
 
 
-    def bayesian_optimization_hyperparameters(self, n_call_bayopt, lambda_bounds, h_bounds, nb_basis, order=4, epsilon=1e-03, max_iter=30, n_splits=5, verbose=True, return_coefs=False):
+    def bayesian_optimization_hyperparameters(self, n_call_bayopt, lambda_bounds, h_bounds, nb_basis=20, order=4, epsilon=1e-03, max_iter=30, n_splits=5, verbose=True, return_coefs=False, knots=None):
 
-        basis_theta = VectorBSplineSmoothing(self.dim_theta, nb_basis, domain_range=(self.grid[0], self.grid[-1]), order=order, penalization=True)
+        basis_theta = VectorBSplineSmoothing(self.dim_theta, nb_basis, domain_range=(self.grid[0], self.grid[-1]), order=order, penalization=True, knots=knots)
         
         def func(x):
             # print('hyperparam:', x)
+            h = x[0]
+            lbda = 10 ** np.array([x[1],x[2]])
+            if verbose:
+                print('x', x)
             score = np.zeros(n_splits)
             kf = KFold(n_splits=n_splits, shuffle=True)
             grid_split = self.grid[1:-1]
@@ -664,9 +668,8 @@ class TwoStepEstimatorKarcherMean:
                 grid_train = self.grid[train_index]
                 Q_train = self.Q[train_index]
                 Q_test = self.Q[test_index]
-                lbda = np.array([x[1],x[2]])
                 
-                coefs = self.__fit(basis_theta, grid_train, Q_train, x[0], lbda, epsilon=epsilon, max_iter=max_iter)
+                coefs = self.__fit(basis_theta, grid_train, Q_train, h, lbda, epsilon=epsilon, max_iter=max_iter)
 
                 if np.isnan(coefs).any():
                     print('NaN in coefficients')
@@ -679,7 +682,7 @@ class TwoStepEstimatorKarcherMean:
                             return np.squeeze((basis_theta.basis_fct(s).T @ coefs).T)
                         else:
                             raise ValueError('Variable is not a float, a int or a NumPy array.')
-                    Q_test_pred = solve_FrenetSerret_ODE_SO(func_basis_theta, self.grid, self.Q[0], timeout_seconds=60)
+                    Q_test_pred = solve_FrenetSerret_ODE_SO(func_basis_theta, self.grid, self.Q[0], timeout_seconds=30)
 
                 dist = np.mean(SO3.geodesic_distance(Q_test, Q_test_pred[test_index]))
                 # print('end distance')
@@ -701,7 +704,7 @@ class TwoStepEstimatorKarcherMean:
                         verbose=verbose)
         param_opt = res_bayopt.x
         h_opt = param_opt[0]
-        lbda_opt = np.array([param_opt[1], param_opt[2]])
+        lbda_opt = 10**np.array([param_opt[1], param_opt[2]])
 
         print('optimal parameters:', h_opt, lbda_opt)
         if return_coefs:
@@ -851,12 +854,17 @@ class TwoStepEstimatorTracking:
         return np.mean(score)
 
 
-    def bayesian_optimization_hyperparameters(self, n_call_bayopt, lambda_track_bounds, lambda_bounds, h_bounds, nb_basis, order=4, epsilon=1e-03, max_iter=30, n_splits=10, verbose=True, return_coefs=False):
+    def bayesian_optimization_hyperparameters(self, n_call_bayopt, lambda_track_bounds, lambda_bounds, h_bounds, nb_basis=20, order=4, epsilon=1e-03, max_iter=30, n_splits=10, verbose=True, return_coefs=False, knots=None):
 
-        basis_theta = VectorBSplineSmoothing(self.dim_theta, nb_basis, domain_range=(self.grid[0], self.grid[-1]), order=4, penalization=True)
+        basis_theta = VectorBSplineSmoothing(self.dim_theta, nb_basis, domain_range=(self.grid[0], self.grid[-1]), order=4, penalization=True, knots=knots)
 
         def func(x):
             # print('hyperparam:', x)
+            h = x[0]
+            lbda = 10 ** np.array([x[1],x[2]])
+            lbda_track = 10**x[3]
+            if verbose:
+                print('x', x)
             score = np.zeros(n_splits)
             kf = KFold(n_splits=n_splits, shuffle=True)
             grid_split = self.grid[1:-1]
@@ -870,10 +878,9 @@ class TwoStepEstimatorTracking:
                 grid_train = self.grid[train_index]
                 Q_train = self.Q[train_index]
                 Q_test = self.Q[test_index]
-                lbda = np.array([x[1],x[2]])
                 # print(lbda)
                 # print(grid_train)
-                coefs = self.__fit(basis_theta, grid_train, Q_train, x[3], x[0], lbda, epsilon=epsilon, max_iter=max_iter)
+                coefs = self.__fit(basis_theta, grid_train, Q_train, lbda_track, h, lbda, epsilon=epsilon, max_iter=max_iter)
 
                 if np.isnan(coefs).any():
                     print('NaN in coefficients')
@@ -888,7 +895,7 @@ class TwoStepEstimatorTracking:
                             raise ValueError('Variable is not a float, a int or a NumPy array.')
                     # visu.plot_2D(self.grid, func_basis_theta(self.grid)[:,0])
                     # visu.plot_2D(self.grid, func_basis_theta(self.grid)[:,1])
-                    Q_test_pred = solve_FrenetSerret_ODE_SO(func_basis_theta, self.grid, self.Q[0], timeout_seconds=60)
+                    Q_test_pred = solve_FrenetSerret_ODE_SO(func_basis_theta, self.grid, self.Q[0], timeout_seconds=30)
 
                 dist = np.mean(SO3.geodesic_distance(Q_test, Q_test_pred[test_index]))
                 # print('end distance', dist)
@@ -911,8 +918,8 @@ class TwoStepEstimatorTracking:
                         verbose=verbose)
         param_opt = res_bayopt.x
         h_opt = param_opt[0]
-        lbda_opt = np.array([param_opt[1], param_opt[2]])
-        lbda_track_opt = param_opt[3]
+        lbda_opt = 10**np.array([param_opt[1], param_opt[2]])
+        lbda_track_opt = 10**param_opt[3]
 
         print('optimal parameters:', h_opt, lbda_opt, lbda_track_opt)
         if return_coefs:

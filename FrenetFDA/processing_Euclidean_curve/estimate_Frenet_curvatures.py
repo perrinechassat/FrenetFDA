@@ -241,10 +241,10 @@ class ExtrinsicFormulas:
         
 
 
-    def bayesian_optimization_hyperparameters(self, n_call_bayopt, lambda_bounds, h_bounds, nb_basis, order=4, n_splits=10, verbose=True, return_coefs=False):
+    def bayesian_optimization_hyperparameters(self, n_call_bayopt, lambda_bounds, h_bounds, nb_basis=20, order=4, n_splits=10, verbose=True, return_coefs=False, knots=None):
 
         # ## CV optimization of lambda
-        Bspline_repres = VectorBSplineSmoothing(self.dim-1, nb_basis, domain_range=(self.grid_arc_s[0], self.grid_arc_s[-1]), order=order, penalization=True)
+        Bspline_repres = VectorBSplineSmoothing(self.dim-1, nb_basis, domain_range=(self.grid_arc_s[0], self.grid_arc_s[-1]), order=order, penalization=True, knots=knots)
                     
         def func(x):
             h = x[0]
@@ -272,7 +272,7 @@ class ExtrinsicFormulas:
                     print('NaN in coefficients')
                     Z_test_pred = np.stack([np.eye(self.dim+1) for i in range(len(self.grid_arc_s[test_index]))])
                 else:
-                    Z_test_pred = solve_FrenetSerret_ODE_SE(Bspline_repres.evaluate, self.grid_arc_s[test_index], timeout_seconds=60) #, method='Radau')
+                    Z_test_pred = solve_FrenetSerret_ODE_SE(Bspline_repres.evaluate, self.grid_arc_s[test_index], timeout_seconds=30) #, method='Radau')
                 
                 X_test_pred = Z_test_pred[:,:self.dim,self.dim]
                 score[ind_CV] = Euclidean_dist_cent_rot(Y_test, X_test_pred)
