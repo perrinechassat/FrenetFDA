@@ -43,7 +43,7 @@ def basis_GS_leastsquares(grid_arc_s, Z_hat_GS, bounds_lbda, n_call_bayopt):
     try:
         local_approx_ode = LocalApproxFrenetODE(grid_arc_s, Z=Z_hat_GS)
         bounds_h = np.array([np.max(grid_arc_s[1:]-grid_arc_s[:-1])*3, np.min((np.max(grid_arc_s[1:]-grid_arc_s[:-1])*8, 0.1))])
-        print(bounds_h)
+        # print(bounds_h)
 
         knots = [grid_arc_s[0]]
         grid_bis = grid_arc_s[1:-1]
