@@ -5,12 +5,12 @@ from geomstats.geometry.special_orthogonal import SpecialOrthogonal
 sphere = Hypersphere(dim=2)
 
 def phi(t):
-    # return 5*(t+1)
-    return 10*(np.sin(t)+2)
+    return 5*(t+1)
+    # return 10*(np.sin(t)+2)
 
 def theta(t):
-    # return 10*t+0.5
-    return 5*t + 10
+    return 10*t+0.5
+    # return 5*t + 10
 
 def exponential_map(v1,v2):
     tangent_vector = sphere.to_tangent(v2, base_point=v1)

@@ -1,5 +1,6 @@
 import sys
 sys.path.insert(1, '../../')
+sys.path.insert(1, '../')
 from FrenetFDA.utils.Frenet_Serret_utils import *
 from FrenetFDA.utils.smoothing_utils import *
 from FrenetFDA.processing_Euclidean_curve.unified_estimate_Frenet_state_space.EM_Frenet_state_space_CV import FrenetStateSpaceCV_global
@@ -50,7 +51,7 @@ if not os.path.exists(final_directory):
 max_iter = 30
 tol = 0.01
 n_call_bayopt = 30
-bounds_lbda = np.array([[-12, -6], [-12, -6]]) # trial_05
+bounds_lbda = np.array([[-12, -6], [-12, -6]]) 
 bounds_lbda_track = np.array([-12,-6])
 
 
