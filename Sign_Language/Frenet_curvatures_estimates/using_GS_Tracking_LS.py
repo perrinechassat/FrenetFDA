@@ -51,8 +51,8 @@ if not os.path.exists(final_directory):
 max_iter = 30
 tol = 0.01
 n_call_bayopt = 30
-bounds_lbda = np.array([[-12, -6], [-12, -6]]) 
-bounds_lbda_track = np.array([-12,-6])
+bounds_lbda = np.array([[-30, -5], [-30, -5]]) 
+bounds_lbda_track = np.array([-20,-5])
 
 
 print('Start: Estimation curvatures with GS + Tracking + Least Squares', '\n')

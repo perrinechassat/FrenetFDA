@@ -51,13 +51,13 @@ if not os.path.exists(final_directory):
 max_iter = 30
 tol = 0.01
 n_call_bayopt = 30
-bounds_lbda = np.array([[-12, -6], [-12, -6]]) 
+bounds_lbda = np.array([[-30, -5], [-30, -5]]) 
 
 
 print('Start: Estimation curvatures with GS + Karcher mean + Least Squares', '\n')
 
 filename = filename_base + "estimates_GS_karcher_least_squares"
-filename_simu = "/home/pchassat/FrenetFDA/Sign_Language/Frenet_curvatures_estimates/results/estimates_GS_least_squares"
+filename_simu = "/home/pchassat/FrenetFDA/Sign_Language/Frenet_curvatures_estimates/results/estimates_GS_least_squares_bis"
 estimation_iteration_Karcher_mean(filename, filename_simu, bounds_lbda, n_call_bayopt, tol, max_iter)
 
 print('End: Estimation curvatures with GS + Karcher mean + Least Squares.', '\n')

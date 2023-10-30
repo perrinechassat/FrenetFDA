@@ -49,18 +49,17 @@ if not os.path.exists(final_directory):
    os.makedirs(final_directory)
 
 
-
 tol_EM = 0.1
 max_iter_EM = 200
 n_splits_CV = 5
 n_call_bayopt = 30
-bounds_lambda = np.array([[-15.0, -6.0], [-15.0, -6.0]]) 
+bounds_lambda = np.array([[-30.0, -5.0], [-30.0, -5.0]]) 
 sigma_init = 3
 
 
 print('Start: Estimation curvatures with EM', '\n')
 
-filename_simu = "/home/pchassat/FrenetFDA/Sign_Language/Frenet_curvatures_estimates/results/estimates_GS_least_squares"
+filename_simu = "/home/pchassat/FrenetFDA/Sign_Language/Frenet_curvatures_estimates/results/estimates_GS_least_squares_bis"
 filename = filename_base + "estimates_EM"
 EM_from_init_theta(filename, filename_simu, sigma_init, n_splits_CV, n_call_bayopt, bounds_lambda, tol_EM, max_iter_EM)
 

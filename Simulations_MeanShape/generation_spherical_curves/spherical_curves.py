@@ -68,13 +68,13 @@ lbda_bounds = np.array([[-15.0,-8.0],[-15.0,-8.0]])
 """ _________________ Amplitude and phase variability on theta and WITHOUT noise on x _________________ """
 
 time_init = time.time()
-out_arithm, out_srvf, out_SRC, out_FC, out_V1, out_V2, out_V3, out_V1_sphere, out_V2_sphere, out_V3_sphere = compute_all_means_sphere(pop_rand_param_x, h_deriv_bounds, h_bounds, lbda_bounds, nb_basis, n_call_bayopt=n_call_bayopt, sigma=lam)
+out_pop, out_arithm, out_srvf, out_SRC, out_FC, out_V1, out_V2, out_V3, out_V1_sphere, out_V2_sphere, out_V3_sphere = compute_all_means_sphere(pop_rand_param_x, h_deriv_bounds, h_bounds, lbda_bounds, nb_basis, n_call_bayopt=n_call_bayopt, sigma=lam)
 time_end = time.time()
 duration = time_end - time_init
 
 # SAVE
 filename = filename_base + "spherical_curves_without_noise_V1" 
-dic = {"duration":duration, "pop_x":pop_rand_param_x, "b":rand_b, "res_arithm":out_arithm, "res_SRVF":out_srvf, "res_SRC":out_SRC, "res_FC":out_FC,
+dic = {"duration":duration, "pop_x":pop_rand_param_x, "b":rand_b, "out_pop": out_pop, "res_arithm":out_arithm, "res_SRVF":out_srvf, "res_SRC":out_SRC, "res_FC":out_FC,
         "res_V1":out_V1, "res_V2":out_V2, "res_V3":out_V3, "res_V1_sphere":out_V1_sphere, "res_V2_sphere":out_V2_sphere, "res_V3_sphere":out_V3_sphere}
 
 if os.path.isfile(filename):
