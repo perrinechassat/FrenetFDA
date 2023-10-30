@@ -919,7 +919,7 @@ def bayesian_CV_optimization_regularization_parameter(n_CV, n_call_bayopt, lambd
             grid_test = np.concatenate((np.array([grid_obs[0]]), grid_obs[1:][test_index]))
             
             FS_statespace = FrenetStateSpaceCV_global(grid_train, Y_train, bornes_theta=np.array([0,1]))
-            FS_statespace.expectation_maximization(tol, max_iter, nb_basis=nb_basis, regularization_parameter=x_log, init_params=init_params, method=method, order=order, verbose=verbose, knots=knots, BSpline_decomp=BSpline_decomp)
+            FS_statespace.expectation_maximization(tol, max_iter, nb_basis=nb_basis, regularization_parameter=x_log, init_params=init_params, method=method, order=order, verbose=verbose, knots=knots, Bspline_decomp=BSpline_decomp)
             
             Z_reconst = solve_FrenetSerret_ODE_SE(FS_statespace.theta, grid_test, Z0=FS_statespace.mu0, timeout_seconds=120)
             X_reconst_test = Z_reconst[1:,:3,3]
@@ -948,7 +948,7 @@ def bayesian_CV_optimization_regularization_parameter(n_CV, n_call_bayopt, lambd
     print('the optimal hyperparameters selected are: ', lbda_opt)
 
     FS_statespace = FrenetStateSpaceCV_global(grid_obs, Y_obs[1:], bornes_theta=np.array([0,1]))
-    FS_statespace.expectation_maximization(tol, max_iter, nb_basis=nb_basis, regularization_parameter=lbda_opt, init_params=init_params, method=method, order=order, verbose=verbose, knots=knots, BSpline_decomp=BSpline_decomp)
+    FS_statespace.expectation_maximization(tol, max_iter, nb_basis=nb_basis, regularization_parameter=lbda_opt, init_params=init_params, method=method, order=order, verbose=verbose, knots=knots, Bspline_decomp=BSpline_decomp)
 
     return FS_statespace, res_bayopt
 

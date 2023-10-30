@@ -345,12 +345,11 @@ def estimation_iteration_Karcher_mean(filename_base, filename_simu, bounds_lbda,
     tab_Z_hat_GS = dic_init["tab_Z_hat_GS"]
     tab_grid_arc_s = dic_init["tab_grid_arc_s"]
     N_curves = len(tab_Y_scale)
+    print(N_curves)
 
     time_init = time.time()
 
-    with tqdm(total=N_curves) as pbar:
-        res = Parallel(n_jobs=N_curves)(delayed(karcher_mean_smoother)(tab_grid_arc_s[k], tab_Z_hat_GS[k,:,:3,:3], bounds_lbda, n_call_bayopt, tol, max_iter) for k in range(N_curves))
-    pbar.update()
+    res = Parallel(n_jobs=N_curves)(delayed(karcher_mean_smoother)(tab_grid_arc_s[k], tab_Z_hat_GS[k][:,:3,:3], bounds_lbda, n_call_bayopt, tol, max_iter) for k in range(N_curves))
 
     time_end = time.time()
     duration = time_end - time_init
@@ -415,7 +414,7 @@ def estimation_iteration_Tracking(filename_base, filename_simu, bounds_lbda, bou
     time_init = time.time()
 
     with tqdm(total=N_curves) as pbar:
-        res = Parallel(n_jobs=N_curves)(delayed(tracking_smoother)(tab_grid_arc_s[k], tab_Z_hat_GS[k,:,:3,:3], bounds_lbda, bounds_lbda_track, n_call_bayopt, tol, max_iter) for k in range(N_curves))
+        res = Parallel(n_jobs=N_curves)(delayed(tracking_smoother)(tab_grid_arc_s[k], tab_Z_hat_GS[k][:,:3,:3], bounds_lbda, bounds_lbda_track, n_call_bayopt, tol, max_iter) for k in range(N_curves))
     pbar.update()
 
     time_end = time.time()
