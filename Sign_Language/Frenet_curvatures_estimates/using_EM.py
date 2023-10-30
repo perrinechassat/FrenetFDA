@@ -59,7 +59,7 @@ sigma_init = 2.5
 
 print('Start: Estimation curvatures with EM', '\n')
 
-filename_simu = "/home/pchassat/FrenetFDA/Sign_Language/Frenet_curvatures_estimates/results/estimates_GS_least_squares_bis"
+filename_simu = "/home/pchassat/FrenetFDA/Sign_Language/Frenet_curvatures_estimates/results/estimates_GS_least_squares_theta_bis"
 filename = filename_base + "estimates_EM"
 EM_from_init_theta(filename, filename_simu, sigma_init, n_splits_CV, n_call_bayopt, bounds_lambda, tol_EM, max_iter_EM)
 

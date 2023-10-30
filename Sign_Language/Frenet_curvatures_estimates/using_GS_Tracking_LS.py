@@ -58,7 +58,7 @@ bounds_lbda_track = np.array([-20,-5])
 print('Start: Estimation curvatures with GS + Tracking + Least Squares', '\n')
 
 filename = filename_base + "estimates_GS_tracking_least_squares"
-filename_simu = "/home/pchassat/FrenetFDA/Sign_Language/Frenet_curvatures_estimates/results/estimates_GS_least_squares"
+filename_simu = "/home/pchassat/FrenetFDA/Sign_Language/Frenet_curvatures_estimates/results/estimates_GS_least_squares_theta_bis"
 estimation_iteration_Tracking(filename, filename_simu, bounds_lbda, bounds_lbda_track, n_call_bayopt, tol, max_iter)
 
 print('End: Estimation curvatures with GS + Tracking + Least Squares.', '\n')
