@@ -73,7 +73,7 @@ time_end = time.time()
 duration = time_end - time_init
 
 # SAVE
-filename = filename_base + "spherical_curves_without_noise_V1" 
+filename = filename_base + "spherical_curves_without_noise_V2" 
 dic = {"duration":duration, "pop_x":pop_rand_param_x, "b":rand_b, "out_pop": out_pop, "res_arithm":out_arithm, "res_SRVF":out_srvf, "res_SRC":out_SRC, "res_FC":out_FC,
         "res_V1":out_V1, "res_V2":out_V2, "res_V3":out_V3, "res_V1_sphere":out_V1_sphere, "res_V2_sphere":out_V2_sphere, "res_V3_sphere":out_V3_sphere}
 
