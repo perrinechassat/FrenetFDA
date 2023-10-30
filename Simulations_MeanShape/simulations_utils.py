@@ -367,7 +367,7 @@ def compute_all_means_sphere(pop_x, h_deriv_bounds, h_bounds, lbda_bounds, nb_ba
     pop_theta_coefs = np.array(pop_theta_coefs)
     pop_kg_coefs = np.array(pop_kg_coefs)
     mu_Z0 = SE3.frechet_mean(pop_Z[:,0,:,:])
-    mu_Q0_sphere = SE3.frechet_mean(pop_Q_sphere[:,0,:,:])
+    mu_Q0_sphere = SO3.frechet_mean(pop_Q_sphere[:,0,:,:])
 
     res_pop = collections.namedtuple('res_pop', ['mu_Z0', 'pop_theta', 'pop_theta_coefs', 'pop_Z', 'pop_X', 'pop_x_scale', 'pop_arclgth', 'pop_L', 'pop_Q_sphere', 'pop_kg_coefs', 'pop_kg', 'mu_Q0_sphere'])
     out_pop = res_pop(mu_Z0, pop_theta, pop_theta_coefs, pop_Z, pop_X, pop_x_scale, pop_arclgth, pop_L, pop_Q_sphere, pop_kg_coefs, pop_kg, mu_Q0_sphere)
