@@ -369,9 +369,9 @@ def estimation_iteration_Karcher_mean(filename_base, filename_simu, bounds_lbda,
             tab_nb_iter.append(res[k][2])
             tab_h_opt.append(res[k][3])
             tab_lbda_opt.append(res[k][4])
-            tab_knots.append(res[k][6])
-            tab_nb_basis.append(res[k][7])
-            tab_h_bounds.append(res[k][8])
+            tab_knots.append(res[k][5])
+            tab_nb_basis.append(res[k][6])
+            tab_h_bounds.append(res[k][7])
         else:
             tab_smooth_theta_coefs.append(None)
             tab_h_opt.append(None)
