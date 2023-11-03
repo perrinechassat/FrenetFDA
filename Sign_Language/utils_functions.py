@@ -496,6 +496,7 @@ def compute_all_means(pop_x, lbda_bounds, n_call_bayopt=20, sigma=0.0):
     concat_grid_arc_s = np.unique(np.round(np.sort(np.concatenate(pop_arclgth)), decimals=3))
     N = len(concat_grid_arc_s)
     grid_time = np.linspace(0,1,N)
+    h_bounds = np.array([np.max(concat_grid_arc_s[1:]-concat_grid_arc_s[:-1]), np.min((np.max((concat_grid_arc_s[1:]-concat_grid_arc_s[:-1]))*8,0.08))])
 
     print('computation population parameters...') 
 
@@ -589,8 +590,6 @@ def compute_all_means(pop_x, lbda_bounds, n_call_bayopt=20, sigma=0.0):
 
     res_mean_FC = collections.namedtuple('res_mean_FC', ['mu', 'mu_theta', 'gam'])
     out_FC = res_mean_FC(mu_FC, mu_theta_FC, gam_mu_FC)
-
-    h_bounds = np.array([np.max(concat_grid_arc_s[1:]-concat_grid_arc_s[:-1]), np.min((np.max((concat_grid_arc_s[1:]-concat_grid_arc_s[:-1]))*8,0.08))])
 
     """ Stat Mean V1 """
     print('computation Stat Mean V1...')
