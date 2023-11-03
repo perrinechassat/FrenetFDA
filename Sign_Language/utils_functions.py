@@ -473,7 +473,7 @@ def estimation_iteration_Tracking(filename_base, filename_simu, bounds_lbda, bou
 
 
 
-def compute_all_means(pop_x, h_bounds, lbda_bounds, n_call_bayopt=20, sigma=0.0):
+def compute_all_means(pop_x, lbda_bounds, n_call_bayopt=20, sigma=0.0):
 
     # pop_x est supposé avoir le meme nombre d'observations pour chaque courbe
     # pop_Q est calculer avec méthode GramScmidt
@@ -544,7 +544,7 @@ def compute_all_means(pop_x, h_bounds, lbda_bounds, n_call_bayopt=20, sigma=0.0)
     print('computation arithmetic mean...')
 
     mu_arithm = np.mean(pop_x_scale, axis=0)
-    mu_s_arithm, mu_Z_arithm, coefs_opt_arithm, knots_arithm = mean_theta_from_mean_shape(mu_arithm, h_bounds, lbda_bounds, n_call_bayopt, nb_basis=None, knots_step=4)
+    mu_s_arithm, mu_Z_arithm, coefs_opt_arithm, knots_arithm = mean_theta_from_mean_shape(mu_arithm, lbda_bounds, n_call_bayopt, nb_basis=None, knots_step=4)
     # mu_theta_arithm = VectorBSplineSmoothing(2, domain_range=(0, 1), order=4, penalization=False, knots=knots_arithm).evaluate_coefs(coefs_opt_arithm)
 
     # mu_arithm_arclgth = np.mean(pop_X, axis=0)
@@ -561,7 +561,7 @@ def compute_all_means(pop_x, h_bounds, lbda_bounds, n_call_bayopt=20, sigma=0.0)
     print('computation SRVF mean...')
 
     mu_srvf = SRVF(3).karcher_mean(pop_x_scale)
-    mu_s_srvf, mu_Z_srvf, coefs_opt_srvf, knots_srvf = mean_theta_from_mean_shape(mu_srvf, h_bounds, lbda_bounds, n_call_bayopt, nb_basis=None, knots_step=4)
+    mu_s_srvf, mu_Z_srvf, coefs_opt_srvf, knots_srvf = mean_theta_from_mean_shape(mu_srvf, lbda_bounds, n_call_bayopt, nb_basis=None, knots_step=4)
     # mu_theta_srvf = VectorBSplineSmoothing(2, domain_range=(0, 1), order=4, penalization=False, knots=knots_srvf).evaluate_coefs(coefs_opt_srvf)
 
     # mu_srvf_arclgth = SRVF(3).karcher_mean(pop_X)
@@ -589,6 +589,8 @@ def compute_all_means(pop_x, h_bounds, lbda_bounds, n_call_bayopt=20, sigma=0.0)
 
     res_mean_FC = collections.namedtuple('res_mean_FC', ['mu', 'mu_theta', 'gam'])
     out_FC = res_mean_FC(mu_FC, mu_theta_FC, gam_mu_FC)
+
+    h_bounds = np.array([np.max(concat_grid_arc_s[1:]-concat_grid_arc_s[:-1]), np.min((np.max((concat_grid_arc_s[1:]-concat_grid_arc_s[:-1]))*8,0.08))])
 
     """ Stat Mean V1 """
     print('computation Stat Mean V1...')
@@ -646,7 +648,7 @@ def compute_all_means(pop_x, h_bounds, lbda_bounds, n_call_bayopt=20, sigma=0.0)
 
 
 
-def mean_theta_from_mean_shape(mu_x, h_bounds, lbda_bounds, n_call_bayopt, nb_basis=None, knots_step=None):
+def mean_theta_from_mean_shape(mu_x, lbda_bounds, n_call_bayopt, nb_basis=None, knots_step=None):
     """
         Compute theta et Z pour une courbe moyenne.
     """
@@ -660,6 +662,9 @@ def mean_theta_from_mean_shape(mu_x, h_bounds, lbda_bounds, n_call_bayopt, nb_ba
     h_opt = GS_orthog.bayesian_optimization_hyperparameters(n_call_bayopt, h_bounds=h_deriv_bounds, verbose=False)
     Z_hat_GS, Q_hat_GS, X_hat_GS = GS_orthog.fit(h_opt) 
     local_approx_ode = LocalApproxFrenetODE(grid_arc_s, Z=Z_hat_GS)
+
+    h_bounds = np.array([np.max(grid_arc_s[1:]-grid_arc_s[:-1]), np.min((np.max(grid_arc_s[1:]-grid_arc_s[:-1])*8,0.08))])
+
     if knots_step is None:
         h_opt, lbda_opt, coefs_opt = local_approx_ode.bayesian_optimization_hyperparameters(n_call_bayopt=n_call_bayopt, lambda_bounds=lbda_bounds, h_bounds=h_bounds, nb_basis=nb_basis, n_splits=10, verbose=False, return_coefs=True)
         knots = None
