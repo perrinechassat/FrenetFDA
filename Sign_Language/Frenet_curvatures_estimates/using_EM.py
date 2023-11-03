@@ -53,7 +53,7 @@ tol_EM = 0.1
 max_iter_EM = 200
 n_splits_CV = 5
 n_call_bayopt = 30
-bounds_lambda = np.array([[-30.0, -5.0], [-30.0, -5.0]]) 
+bounds_lambda = np.array([[-30.0, -5.0], [-30.0, -5.0]])
 sigma_init = 2.5
 
 

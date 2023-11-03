@@ -489,7 +489,7 @@ class SRC:
         return mean_x, theta, mean_s, mean_src_theta, arr_gam
     
 
-    def karcher_mean_bspline(self, arr_theta_coefs, arr_arc_s, tol, max_iter, nb_basis, lam=1, parallel=False):
+    def karcher_mean_bspline(self, arr_theta_coefs, arr_arc_s, tol, max_iter, nb_basis, lam=1, parallel=False, knots=None):
         """
             Karcher mean under the square-root curvature transform framework. 
 
@@ -507,7 +507,7 @@ class SRC:
         """
         N_samples = len(arr_theta_coefs)
 
-        bspline_decomp = VectorBSplineSmoothing(2, nb_basis, domain_range=(0, 1), order=4, penalization=False)
+        bspline_decomp = VectorBSplineSmoothing(2, nb_basis, domain_range=(0, 1), order=4, penalization=False, knots=knots)
         
         print("Computing Karcher Mean of %d curves in SRC space.. \n" % (N_samples))
         T = len(arr_arc_s[0])
@@ -681,7 +681,7 @@ class Frenet_Curvatures:
     
 
 
-    def karcher_mean_bspline(self, arr_theta_coefs, arr_arc_s, nb_basis):
+    def karcher_mean_bspline(self, arr_theta_coefs, arr_arc_s, nb_basis, knots=None):
         """
             Compute the Karcher mean under the Frenet curvatures representation. 
 
@@ -691,7 +691,7 @@ class Frenet_Curvatures:
             - arr_arc_s: numpy array of size (K,N) of the K arc-length functions of the considered curves, with N samples points. 
 
         """
-        bspline_decomp = VectorBSplineSmoothing(2, nb_basis, domain_range=(0, 1), order=4, penalization=False)
+        bspline_decomp = VectorBSplineSmoothing(2, nb_basis, domain_range=(0, 1), order=4, penalization=False, knots=knots)
         n = len(arr_theta_coefs)
         mean_theta = lambda s: np.mean([bspline_decomp.evaluate_coefs(arr_theta_coefs[i])(s) for i in range(n)], axis=0)
         psi_mu, gam_mu, psi_arr, vec = fs.utility_functions.SqrtMean(arr_arc_s.T)
