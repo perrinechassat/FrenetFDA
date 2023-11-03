@@ -49,7 +49,7 @@ if not os.path.exists(final_directory):
 
 
 max_iter = 30
-tol = 0.01
+tol = 0.001
 n_call_bayopt = 30
 bounds_lbda = np.array([[-30, -5], [-30, -5]]) 
 bounds_lbda_track = np.array([-30,-5])

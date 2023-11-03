@@ -92,7 +92,7 @@ def basis_extrins(Y, bounds_h_der, n_call_bayopt_der, bounds_lbda, n_call_bayopt
 
 def karcher_mean_smoother(grid_arc_s, Q_noisy, bounds_lbda, n_call_bayopt, tol, max_iter):
     try:
-        bounds_h = np.array([np.max(grid_arc_s[1:]-grid_arc_s[:-1])*3, np.min((np.max(grid_arc_s[1:]-grid_arc_s[:-1])*8, 0.1))])
+        bounds_h = np.array([np.min((0.05,np.max(grid_arc_s[1:]-grid_arc_s[:-1])*4)), np.min((np.max(grid_arc_s[1:]-grid_arc_s[:-1])*8, 0.1))])
 
         knots = [grid_arc_s[0]]
         grid_bis = grid_arc_s[1:-1]
