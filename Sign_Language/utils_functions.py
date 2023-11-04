@@ -496,7 +496,7 @@ def compute_all_means(pop_x, lbda_bounds, n_call_bayopt=20, sigma=0.0):
     concat_grid_arc_s = np.unique(np.round(np.sort(np.concatenate(pop_arclgth)), decimals=3))
     N = len(concat_grid_arc_s)
     grid_time = np.linspace(0,1,N)
-    h_bounds = np.array([np.max(concat_grid_arc_s[1:]-concat_grid_arc_s[:-1]), np.min((np.max((concat_grid_arc_s[1:]-concat_grid_arc_s[:-1]))*8,0.08))])
+    h_bounds = np.array([np.max((concat_grid_arc_s[1:]-concat_grid_arc_s[:-1])), np.min((np.max((concat_grid_arc_s[1:]-concat_grid_arc_s[:-1]))*8,0.08))])
 
     print('computation population parameters...') 
 
@@ -652,17 +652,17 @@ def mean_theta_from_mean_shape(mu_x, lbda_bounds, n_call_bayopt, nb_basis=None, 
         Compute theta et Z pour une courbe moyenne.
     """
     time = np.linspace(0,1,len(mu_x))
-    h_deriv_bounds = np.array([np.max(time[1:]-time[:-1])*3, np.max(time[1:]-time[:-1])*5])
+    h_deriv_bounds = np.array([np.max((time[1:]-time[:-1]))*3, np.max((time[1:]-time[:-1]))*5])
     derivatives, h_opt = compute_derivatives(mu_x, time, deg=3, h=None, CV_optimization_h={"flag":True, "h_grid":h_deriv_bounds, "K":10, "method":'bayesian', "n_call":30, "verbose":False})
     grid_arc_s, L, arc_s, arc_s_dot = compute_arc_length(mu_x, time, smooth=True, smoothing_param=h_opt)
     mu_x_scale = mu_x/L
-    h_deriv_bounds = np.array([np.max(0.01,np.max(grid_arc_s[1:]-grid_arc_s[:-1])), np.max(grid_arc_s[1:]-grid_arc_s[:-1])*5])
+    h_deriv_bounds = np.array([np.max((0.01,np.max((grid_arc_s[1:]-grid_arc_s[:-1])))), np.max((grid_arc_s[1:]-grid_arc_s[:-1]))*5])
     GS_orthog = GramSchmidtOrthogonalization(mu_x_scale, grid_arc_s, deg=3)
     h_opt = GS_orthog.bayesian_optimization_hyperparameters(n_call_bayopt, h_bounds=h_deriv_bounds, verbose=False)
     Z_hat_GS, Q_hat_GS, X_hat_GS = GS_orthog.fit(h_opt) 
     local_approx_ode = LocalApproxFrenetODE(grid_arc_s, Z=Z_hat_GS)
 
-    h_bounds = np.array([np.max(grid_arc_s[1:]-grid_arc_s[:-1]), np.min((np.max(grid_arc_s[1:]-grid_arc_s[:-1])*8,0.08))])
+    h_bounds = np.array([np.max((grid_arc_s[1:]-grid_arc_s[:-1])), np.min((np.max((grid_arc_s[1:]-grid_arc_s[:-1]))*8,0.08))])
 
     if knots_step is None:
         h_opt, lbda_opt, coefs_opt = local_approx_ode.bayesian_optimization_hyperparameters(n_call_bayopt=n_call_bayopt, lambda_bounds=lbda_bounds, h_bounds=h_bounds, nb_basis=nb_basis, n_splits=10, verbose=False, return_coefs=True)
