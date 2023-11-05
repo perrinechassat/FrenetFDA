@@ -1,3 +1,44 @@
+![FrenetFDA Banner](link_to_your_banner_image)
+
+FrenetFDA
+=========
+
+**FrenetFDA** is a Python package for funtional and shape data analysis of Euclidean curves in $\mathbb{R}^d$ based on the Frenet-Serret representation. 
+The package includes statistical methods for estimating the Frenet curvatures functional parameters of a curve (particularly in 3D, the curvature and torsion functions). 
+Several shape analysis methods based on these parameters are then implemented, including the method based on the Square-Root Curvature Transform. 
+In addition, this package includes implementations of various statistical methods for estimating the mean shape of a population of curves within the Frenet framework.
+
+Papers: [Shape Analysis of Euclidean Curves under Frenet-Serret Framework](https://openaccess.thecvf.com/content/ICCV2023/papers/Chassat_Shape_Analysis_of_Euclidean_Curves_under_Frenet-Serret_Framework_ICCV_2023_paper.pdf)
+        [Curvature and Torsion estimation of 3D functional data: A geometric approach to build the mean shape under the Frenet Serret framework](https://arxiv.org/abs/2203.02398)
+
+
+🔗 Requirements
+===============
+Python 3.7+ 
+
+Install the required packages:
+
+```
+$ pip install -r requirements.txt
+```
+
+🛠 Installation
+===============
+
+Clone the repo and run the following command in the directory to install FrenetFDA
+```
+$ pip install .
+```
+To make an all-in-one installation, you can run the bash script: 
+```
+$ python3 setup.py install
+```
+
+⚡️ Quickstart
+==============
+
+
+## Notebooks
 
 
 

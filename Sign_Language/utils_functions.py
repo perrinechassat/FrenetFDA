@@ -524,7 +524,7 @@ def compute_all_means(pop_x, lbda_bounds, n_call_bayopt=20, sigma=0.0):
 
     for k in range(n_samples):
         GS_orthog = GramSchmidtOrthogonalization(pop_X[k], concat_grid_arc_s, deg=3)
-        h_deriv_bounds = np.array([np.max((0.01,np.max(concat_grid_arc_s[1:]-concat_grid_arc_s[:-1]))), np.max((concat_grid_arc_s[1:]-concat_grid_arc_s[:-1]))*5])
+        h_deriv_bounds = np.array([np.max((0.01,np.max(concat_grid_arc_s[1:]-concat_grid_arc_s[:-1]))), np.max((0.05,np.max((concat_grid_arc_s[1:]-concat_grid_arc_s[:-1]))*5))])
         h_opt = GS_orthog.bayesian_optimization_hyperparameters(n_call_bayopt, h_bounds=h_deriv_bounds, verbose=False)
         Z_hat_GS, Q_hat_GS, X_hat_GS = GS_orthog.fit(h_opt) 
         pop_Z[k] = Z_hat_GS
@@ -656,7 +656,7 @@ def mean_theta_from_mean_shape(mu_x, lbda_bounds, n_call_bayopt, nb_basis=None, 
     derivatives, h_opt = compute_derivatives(mu_x, time, deg=3, h=None, CV_optimization_h={"flag":True, "h_grid":h_deriv_bounds, "K":10, "method":'bayesian', "n_call":30, "verbose":False})
     grid_arc_s, L, arc_s, arc_s_dot = compute_arc_length(mu_x, time, smooth=True, smoothing_param=h_opt)
     mu_x_scale = mu_x/L
-    h_deriv_bounds = np.array([np.max((0.01,np.max((grid_arc_s[1:]-grid_arc_s[:-1])))), np.max((grid_arc_s[1:]-grid_arc_s[:-1]))*5])
+    h_deriv_bounds = np.array([np.max((0.01,np.max((grid_arc_s[1:]-grid_arc_s[:-1])))), np.max((0.05,np.max((grid_arc_s[1:]-grid_arc_s[:-1]))*5))])
     GS_orthog = GramSchmidtOrthogonalization(mu_x_scale, grid_arc_s, deg=3)
     h_opt = GS_orthog.bayesian_optimization_hyperparameters(n_call_bayopt, h_bounds=h_deriv_bounds, verbose=False)
     Z_hat_GS, Q_hat_GS, X_hat_GS = GS_orthog.fit(h_opt) 
