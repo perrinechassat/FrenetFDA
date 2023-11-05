@@ -9,14 +9,15 @@ The package includes statistical methods for estimating the Frenet curvatures fu
 Several shape analysis methods based on these parameters are then implemented, including the method based on the Square-Root Curvature Transform. 
 In addition, this package includes implementations of various statistical methods for estimating the mean shape of a population of curves within the Frenet framework.
 
-Papers: 
-    - [Shape Analysis of Euclidean Curves under Frenet-Serret Framework](https://openaccess.thecvf.com/content/ICCV2023/papers/Chassat_Shape_Analysis_of_Euclidean_Curves_under_Frenet-Serret_Framework_ICCV_2023_paper.pdf)
+Papers: \\
+    - [Shape Analysis of Euclidean Curves under Frenet-Serret Framework](https://openaccess.thecvf.com/content/ICCV2023/papers/Chassat_Shape_Analysis_of_Euclidean_Curves_under_Frenet-Serret_Framework_ICCV_2023_paper.pdf) \\
     - [Curvature and Torsion estimation of 3D functional data: A geometric approach to build the mean shape under the Frenet Serret framework](https://arxiv.org/abs/2203.02398)
 
 
 🔗 Requirements
 ===============
 Python 3.8+ 
+<!-- All methods based on the Square-Root Velocity Function representation are done using the p  -->
 
 Install the required packages:
 
@@ -33,8 +34,8 @@ Clone the repo and run the following command in the directory to install FrenetF
 $ python3 setup.py install
 ```
 
-⚡️ Quickstart
-==============
+<!-- ⚡️ Quickstart
+============== -->
 
 
 
