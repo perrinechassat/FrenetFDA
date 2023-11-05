@@ -592,11 +592,14 @@ class TwoStepEstimatorKarcherMean:
         theta  = basis_theta.evaluate(grid)
         Dtheta = theta
         k=0
+        print('ok first')
         while np.linalg.norm(Dtheta)>=epsilon*np.linalg.norm(theta) and k<max_iter:
             # print('iteration smoother n°', k)
             theta_old = theta
             Smoother = KarcherMeanSmoother(grid, Q=Q_smooth)
+            print('before smoothing')
             Q_smooth = Smoother.fit(h, basis_theta.evaluate)
+            print('smoothing ok, before theta estim')
             grid_theta, raw_theta, weight_theta = LocalApproxFrenetODE(grid, Q=Q_smooth).raw_estimates(h)
             basis_theta.fit(grid_theta, raw_theta, weights=weight_theta, regularization_parameter=lbda)
             # basis_theta = LS_theta.Bspline_smooth_estimates(h, nb_basis, order=4, regularization_parameter=lbda)

@@ -76,6 +76,8 @@ class KarcherMeanSmoother:
             # mat_product[ind_norm] = np.matmul(Obs_q[ind_norm].double(), exp_A_q[ind_norm].double())
             mat_product = np.matmul(Obs_q, exp_a_theta_q)
             M[q] = SO3.frechet_mean(mat_product, weights=weight[q])
+        
+        print('ok frechet mean')
         return M
         
 
