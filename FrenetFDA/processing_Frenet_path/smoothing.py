@@ -75,9 +75,11 @@ class KarcherMeanSmoother:
             # ind_norm = np.where(np.linalg.matrix_norm(A_q) > 0.)[0]
             # mat_product[ind_norm] = np.matmul(Obs_q[ind_norm].double(), exp_A_q[ind_norm].double())
             mat_product = np.matmul(Obs_q, exp_a_theta_q)
+            for i in range(len(mat_product)):
+                if np.linalg.det(mat_product[i])<0:
+                    mat_product[i] = mat_product[i]@np.diag((1,1,-1))
             M[q] = SO3.frechet_mean(mat_product, weights=weight[q])
-        
-        print('ok frechet mean')
+            
         return M
         
 
