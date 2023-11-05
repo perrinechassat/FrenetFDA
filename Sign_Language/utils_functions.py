@@ -91,22 +91,22 @@ def basis_extrins(Y, bounds_h_der, n_call_bayopt_der, bounds_lbda, n_call_bayopt
 
 
 def karcher_mean_smoother(grid_arc_s, Q_noisy, bounds_lbda, n_call_bayopt, tol, max_iter):
-    try:
-        bounds_h = np.array([np.min((0.05,np.max(grid_arc_s[1:]-grid_arc_s[:-1])*4)), np.min((np.max(grid_arc_s[1:]-grid_arc_s[:-1])*8, 0.1))])
+    # try:
+    bounds_h = np.array([np.max(grid_arc_s[1:]-grid_arc_s[:-1])*2, np.min((np.max(grid_arc_s[1:]-grid_arc_s[:-1])*5, 0.06))])
 
-        knots = [grid_arc_s[0]]
-        grid_bis = grid_arc_s[1:-1]
-        for i in range(0,len(grid_bis),4):
-            knots.append(grid_bis[i])
-        knots.append(grid_arc_s[-1])
-        nb_basis = len(knots)+2
+    knots = [grid_arc_s[0]]
+    grid_bis = grid_arc_s[1:-1]
+    for i in range(0,len(grid_bis),4):
+        knots.append(grid_bis[i])
+    knots.append(grid_arc_s[-1])
+    nb_basis = len(knots)+2
 
-        karcher_mean_smoother = TwoStepEstimatorKarcherMean(grid_arc_s, Q_noisy)
-        coefs_opt, Q_smooth_opt, nb_iter, h_opt, lbda_opt = karcher_mean_smoother.bayesian_optimization_hyperparameters(n_call_bayopt=n_call_bayopt, lambda_bounds=bounds_lbda, h_bounds=bounds_h, nb_basis=nb_basis, epsilon=tol, max_iter=max_iter, n_splits=5, verbose=False, return_coefs=True, knots=knots)
-    
-        return [coefs_opt, Q_smooth_opt, nb_iter, h_opt, lbda_opt,  knots, nb_basis, bounds_h]
-    except:
-        return [None, None, None, None, None,  knots, nb_basis, bounds_h]
+    karcher_mean_smoother = TwoStepEstimatorKarcherMean(grid_arc_s, Q_noisy)
+    coefs_opt, Q_smooth_opt, nb_iter, h_opt, lbda_opt = karcher_mean_smoother.bayesian_optimization_hyperparameters(n_call_bayopt=n_call_bayopt, lambda_bounds=bounds_lbda, h_bounds=bounds_h, nb_basis=nb_basis, epsilon=tol, max_iter=max_iter, n_splits=5, verbose=False, return_coefs=True, knots=knots)
+
+    return [coefs_opt, Q_smooth_opt, nb_iter, h_opt, lbda_opt,  knots, nb_basis, bounds_h]
+    # except:
+    #     return [None, None, None, None, None,  knots, nb_basis, bounds_h]
 
 
 
