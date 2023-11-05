@@ -489,7 +489,7 @@ class SRC:
         return mean_x, theta, mean_s, mean_src_theta, arr_gam
     
 
-    def karcher_mean_bspline(self, arr_theta_coefs, arr_arc_s, tol, max_iter, nb_basis, lam=1, parallel=False, knots=None):
+    def karcher_mean_bspline(self, arr_theta_coefs, arr_arc_s, tol, max_iter, nb_basis=None, lam=1, parallel=False, knots=None):
         """
             Karcher mean under the square-root curvature transform framework. 
 
@@ -681,7 +681,7 @@ class Frenet_Curvatures:
     
 
 
-    def karcher_mean_bspline(self, arr_theta_coefs, arr_arc_s, nb_basis, knots=None):
+    def karcher_mean_bspline(self, arr_theta_coefs, arr_arc_s, nb_basis=None, knots=None):
         """
             Compute the Karcher mean under the Frenet curvatures representation. 
 

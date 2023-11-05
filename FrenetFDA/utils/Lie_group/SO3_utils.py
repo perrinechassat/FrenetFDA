@@ -293,19 +293,19 @@ class SO3:
     def frechet_mean(self, arr_R, weights=None):
         """ pointwise distance 
         """
-        # try:
-        so3 = SpecialOrthogonal(3)
-        mean = FrechetMean(metric=so3.metric, method='adaptive')
-        mean.fit(arr_R, weights=weights)
-        return mean.estimate_
+        try:
+            so3 = SpecialOrthogonal(3)
+            mean = FrechetMean(metric=so3.metric)
+            mean.fit(arr_R, weights=weights)
+            return mean.estimate_
 
-        # except:
-        #     print('mean with projections')
-        #     so3 = SpecialOrthogonal(3)
-        #     mean = FrechetMean(metric=so3.metric)
-        #     arr_R_bis = so3.projection(arr_R)
-        #     mean.fit(arr_R_bis, weights=weights)
-        #     return mean.estimate_
+        except:
+            # print('mean with projections')
+            so3 = SpecialOrthogonal(3)
+            mean = FrechetMean(metric=so3.metric)
+            arr_R_bis = so3.projection(arr_R)
+            mean.fit(arr_R_bis, weights=weights)
+            return mean.estimate_
 
 
     @classmethod

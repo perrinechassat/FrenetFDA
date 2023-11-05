@@ -91,22 +91,22 @@ def basis_extrins(Y, bounds_h_der, n_call_bayopt_der, bounds_lbda, n_call_bayopt
 
 
 def karcher_mean_smoother(grid_arc_s, Q_noisy, bounds_lbda, n_call_bayopt, tol, max_iter):
-    # try:
-    bounds_h = np.array([np.max(grid_arc_s[1:]-grid_arc_s[:-1])*2, np.min((np.max(grid_arc_s[1:]-grid_arc_s[:-1])*5, 0.06))])
+    try:
+        bounds_h = np.array([np.max(grid_arc_s[1:]-grid_arc_s[:-1])*2, np.min((np.max(grid_arc_s[1:]-grid_arc_s[:-1])*5, 0.06))])
 
-    knots = [grid_arc_s[0]]
-    grid_bis = grid_arc_s[1:-1]
-    for i in range(0,len(grid_bis),4):
-        knots.append(grid_bis[i])
-    knots.append(grid_arc_s[-1])
-    nb_basis = len(knots)+2
+        knots = [grid_arc_s[0]]
+        grid_bis = grid_arc_s[1:-1]
+        for i in range(0,len(grid_bis),4):
+            knots.append(grid_bis[i])
+        knots.append(grid_arc_s[-1])
+        nb_basis = len(knots)+2
 
-    karcher_mean_smoother = TwoStepEstimatorKarcherMean(grid_arc_s, Q_noisy)
-    coefs_opt, Q_smooth_opt, nb_iter, h_opt, lbda_opt = karcher_mean_smoother.bayesian_optimization_hyperparameters(n_call_bayopt=n_call_bayopt, lambda_bounds=bounds_lbda, h_bounds=bounds_h, nb_basis=nb_basis, epsilon=tol, max_iter=max_iter, n_splits=5, verbose=False, return_coefs=True, knots=knots)
+        karcher_mean_smoother = TwoStepEstimatorKarcherMean(grid_arc_s, Q_noisy)
+        coefs_opt, Q_smooth_opt, nb_iter, h_opt, lbda_opt = karcher_mean_smoother.bayesian_optimization_hyperparameters(n_call_bayopt=n_call_bayopt, lambda_bounds=bounds_lbda, h_bounds=bounds_h, nb_basis=nb_basis, epsilon=tol, max_iter=max_iter, n_splits=5, verbose=False, return_coefs=True, knots=knots)
 
-    return [coefs_opt, Q_smooth_opt, nb_iter, h_opt, lbda_opt,  knots, nb_basis, bounds_h]
-    # except:
-    #     return [None, None, None, None, None,  knots, nb_basis, bounds_h]
+        return [coefs_opt, Q_smooth_opt, nb_iter, h_opt, lbda_opt,  knots, nb_basis, bounds_h]
+    except:
+        return [None, None, None, None, None,  knots, nb_basis, bounds_h]
 
 
 
@@ -496,6 +496,10 @@ def compute_all_means(pop_x, lbda_bounds, n_call_bayopt=20, sigma=0.0):
     concat_grid_arc_s = np.unique(np.round(np.sort(np.concatenate(pop_arclgth)), decimals=3))
     N = len(concat_grid_arc_s)
     grid_time = np.linspace(0,1,N)
+    pop_arclgth_reshape = np.zeros((n_samples,N))
+    for k in range(n_samples):
+        pop_arclgth_reshape[k] = interp1d(np.linspace(0,1,len(pop_x[k])), pop_arclgth[k])(grid_time)
+
     h_bounds = np.array([np.max((concat_grid_arc_s[1:]-concat_grid_arc_s[:-1])), np.min((np.max((concat_grid_arc_s[1:]-concat_grid_arc_s[:-1]))*8,0.08))])
 
     print('computation population parameters...') 
@@ -538,8 +542,8 @@ def compute_all_means(pop_x, lbda_bounds, n_call_bayopt=20, sigma=0.0):
     pop_theta_coefs = np.array(pop_theta_coefs)
     mu_Z0 = SE3.frechet_mean(pop_Z[:,0,:,:])
 
-    res_pop = collections.namedtuple('res_pop', ['mu_Z0', 'pop_theta', 'pop_theta_coefs', 'pop_Z', 'pop_X', 'pop_x_scale', 'pop_x_scale_init', 'pop_arclgth', 'pop_L', 'concat_grid_arc_s'])
-    out_pop = res_pop(mu_Z0, pop_theta, pop_theta_coefs, pop_Z, pop_X, pop_x_scale, pop_x_scale_bis, pop_arclgth, pop_L, concat_grid_arc_s)
+    res_pop = collections.namedtuple('res_pop', ['mu_Z0', 'pop_theta', 'pop_theta_coefs', 'pop_Z', 'pop_X', 'pop_x_scale', 'pop_x_scale_init', 'pop_arclgth', 'pop_arclgth_reshape', 'pop_L', 'concat_grid_arc_s'])
+    out_pop = res_pop(mu_Z0, pop_theta, pop_theta_coefs, pop_Z, pop_X, pop_x_scale, pop_x_scale_bis, pop_arclgth, pop_arclgth_reshape, pop_L, concat_grid_arc_s)
 
     """ arithmetic mean """
     print('computation arithmetic mean...')
@@ -578,7 +582,7 @@ def compute_all_means(pop_x, lbda_bounds, n_call_bayopt=20, sigma=0.0):
     """ SRC mean """
     print('computation SRC mean...')
   
-    mu_SRC, mu_theta_SRC, mu_s_SRC, mu_src_theta, gam_SRC = SRC(3).karcher_mean_bspline(pop_theta_coefs, pop_arclgth, 0.01, 20, nb_basis, lam=1, parallel=True, knots=knots)
+    mu_SRC, mu_theta_SRC, mu_s_SRC, mu_src_theta, gam_SRC = SRC(3).karcher_mean_bspline(pop_theta_coefs, pop_arclgth_reshape, 0.01, 20, nb_basis=None, lam=1, parallel=True, knots=knots)
 
     res_mean_SRC = collections.namedtuple('res_mean_SRC', ['mu', 'mu_theta', 'gam', 'mu_arclength', 'mu_src'])
     out_SRC = res_mean_SRC(mu_SRC, mu_theta_SRC, gam_SRC, mu_s_SRC, mu_src_theta)
@@ -586,7 +590,7 @@ def compute_all_means(pop_x, lbda_bounds, n_call_bayopt=20, sigma=0.0):
     """ FC mean """
     print('computation FC mean...')
 
-    mu_FC, mu_theta_FC, gam_mu_FC = Frenet_Curvatures(3).karcher_mean_bspline(pop_theta_coefs, pop_arclgth, nb_basis, knots=knots)
+    mu_FC, mu_theta_FC, gam_mu_FC = Frenet_Curvatures(3).karcher_mean_bspline(pop_theta_coefs, pop_arclgth_reshape, nb_basis=None, knots=knots)
 
     res_mean_FC = collections.namedtuple('res_mean_FC', ['mu', 'mu_theta', 'gam'])
     out_FC = res_mean_FC(mu_FC, mu_theta_FC, gam_mu_FC)
