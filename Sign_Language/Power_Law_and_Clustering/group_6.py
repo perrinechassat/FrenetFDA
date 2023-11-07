@@ -20,24 +20,23 @@ import pandas as pd
 import numpy as np
 from utils_functions import estimation_GS_group
 
+
 def compute_list_Y_from_group(df, group):
     list_Y = []
     for gls in group:
         n_rep_Thomas = int(df[(df["glose"]==gls) & (df["name"]=='Thomas')]["n_rep"].values[0])
         for k in range(n_rep_Thomas):
             list_Y.append(df[(df["glose"]==gls) & (df["name"]=='Thomas')]["Rwrist"].values[0][k])
+        n_rep_Aliza = int(df[(df["glose"]==gls) & (df["name"]=='Aliza')]["n_rep"].values[0])
+        for k in range(n_rep_Aliza):
+            list_Y.append(df[(df["glose"]==gls) & (df["name"]=='Aliza')]["Rwrist"].values[0][k])
     return list_Y
 
 # Load data frame of data
 df = pd.read_pickle('../Process_Data/LSFtraj_5dis_cutrep.pkl')  
 
-group = ['aimer', 'autres', 'bleu', 'boire', 'bonbon', 'chagrin', 'chuchoter', 'cloche'] #93
+group = ['après-midi', 'débrouiller', 'éclair', 'enfant', 'désolé', 'décembre', 'jour', 'femme'] #90
 list_Y = compute_list_Y_from_group(df, group)
-
-ind_group = []
-ind_group.append(np.array([0,int(np.sum(df[(df["glose"]==group[0]) & (df["name"]=='Thomas')]["n_rep"].values))]))
-for i in range(len(group)-1):
-    ind_group.append(np.array([int(ind_group[i][1]),int(ind_group[i][1]+np.sum(df[(df["glose"]==group[i+1]) & (df["name"]=='Thomas')]["n_rep"].values))]))
 
 
 directory = r"results/"
@@ -50,13 +49,13 @@ if not os.path.exists(final_directory):
 
 n_call_bayopt_der = 30
 bounds_lbda = np.array([[-30, -5], [-30, -5]])
-n_call_bayopt_theta = 30
+n_call_bayopt_theta = 60
 bounds_h_der = np.array([0.05, 0.15])
 
 
 print('Start: Estimation curvatures with GS and Least Squares', '\n')
 
-filename = filename_base + "estimates_GS_least_squares_group_4"
+filename = filename_base + "estimates_GS_least_squares_group_6"
 estimation_GS_group(filename, list_Y, n_call_bayopt_der, bounds_h_der, bounds_lbda, n_call_bayopt_theta)
 
 print('End: Estimation curvatures with GS and Least Squares.', '\n')

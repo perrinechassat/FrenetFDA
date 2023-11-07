@@ -53,77 +53,98 @@ def compute_all_means_known_param(pop_x_scale, pop_Z, pop_theta_func, h_deriv_bo
     """ arithmetic mean """
     print('computation arithmetic mean...')
 
+    time_init = time.time()
     mu_arithm = np.mean(pop_x_scale, axis=0)
+    time_end = time.time()
+    duration = time_end - time_init
     mu_s_arithm, mu_Z_arithm, coefs_opt, knots = mean_theta_from_mean_shape(mu_arithm, h_deriv_bounds, h_bounds, lbda_bounds, n_call_bayopt, nb_basis=None, knots_step=3)
     mu_theta_arithm = VectorBSplineSmoothing(2, domain_range=(0, 1), order=4, penalization=False, knots=knots).evaluate_coefs(coefs_opt)
 
-    res_mean_arithm = collections.namedtuple('res_mean_arithm', ['mu', 'mu_s', 'mu_Z', 'mu_theta'])
-    out_arithm = res_mean_arithm(mu_arithm, mu_s_arithm, mu_Z_arithm, mu_theta_arithm)
+    res_mean_arithm = collections.namedtuple('res_mean_arithm', ['mu', 'mu_s', 'mu_Z', 'mu_theta', 'duration'])
+    out_arithm = res_mean_arithm(mu_arithm, mu_s_arithm, mu_Z_arithm, mu_theta_arithm, duration)
 
     """ SRVF mean """
     print('computation SRVF mean...')
 
+    time_init = time.time()
     mu_srvf = SRVF(3).karcher_mean(pop_x_scale)
+    time_end = time.time()
+    duration = time_end - time_init
     mu_s_srvf, mu_Z_srvf, coefs_opt, knots = mean_theta_from_mean_shape(mu_srvf, h_deriv_bounds, h_bounds, lbda_bounds, n_call_bayopt, nb_basis=None, knots_step=3)
     mu_theta_srvf = VectorBSplineSmoothing(2, domain_range=(0, 1), order=4, penalization=False, knots=knots).evaluate_coefs(coefs_opt)
 
-    res_mean_srvf = collections.namedtuple('res_mean_srvf', ['mu', 'mu_s', 'mu_Z', 'mu_theta'])
-    out_srvf = res_mean_srvf(mu_srvf, mu_s_srvf, mu_Z_srvf, mu_theta_srvf)
+    res_mean_srvf = collections.namedtuple('res_mean_srvf', ['mu', 'mu_s', 'mu_Z', 'mu_theta', 'duration'])
+    out_srvf = res_mean_srvf(mu_srvf, mu_s_srvf, mu_Z_srvf, mu_theta_srvf, duration)
 
     """ SRC mean """
     print('computation SRC mean...')
 
+    time_init = time.time()
     mu_SRC, mu_theta_SRC, mu_s_SRC, mu_src_theta, gam_SRC = SRC(3).karcher_mean(pop_theta_func, pop_arclgth, 0.01, 20, lam=1, parallel=True)
+    time_end = time.time()
+    duration = time_end - time_init
 
-    res_mean_SRC = collections.namedtuple('res_mean_SRC', ['mu', 'mu_theta', 'gam', 'mu_arclength', 'mu_src'])
-    out_SRC = res_mean_SRC(mu_SRC, mu_theta_SRC, gam_SRC, mu_s_SRC, mu_src_theta)
+    res_mean_SRC = collections.namedtuple('res_mean_SRC', ['mu', 'mu_theta', 'gam', 'mu_arclength', 'mu_src', 'duration'])
+    out_SRC = res_mean_SRC(mu_SRC, mu_theta_SRC, gam_SRC, mu_s_SRC, mu_src_theta, duration)
 
     """ FC mean """
     print('computation FC mean...')
 
+    time_init = time.time()
     mu_FC, mu_theta_FC, gam_mu_FC = Frenet_Curvatures(3).karcher_mean(pop_theta_func, pop_arclgth)
+    time_end = time.time()
+    duration = time_end - time_init
 
-    res_mean_FC = collections.namedtuple('res_mean_FC', ['mu', 'mu_theta', 'gam'])
-    out_FC = res_mean_FC(mu_FC, mu_theta_FC, gam_mu_FC)
+    res_mean_FC = collections.namedtuple('res_mean_FC', ['mu', 'mu_theta', 'gam', 'duration'])
+    out_FC = res_mean_FC(mu_FC, mu_theta_FC, gam_mu_FC, duration)
 
     """ Stat Mean V1 """
     print('computation Stat Mean V1...')
 
+    time_init = time.time()
     statmean_V1 = StatisticalMeanShapeV1(pop_arclgth,  pop_Q)
     h_opt, lbda_opt, coefs_opt = statmean_V1.bayesian_optimization_hyperparameters(n_call_bayopt, lbda_bounds, h_bounds, nb_basis, order=4, n_splits=10, verbose=False, return_coefs=True, knots=None) #, list_X=pop_X)
     mu_theta_V1_func = Bspline_decom.evaluate_coefs(coefs_opt)
     mu_theta_V1 = mu_theta_V1_func(arclgth)
     mu_Z_V1 = solve_FrenetSerret_ODE_SE(mu_theta_V1_func, arclgth, Z0=mu_Z0)
     mu_V1 = mu_Z_V1[:,:3,3]
+    time_end = time.time()
+    duration = time_end - time_init
 
-    res_mean_V1 = collections.namedtuple('res_mean_V1', ['h_opt', 'lbda_opt', 'mu', 'mu_Z', 'mu_theta', 'mu_theta_func', 'coefs_opt'])
-    out_V1 = res_mean_V1(h_opt, lbda_opt, mu_V1, mu_Z_V1, mu_theta_V1, mu_theta_V1_func, coefs_opt)
+    res_mean_V1 = collections.namedtuple('res_mean_V1', ['h_opt', 'lbda_opt', 'mu', 'mu_Z', 'mu_theta', 'mu_theta_func', 'coefs_opt', 'duration'])
+    out_V1 = res_mean_V1(h_opt, lbda_opt, mu_V1, mu_Z_V1, mu_theta_V1, mu_theta_V1_func, coefs_opt, duration)
 
     """ Stat Mean V2 """
     print('computation Stat Mean V2...')
 
+    time_init = time.time()
     statmean_V2 = StatisticalMeanShapeV2(arclgth,  pop_Q)
     h_opt, lbda_opt, coefs_opt = statmean_V2.bayesian_optimization_hyperparameters(n_call_bayopt, lbda_bounds, h_bounds, nb_basis, order=4, n_splits=10, verbose=False, return_coefs=True, knots=None, sigma=0.001) #, list_X=pop_X)
     mu_theta_V2_func = Bspline_decom.evaluate_coefs(coefs_opt)
     mu_theta_V2 = mu_theta_V2_func(arclgth)
     mu_Z_V2 = solve_FrenetSerret_ODE_SE(mu_theta_V2_func, arclgth, Z0=mu_Z0)
     mu_V2 = mu_Z_V2[:,:3,3]
+    time_end = time.time()
+    duration = time_end - time_init
 
-    res_mean_V2 = collections.namedtuple('res_mean_V2', ['h_opt', 'lbda_opt', 'mu', 'mu_Z', 'mu_theta', 'mu_theta_func', 'coefs_opt', 'gam', 'results_alignment'])
-    out_V2 = res_mean_V2(h_opt, lbda_opt, mu_V2, mu_Z_V2, mu_theta_V2, mu_theta_V2_func, coefs_opt, statmean_V2.gam, statmean_V2.res_align)
+    res_mean_V2 = collections.namedtuple('res_mean_V2', ['h_opt', 'lbda_opt', 'mu', 'mu_Z', 'mu_theta', 'mu_theta_func', 'coefs_opt', 'gam', 'results_alignment', 'duration'])
+    out_V2 = res_mean_V2(h_opt, lbda_opt, mu_V2, mu_Z_V2, mu_theta_V2, mu_theta_V2_func, coefs_opt, statmean_V2.gam, statmean_V2.res_align, duration)
 
     """ Stat Mean V3 """
     print('computation Stat Mean V3...')
 
+    time_init = time.time()
     statmean_V3 = StatisticalMeanShapeV3(arclgth,  pop_Q)
     h_opt, lbda_opt, coefs_opt = statmean_V3.bayesian_optimization_hyperparameters(n_call_bayopt, lbda_bounds, h_bounds, nb_basis, order=4, n_splits=10, verbose=False, return_coefs=True, knots=None, sigma=sigma) #, list_X=pop_X)
     mu_theta_V3_func = Bspline_decom.evaluate_coefs(coefs_opt)
     mu_theta_V3 = mu_theta_V3_func(arclgth)
     mu_Z_V3 = solve_FrenetSerret_ODE_SE(mu_theta_V3_func, arclgth, Z0=mu_Z0)
     mu_V3 = mu_Z_V3[:,:3,3]
+    time_end = time.time()
+    duration = time_end - time_init
 
-    res_mean_V3 = collections.namedtuple('res_mean_V3', ['h_opt', 'lbda_opt', 'mu', 'mu_Z', 'mu_theta', 'mu_theta_func', 'coefs_opt', 'gam', 'results_alignment'])
-    out_V3 = res_mean_V3(h_opt, lbda_opt, mu_V3, mu_Z_V3, mu_theta_V3, mu_theta_V3_func, coefs_opt, statmean_V3.gam, statmean_V3.res_align)
+    res_mean_V3 = collections.namedtuple('res_mean_V3', ['h_opt', 'lbda_opt', 'mu', 'mu_Z', 'mu_theta', 'mu_theta_func', 'coefs_opt', 'gam', 'results_alignment', 'duration'])
+    out_V3 = res_mean_V3(h_opt, lbda_opt, mu_V3, mu_Z_V3, mu_theta_V3, mu_theta_V3_func, coefs_opt, statmean_V3.gam, statmean_V3.res_align, duration)
 
     return out_arithm, out_srvf, out_SRC, out_FC, out_V1, out_V2, out_V3
 
@@ -137,7 +158,7 @@ def compute_all_means(pop_x, h_deriv_bounds, h_bounds, lbda_bounds, nb_basis, po
     
     n_samples = len(pop_x)
     N = len(pop_x[0])
-    time = np.linspace(0,1,N)
+    grid_time = np.linspace(0,1,N)
     dim = pop_x[0].shape[1]
     
     if pop_arclgth is None:
@@ -145,8 +166,8 @@ def compute_all_means(pop_x, h_deriv_bounds, h_bounds, lbda_bounds, nb_basis, po
         pop_arclgth = np.zeros((n_samples,N))
         pop_L = np.zeros(n_samples)
         for k in range(n_samples):
-            derivatives, h_opt = compute_derivatives(pop_x[k], time, deg=3, h=None, CV_optimization_h={"flag":True, "h_grid":h_deriv_bounds, "K":10, "method":'bayesian', "n_call":30, "verbose":False})
-            grid_arc_s, L, arc_s, arc_s_dot = compute_arc_length(pop_x[k], time, smooth=True, smoothing_param=h_opt)
+            derivatives, h_opt = compute_derivatives(pop_x[k], grid_time, deg=3, h=None, CV_optimization_h={"flag":True, "h_grid":h_deriv_bounds, "K":10, "method":'bayesian', "n_call":30, "verbose":False})
+            grid_arc_s, L, arc_s, arc_s_dot = compute_arc_length(pop_x[k], grid_time, smooth=True, smoothing_param=h_opt)
             pop_arclgth[k] = grid_arc_s
             pop_L[k] = L 
     else:
@@ -158,7 +179,7 @@ def compute_all_means(pop_x, h_deriv_bounds, h_bounds, lbda_bounds, nb_basis, po
     pop_x_scale = np.zeros(np.array(pop_x).shape)
     for k in range(n_samples):
         pop_x_scale[k] = pop_x[k]/pop_L[k]
-        pop_X[k] = interp1d(pop_arclgth[k], pop_x_scale[k].T)(time).T 
+        pop_X[k] = interp1d(pop_arclgth[k], pop_x_scale[k].T)(grid_time).T 
 
     pop_Q = np.zeros((n_samples, N, dim, dim))
     pop_Z = np.zeros((n_samples, N, dim+1, dim+1))
@@ -168,14 +189,16 @@ def compute_all_means(pop_x, h_deriv_bounds, h_bounds, lbda_bounds, nb_basis, po
 
     Bspline_decom = VectorBSplineSmoothing(dim-1, nb_basis, domain_range=(0, 1), order=4, penalization=True)
 
+    time_init = time.time()
+
     for k in range(n_samples):
-        GS_orthog = GramSchmidtOrthogonalization(pop_X[k], time, deg=3)
+        GS_orthog = GramSchmidtOrthogonalization(pop_X[k], grid_time, deg=3)
         h_opt = GS_orthog.bayesian_optimization_hyperparameters(n_call_bayopt, h_bounds=h_deriv_bounds, verbose=False)
         Z_hat_GS, Q_hat_GS, X_hat_GS = GS_orthog.fit(h_opt) 
         pop_Z[k] = Z_hat_GS
         pop_Q[k] = Q_hat_GS
         # try:
-        local_approx_ode = LocalApproxFrenetODE(time, Z=pop_Z[k])
+        local_approx_ode = LocalApproxFrenetODE(grid_time, Z=pop_Z[k])
         h_opt, lbda_opt, coefs_opt = local_approx_ode.bayesian_optimization_hyperparameters(n_call_bayopt=n_call_bayopt, lambda_bounds=lbda_bounds, h_bounds=h_bounds, n_splits=10, verbose=False, return_coefs=True, Bspline_repres=Bspline_decom)
         pop_theta_coefs[k] = coefs_opt
         # def func(s):
@@ -184,21 +207,27 @@ def compute_all_means(pop_x, h_deriv_bounds, h_bounds, lbda_bounds, nb_basis, po
         #     elif isinstance(s, np.ndarray):
         #         return np.squeeze((Bspline_decom.basis_fct(s).T @ coefs_opt).T)
         # pop_theta_fct[k] = func
-        pop_theta[k] = np.squeeze((Bspline_decom.basis_fct(time).T @ coefs_opt).T)
+        pop_theta[k] = np.squeeze((Bspline_decom.basis_fct(grid_time).T @ coefs_opt).T)
         # except:
         #     pop_theta_fct[k] = lambda s: 0*s
         #     pop_theta[k] = np.zeros((N,2))
     
+    time_end = time.time()
+    duration = time_end - time_init
+
     pop_theta_coefs = np.array(pop_theta_coefs)
     mu_Z0 = SE3.frechet_mean(pop_Z[:,0,:,:])
 
-    res_pop = collections.namedtuple('res_pop', ['mu_Z0', 'pop_theta', 'pop_theta_coefs', 'pop_Z', 'pop_X', 'pop_x_scale', 'pop_arclgth', 'pop_L'])
-    out_pop = res_pop(mu_Z0, pop_theta, pop_theta_coefs, pop_Z, pop_X, pop_x_scale, pop_arclgth, pop_L)
+    res_pop = collections.namedtuple('res_pop', ['mu_Z0', 'pop_theta', 'pop_theta_coefs', 'pop_Z', 'pop_X', 'pop_x_scale', 'pop_arclgth', 'pop_L', 'duration'])
+    out_pop = res_pop(mu_Z0, pop_theta, pop_theta_coefs, pop_Z, pop_X, pop_x_scale, pop_arclgth, pop_L, duration)
 
     """ arithmetic mean """
     print('computation arithmetic mean...')
 
+    time_init = time.time()
     mu_arithm = np.mean(pop_x_scale, axis=0)
+    time_end = time.time()
+    duration = time_end - time_init
     mu_s_arithm, mu_Z_arithm, coefs_opt_arithm, knots_arithm = mean_theta_from_mean_shape(mu_arithm, h_deriv_bounds, h_bounds, lbda_bounds, n_call_bayopt, nb_basis=None, knots_step=3)
     # mu_theta_arithm = VectorBSplineSmoothing(2, domain_range=(0, 1), order=4, penalization=False, knots=knots_arithm).evaluate_coefs(coefs_opt_arithm)
 
@@ -209,13 +238,16 @@ def compute_all_means(pop_x, h_deriv_bounds, h_bounds, lbda_bounds, nb_basis, po
     # res_mean_arithm = collections.namedtuple('res_mean_arithm', ['mu', 'mu_X_arclength', 'mu_s_arclgth', 'mu_s', 'mu_Z', 'mu_Z_arclgth', 'knots_arithm', 'coefs_opt_arithm', 'knots_arithm_arclgth', 'coefs_opt_arithm_arclgth'])
     # out_arithm = res_mean_arithm(mu_arithm, mu_arithm_arclgth, mu_s_arithm_arclgth, mu_s_arithm, mu_Z_arithm, mu_Z_arithm_arclgth, knots_arithm, coefs_opt_arithm, knots_arithm_arclgth, coefs_opt_arithm_arclgth)
 
-    res_mean_arithm = collections.namedtuple('res_mean_arithm', ['mu', 'mu_s', 'mu_Z', 'knots_arithm', 'coefs_opt_arithm'])
-    out_arithm = res_mean_arithm(mu_arithm, mu_s_arithm, mu_Z_arithm, knots_arithm, coefs_opt_arithm)
+    res_mean_arithm = collections.namedtuple('res_mean_arithm', ['mu', 'mu_s', 'mu_Z', 'knots_arithm', 'coefs_opt_arithm', 'duration'])
+    out_arithm = res_mean_arithm(mu_arithm, mu_s_arithm, mu_Z_arithm, knots_arithm, coefs_opt_arithm, duration)
 
     """ SRVF mean """
     print('computation SRVF mean...')
 
+    time_init = time.time()
     mu_srvf = SRVF(3).karcher_mean(pop_x_scale)
+    time_end = time.time()
+    duration = time_end - time_init
     mu_s_srvf, mu_Z_srvf, coefs_opt_srvf, knots_srvf = mean_theta_from_mean_shape(mu_srvf, h_deriv_bounds, h_bounds, lbda_bounds, n_call_bayopt, nb_basis=None, knots_step=3)
     # mu_theta_srvf = VectorBSplineSmoothing(2, domain_range=(0, 1), order=4, penalization=False, knots=knots_srvf).evaluate_coefs(coefs_opt_srvf)
 
@@ -226,75 +258,90 @@ def compute_all_means(pop_x, h_deriv_bounds, h_bounds, lbda_bounds, nb_basis, po
     # res_mean_SRVF = collections.namedtuple('res_mean_SRVF', ['mu', 'mu_X_arclength', 'mu_s_arclgth', 'mu_s', 'mu_Z', 'mu_Z_arclgth', 'knots_srvf', 'coefs_opt_srvf', 'knots_srvf_arclgth', 'coefs_opt_srvf_arclgth'])
     # out_SRVF = res_mean_SRVF(mu_srvf, mu_srvf_arclgth, mu_s_srvf_arclgth, mu_s_srvf, mu_Z_srvf, mu_Z_srvf_arclgth, knots_srvf, coefs_opt_srvf, knots_srvf_arclgth, coefs_opt_srvf_arclgth)
 
-    res_mean_SRVF = collections.namedtuple('res_mean_SRVF', ['mu', 'mu_s', 'mu_Z', 'knots_srvf', 'coefs_opt_srvf'])
-    out_SRVF = res_mean_SRVF(mu_srvf, mu_s_srvf, mu_Z_srvf, knots_srvf, coefs_opt_srvf)
+    res_mean_SRVF = collections.namedtuple('res_mean_SRVF', ['mu', 'mu_s', 'mu_Z', 'knots_srvf', 'coefs_opt_srvf', 'duration'])
+    out_SRVF = res_mean_SRVF(mu_srvf, mu_s_srvf, mu_Z_srvf, knots_srvf, coefs_opt_srvf, duration)
 
     """ SRC mean """
     print('computation SRC mean...')
-  
+    
+    time_init = time.time()
     mu_SRC, mu_theta_SRC, mu_s_SRC, mu_src_theta, gam_SRC = SRC(3).karcher_mean_bspline(pop_theta_coefs, pop_arclgth, 0.01, 20, nb_basis, lam=1, parallel=True)
+    time_end = time.time()
+    duration = time_end - time_init
 
-    res_mean_SRC = collections.namedtuple('res_mean_SRC', ['mu', 'mu_theta', 'gam', 'mu_arclength', 'mu_src'])
-    out_SRC = res_mean_SRC(mu_SRC, mu_theta_SRC, gam_SRC, mu_s_SRC, mu_src_theta)
+    res_mean_SRC = collections.namedtuple('res_mean_SRC', ['mu', 'mu_theta', 'gam', 'mu_arclength', 'mu_src', 'duration'])
+    out_SRC = res_mean_SRC(mu_SRC, mu_theta_SRC, gam_SRC, mu_s_SRC, mu_src_theta, duration)
 
     """ FC mean """
     print('computation FC mean...')
 
+    time_init = time.time()
     mu_FC, mu_theta_FC, gam_mu_FC = Frenet_Curvatures(3).karcher_mean_bspline(pop_theta_coefs, pop_arclgth, nb_basis)
+    time_end = time.time()
+    duration = time_end - time_init
 
-    res_mean_FC = collections.namedtuple('res_mean_FC', ['mu', 'mu_theta', 'gam'])
-    out_FC = res_mean_FC(mu_FC, mu_theta_FC, gam_mu_FC)
+    res_mean_FC = collections.namedtuple('res_mean_FC', ['mu', 'mu_theta', 'gam', 'duration'])
+    out_FC = res_mean_FC(mu_FC, mu_theta_FC, gam_mu_FC, duration)
 
     """ Stat Mean V1 """
     print('computation Stat Mean V1...')
 
-    statmean_V1 = StatisticalMeanShapeV1(np.array([time for k in range(n_samples)]),  pop_Q)
+    time_init = time.time()
+    statmean_V1 = StatisticalMeanShapeV1(np.array([grid_time for k in range(n_samples)]),  pop_Q)
     h_opt, lbda_opt, coefs_opt = statmean_V1.bayesian_optimization_hyperparameters(n_call_bayopt, lbda_bounds, h_bounds, nb_basis, order=4, n_splits=10, verbose=False, return_coefs=True, knots=None) #, list_X=pop_X)
     def mu_theta_V1_func(s):
         if isinstance(s, int) or isinstance(s, float):
             return np.squeeze(Bspline_decom.basis_fct(s).T @ coefs_opt)
         elif isinstance(s, np.ndarray):
             return np.squeeze((Bspline_decom.basis_fct(s).T @ coefs_opt).T)
-    mu_theta_V1 = np.squeeze((Bspline_decom.basis_fct(time).T @ coefs_opt).T)
-    mu_Z_V1 = solve_FrenetSerret_ODE_SE(mu_theta_V1_func, time, Z0=mu_Z0, timeout_seconds=60)
+    mu_theta_V1 = np.squeeze((Bspline_decom.basis_fct(grid_time).T @ coefs_opt).T)
+    mu_Z_V1 = solve_FrenetSerret_ODE_SE(mu_theta_V1_func, grid_time, Z0=mu_Z0, timeout_seconds=60)
     mu_V1 = mu_Z_V1[:,:3,3]
+    time_end = time.time()
+    duration = time_end - time_init
 
-    res_mean_V1 = collections.namedtuple('res_mean_V1', ['h_opt', 'lbda_opt', 'mu', 'mu_Z', 'mu_theta', 'coefs_opt'])
-    out_V1 = res_mean_V1(h_opt, lbda_opt, mu_V1, mu_Z_V1, mu_theta_V1, coefs_opt)
+    res_mean_V1 = collections.namedtuple('res_mean_V1', ['h_opt', 'lbda_opt', 'mu', 'mu_Z', 'mu_theta', 'coefs_opt', 'duration'])
+    out_V1 = res_mean_V1(h_opt, lbda_opt, mu_V1, mu_Z_V1, mu_theta_V1, coefs_opt, duration)
 
     """ Stat Mean V2 """
     print('computation Stat Mean V2...')
 
-    statmean_V2 = StatisticalMeanShapeV2(time,  pop_Q)
+    time_init = time.time()
+    statmean_V2 = StatisticalMeanShapeV2(grid_time,  pop_Q)
     h_opt, lbda_opt, coefs_opt = statmean_V2.bayesian_optimization_hyperparameters(n_call_bayopt, lbda_bounds, h_bounds, nb_basis, order=4, n_splits=10, verbose=False, return_coefs=True, knots=None, sigma=sigma) #, list_X=pop_X)
     def mu_theta_V2_func(s):
         if isinstance(s, int) or isinstance(s, float):
             return np.squeeze(Bspline_decom.basis_fct(s).T @ coefs_opt)
         elif isinstance(s, np.ndarray):
             return np.squeeze((Bspline_decom.basis_fct(s).T @ coefs_opt).T)
-    mu_theta_V2 =  np.squeeze((Bspline_decom.basis_fct(time).T @ coefs_opt).T)
-    mu_Z_V2 = solve_FrenetSerret_ODE_SE(mu_theta_V2_func, time, Z0=mu_Z0, timeout_seconds=60)
+    mu_theta_V2 =  np.squeeze((Bspline_decom.basis_fct(grid_time).T @ coefs_opt).T)
+    mu_Z_V2 = solve_FrenetSerret_ODE_SE(mu_theta_V2_func, grid_time, Z0=mu_Z0, timeout_seconds=60)
     mu_V2 = mu_Z_V2[:,:3,3]
+    time_end = time.time()
+    duration = time_end - time_init
 
-    res_mean_V2 = collections.namedtuple('res_mean_V2', ['h_opt', 'lbda_opt', 'mu', 'mu_Z', 'mu_theta', 'coefs_opt', 'gam', 'results_alignment'])
-    out_V2 = res_mean_V2(h_opt, lbda_opt, mu_V2, mu_Z_V2, mu_theta_V2, coefs_opt, statmean_V2.gam, statmean_V2.res_align)
+    res_mean_V2 = collections.namedtuple('res_mean_V2', ['h_opt', 'lbda_opt', 'mu', 'mu_Z', 'mu_theta', 'coefs_opt', 'gam', 'results_alignment', 'duration'])
+    out_V2 = res_mean_V2(h_opt, lbda_opt, mu_V2, mu_Z_V2, mu_theta_V2, coefs_opt, statmean_V2.gam, statmean_V2.res_align, duration)
 
     """ Stat Mean V3 """
     print('computation Stat Mean V3...')
 
-    statmean_V3 = StatisticalMeanShapeV3(time,  pop_Q)
+    time_init = time.time()
+    statmean_V3 = StatisticalMeanShapeV3(grid_time,  pop_Q)
     h_opt, lbda_opt, coefs_opt = statmean_V3.bayesian_optimization_hyperparameters(n_call_bayopt, lbda_bounds, h_bounds, nb_basis, order=4, n_splits=10, verbose=False, return_coefs=True, knots=None, sigma=sigma) #, list_X=pop_X)
     def mu_theta_V3_func(s):
         if isinstance(s, int) or isinstance(s, float):
             return np.squeeze(Bspline_decom.basis_fct(s).T @ coefs_opt)
         elif isinstance(s, np.ndarray):
             return np.squeeze((Bspline_decom.basis_fct(s).T @ coefs_opt).T)
-    mu_theta_V3 =  np.squeeze((Bspline_decom.basis_fct(time).T @ coefs_opt).T)
-    mu_Z_V3 = solve_FrenetSerret_ODE_SE(mu_theta_V3_func, time, Z0=mu_Z0, timeout_seconds=60)
+    mu_theta_V3 =  np.squeeze((Bspline_decom.basis_fct(grid_time).T @ coefs_opt).T)
+    mu_Z_V3 = solve_FrenetSerret_ODE_SE(mu_theta_V3_func, grid_time, Z0=mu_Z0, timeout_seconds=60)
     mu_V3 = mu_Z_V3[:,:3,3]
+    time_end = time.time()
+    duration = time_end - time_init
 
-    res_mean_V3 = collections.namedtuple('res_mean_V3', ['h_opt', 'lbda_opt', 'mu', 'mu_Z', 'mu_theta', 'coefs_opt', 'gam', 'results_alignment'])
-    out_V3 = res_mean_V3(h_opt, lbda_opt, mu_V3, mu_Z_V3, mu_theta_V3, coefs_opt, statmean_V3.gam, statmean_V3.res_align)
+    res_mean_V3 = collections.namedtuple('res_mean_V3', ['h_opt', 'lbda_opt', 'mu', 'mu_Z', 'mu_theta', 'coefs_opt', 'gam', 'results_alignment', 'duration'])
+    out_V3 = res_mean_V3(h_opt, lbda_opt, mu_V3, mu_Z_V3, mu_theta_V3, coefs_opt, statmean_V3.gam, statmean_V3.res_align, duration)
 
 
     return out_pop, out_arithm, out_SRVF, out_SRC, out_FC, out_V1, out_V2, out_V3

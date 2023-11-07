@@ -36,7 +36,7 @@ tors_ref = lambda s : 8*s - 3
 
 n_samples = 20
 
-n_MC = 80
+n_MC = 2
 n_call_bayopt = 30
 lam = 1.0
 
@@ -73,27 +73,27 @@ pop_theta_func = np.array([lambda s, a1=a_curv[k], a2=a_tors[k], a3=b[k]: theta(
 """ _______________________________________________________________ N = 100 _______________________________________________________________ """ 
 
 
-# N = 100
+N = 100
 
 # nb_basis = 20
 # h_bounds = np.array([0.03,0.1])
 # h_deriv_bounds = np.array([0.05,0.12])
 # lbda_bounds = np.array([[-15.0,-8.0],[-15.0,-8.0]])
 
-# grid = np.linspace(0,1,N)
-# arclgth = np.linspace(0,1,N)
-# pop_theta = np.array([theta(arclgth, curv_ref, tors_ref,  a_curv[k], a_tors[k], b[k]) for k in range(n_samples)])
-# pop_Z = []
-# for k in range(n_samples):
-#     Z = solve_FrenetSerret_ODE_SE(theta= lambda s: theta(s, curv_ref, tors_ref, a_curv[k], a_tors[k], b[k]), t_eval=arclgth, Z0=np.eye(4))
-#     pop_Z.append(Z)
+grid = np.linspace(0,1,N)
+arclgth = np.linspace(0,1,N)
+pop_theta = np.array([theta(arclgth, curv_ref, tors_ref,  a_curv[k], a_tors[k], b[k]) for k in range(n_samples)])
+pop_Z = []
+for k in range(n_samples):
+    Z = solve_FrenetSerret_ODE_SE(theta= lambda s: theta(s, curv_ref, tors_ref, a_curv[k], a_tors[k], b[k]), t_eval=arclgth, Z0=np.eye(4))
+    pop_Z.append(Z)
 
-# pop_Z = np.array(pop_Z)
-# pop_Q = pop_Z[:,:,:3,:3]
-# pop_X = pop_Z[:,:,:3,3]
-# pop_L = np.ones(n_samples)
-# pop_x_scale = pop_X
-# pop_arclgth = np.array([arclgth for i in range(n_samples)])
+pop_Z = np.array(pop_Z)
+pop_Q = pop_Z[:,:,:3,:3]
+pop_X = pop_Z[:,:,:3,3]
+pop_L = np.ones(n_samples)
+pop_x_scale = pop_X
+pop_arclgth = np.array([arclgth for i in range(n_samples)])
 
 
 # """ _________________ Amplitude and phase variability on theta and WITHOUT noise on x _________________ """
@@ -116,7 +116,7 @@ pop_theta_func = np.array([lambda s, a1=a_curv[k], a2=a_tors[k], a3=b[k]: theta(
 
 
 
-""" _________________ Amplitude and phase variability on theta and with noise on x _________________ """
+# """ _________________ Amplitude and phase variability on theta and with noise on x _________________ """
 
 
 nb_basis = 20
@@ -124,8 +124,8 @@ h_bounds = np.array([0.03,0.15])
 h_deriv_bounds = np.array([0.1,0.3])
 lbda_bounds = np.array([[-15.0,-5.0],[-15.0,-5.0]])
 
-""" sig_x = 0.01 """
-sig_x = 0.01
+# """ sig_x = 0.01 """
+# sig_x = 0.01
 
 # arr_noisy_x = np.zeros((n_MC, n_samples, N, 3))
 # for k in range(n_MC):
@@ -224,9 +224,9 @@ sig_x = 0.01
 """ sig_x = 0.005 """
 sig_x = 0.005
 
-# arr_noisy_x = np.zeros((n_MC, n_samples, N, 3))
-# for k in range(n_MC):
-#     arr_noisy_x[k] = add_noise_pop(pop_X, sig_x)
+arr_noisy_x = np.zeros((n_MC, n_samples, N, 3))
+for k in range(n_MC):
+    arr_noisy_x[k] = add_noise_pop(pop_X, sig_x)
 
 
 # time_init = time.time()
@@ -281,34 +281,32 @@ sig_x = 0.005
 # fil.close()
 
 
-# time_init = time.time()
-# res = Parallel(n_jobs=n_MC)(delayed(compute_all_means)(arr_noisy_x[k], h_deriv_bounds, h_bounds, lbda_bounds, nb_basis, n_call_bayopt=n_call_bayopt, sigma=lam) for k in range(n_MC))
-# time_end = time.time()
-# duration = time_end - time_init
+time_init = time.time()
+res = Parallel(n_jobs=n_MC)(delayed(compute_all_means)(arr_noisy_x[k], h_deriv_bounds, h_bounds, lbda_bounds, nb_basis, n_call_bayopt=n_call_bayopt, sigma=lam) for k in range(n_MC))
+time_end = time.time()
+duration = time_end - time_init
 
-# out_pop, out_arithm, out_srvf, out_SRC, out_FC, out_V1, out_V2, out_V3 = [], [], [], [], [], [], [], []
-# for k in range(n_MC):
-#     out_pop.append(res[k][0])
-#     out_arithm.append(res[k][1])
-#     out_srvf.append(res[k][2])
-#     out_SRC.append(res[k][3])
-#     out_FC.append(res[k][4])
-#     out_V1.append(res[k][5])
-#     out_V2.append(res[k][6])
-#     out_V3.append(res[k][7])
+out_pop, out_arithm, out_srvf, out_SRC, out_FC, out_V1, out_V2, out_V3 = [], [], [], [], [], [], [], []
+for k in range(n_MC):
+    out_pop.append(res[k][0])
+    out_arithm.append(res[k][1])
+    out_srvf.append(res[k][2])
+    out_SRC.append(res[k][3])
+    out_FC.append(res[k][4])
+    out_V1.append(res[k][5])
+    out_V2.append(res[k][6])
+    out_V3.append(res[k][7])
 
-# # SAVE
-# filename = filename_base + "with_noise_N_100_sig_005" 
-# dic = {"duration":duration, "arr_noisy_x":arr_noisy_x, "res_pop":out_pop, "res_arithm":out_arithm, "res_SRVF":out_srvf, "res_SRC":out_SRC, "res_FC":out_FC, "res_V1":out_V1, "res_V2":out_V2, "res_V3":out_V3}
+# SAVE
+filename = filename_base + "with_noise_N_100_sig_005_with_durations" 
+dic = {"duration":duration, "arr_noisy_x":arr_noisy_x, "res_pop":out_pop, "res_arithm":out_arithm, "res_SRVF":out_srvf, "res_SRC":out_SRC, "res_FC":out_FC, "res_V1":out_V1, "res_V2":out_V2, "res_V3":out_V3}
 
-# if os.path.isfile(filename):
-#     print("Le fichier ", filename, " existe déjà.")
-#     filename = filename + '_bis'
-# fil = open(filename,"xb")
-# pickle.dump(dic,fil)
-# fil.close()
-
-
+if os.path.isfile(filename):
+    print("Le fichier ", filename, " existe déjà.")
+    filename = filename + '_bis'
+fil = open(filename,"xb")
+pickle.dump(dic,fil)
+fil.close()
 
 
 
@@ -318,34 +316,36 @@ sig_x = 0.005
 
 
 
-""" _______________________________________________________________ N = 200 _______________________________________________________________ """ 
 
 
-N = 200
-
-nb_basis = 25
-
-h_bounds = np.array([0.015,0.1])
-h_deriv_bounds = np.array([0.05,0.12])
-lbda_bounds = np.array([[-15.0,-8.0],[-15.0,-8.0]])
-
-grid = np.linspace(0,1,N)
-arclgth = np.linspace(0,1,N)
-pop_theta = np.array([theta(arclgth, curv_ref, tors_ref,  a_curv[k], a_tors[k], b[k]) for k in range(n_samples)])
-pop_Z = []
-for k in range(n_samples):
-    Z = solve_FrenetSerret_ODE_SE(theta= lambda s: theta(s, curv_ref, tors_ref, a_curv[k], a_tors[k], b[k]), t_eval=arclgth, Z0=np.eye(4))
-    pop_Z.append(Z)
-
-pop_Z = np.array(pop_Z)
-pop_Q = pop_Z[:,:,:3,:3]
-pop_X = pop_Z[:,:,:3,3]
-pop_L = np.ones(n_samples)
-pop_x_scale = pop_X
-pop_arclgth = np.array([arclgth for i in range(n_samples)])
+# """ _______________________________________________________________ N = 200 _______________________________________________________________ """ 
 
 
-""" _________________ Amplitude and phase variability on theta and WITHOUT noise on x _________________ """
+# N = 200
+
+# nb_basis = 25
+
+# h_bounds = np.array([0.015,0.1])
+# h_deriv_bounds = np.array([0.05,0.12])
+# lbda_bounds = np.array([[-15.0,-8.0],[-15.0,-8.0]])
+
+# grid = np.linspace(0,1,N)
+# arclgth = np.linspace(0,1,N)
+# pop_theta = np.array([theta(arclgth, curv_ref, tors_ref,  a_curv[k], a_tors[k], b[k]) for k in range(n_samples)])
+# pop_Z = []
+# for k in range(n_samples):
+#     Z = solve_FrenetSerret_ODE_SE(theta= lambda s: theta(s, curv_ref, tors_ref, a_curv[k], a_tors[k], b[k]), t_eval=arclgth, Z0=np.eye(4))
+#     pop_Z.append(Z)
+
+# pop_Z = np.array(pop_Z)
+# pop_Q = pop_Z[:,:,:3,:3]
+# pop_X = pop_Z[:,:,:3,3]
+# pop_L = np.ones(n_samples)
+# pop_x_scale = pop_X
+# pop_arclgth = np.array([arclgth for i in range(n_samples)])
+
+
+# """ _________________ Amplitude and phase variability on theta and WITHOUT noise on x _________________ """
 
 # time_init = time.time()
 # out_arithm, out_srvf, out_SRC, out_FC, out_V1, out_V2, out_V3 = compute_all_means_known_param(pop_x_scale, pop_Z, pop_theta_func, h_deriv_bounds, h_bounds, lbda_bounds, nb_basis, pop_arclgth, n_call_bayopt=n_call_bayopt, sigma=lam)
@@ -365,16 +365,16 @@ pop_arclgth = np.array([arclgth for i in range(n_samples)])
 
 
 
-""" _________________ Amplitude and phase variability on theta and with noise on x _________________ """
+# """ _________________ Amplitude and phase variability on theta and with noise on x _________________ """
 
 
-h_bounds = np.array([0.02,0.15])
-h_deriv_bounds = np.array([0.05,0.3])
-lbda_bounds = np.array([[-15.0,-5.0],[-15.0,-5.0]])
+# h_bounds = np.array([0.02,0.15])
+# h_deriv_bounds = np.array([0.05,0.3])
+# lbda_bounds = np.array([[-15.0,-5.0],[-15.0,-5.0]])
 
 
-""" sig_x = 0.01 """
-sig_x = 0.01
+# """ sig_x = 0.01 """
+# sig_x = 0.01
 
 # arr_noisy_x = np.zeros((n_MC, n_samples, N, 3))
 # for k in range(n_MC):
@@ -408,12 +408,12 @@ sig_x = 0.01
 # fil.close()
 
 
-""" sig_x = 0.005 """
-sig_x = 0.005
+# """ sig_x = 0.005 """
+# sig_x = 0.005
 
-arr_noisy_x = np.zeros((n_MC, n_samples, N, 3))
-for k in range(n_MC):
-    arr_noisy_x[k] = add_noise_pop(pop_X, sig_x)
+# arr_noisy_x = np.zeros((n_MC, n_samples, N, 3))
+# for k in range(n_MC):
+#     arr_noisy_x[k] = add_noise_pop(pop_X, sig_x)
 
 # time_init = time.time()
 # res = Parallel(n_jobs=n_MC)(delayed(compute_all_means)(arr_noisy_x[k], h_deriv_bounds, h_bounds, lbda_bounds, nb_basis, n_call_bayopt=n_call_bayopt, sigma=lam) for k in range(n_MC))
@@ -443,49 +443,49 @@ for k in range(n_MC):
 # fil.close()
 
 
-time_init = time.time()
-res = Parallel(n_jobs=n_MC)(delayed(compute_pop_artihm_SRVF)(arr_noisy_x[k], h_deriv_bounds, h_bounds, lbda_bounds, nb_basis, n_call_bayopt=n_call_bayopt, sigma=lam) for k in range(n_MC))
-time_end = time.time()
-duration = time_end - time_init
+# time_init = time.time()
+# res = Parallel(n_jobs=n_MC)(delayed(compute_pop_artihm_SRVF)(arr_noisy_x[k], h_deriv_bounds, h_bounds, lbda_bounds, nb_basis, n_call_bayopt=n_call_bayopt, sigma=lam) for k in range(n_MC))
+# time_end = time.time()
+# duration = time_end - time_init
 
-out_pop, out_arithm, out_srvf = [], [], []
-for k in range(n_MC):
-    out_pop.append(res[k][0])
-    out_arithm.append(res[k][1])
-    out_srvf.append(res[k][2])
+# out_pop, out_arithm, out_srvf = [], [], []
+# for k in range(n_MC):
+#     out_pop.append(res[k][0])
+#     out_arithm.append(res[k][1])
+#     out_srvf.append(res[k][2])
 
-# SAVE
-filename = filename_base + "pop_Arithm_SRVF_with_noise_N_200_sig_005" 
-dic = {"duration":duration, "arr_noisy_x":arr_noisy_x, "res_pop":out_pop, "res_arithm":out_arithm, "res_SRVF":out_srvf}
+# # SAVE
+# filename = filename_base + "pop_Arithm_SRVF_with_noise_N_200_sig_005" 
+# dic = {"duration":duration, "arr_noisy_x":arr_noisy_x, "res_pop":out_pop, "res_arithm":out_arithm, "res_SRVF":out_srvf}
 
-if os.path.isfile(filename):
-    print("Le fichier ", filename, " existe déjà.")
-    filename = filename + '_bis'
-fil = open(filename,"xb")
-pickle.dump(dic,fil)
-fil.close()
+# if os.path.isfile(filename):
+#     print("Le fichier ", filename, " existe déjà.")
+#     filename = filename + '_bis'
+# fil = open(filename,"xb")
+# pickle.dump(dic,fil)
+# fil.close()
 
 
-time_init = time.time()
-res = Parallel(n_jobs=n_MC)(delayed(compute_SRC_FC_StatMeans)(out_pop[k].pop_Q, out_pop[k].pop_theta_coefs, out_pop[k].pop_arclgth, out_pop[k].mu_Z0, h_bounds, lbda_bounds, nb_basis, n_call_bayopt=n_call_bayopt, sigma=lam) for k in range(n_MC))
-time_end = time.time()
-duration = time_end - time_init
+# time_init = time.time()
+# res = Parallel(n_jobs=n_MC)(delayed(compute_SRC_FC_StatMeans)(out_pop[k].pop_Q, out_pop[k].pop_theta_coefs, out_pop[k].pop_arclgth, out_pop[k].mu_Z0, h_bounds, lbda_bounds, nb_basis, n_call_bayopt=n_call_bayopt, sigma=lam) for k in range(n_MC))
+# time_end = time.time()
+# duration = time_end - time_init
 
-out_SRC, out_FC, out_V1, out_V2, out_V3 = [], [], [], [], []
-for k in range(n_MC):
-    out_SRC.append(res[k][0])
-    out_FC.append(res[k][1])
-    out_V1.append(res[k][2])
-    out_V2.append(res[k][3])
-    out_V3.append(res[k][4])
+# out_SRC, out_FC, out_V1, out_V2, out_V3 = [], [], [], [], []
+# for k in range(n_MC):
+#     out_SRC.append(res[k][0])
+#     out_FC.append(res[k][1])
+#     out_V1.append(res[k][2])
+#     out_V2.append(res[k][3])
+#     out_V3.append(res[k][4])
 
-# SAVE
-filename = filename_base + "pop_other_means_with_noise_N_200_sig_005" 
-dic = {"duration":duration, "res_SRC":out_SRC, "res_FC":out_FC, "res_V1":out_V1, "res_V2":out_V2, "res_V3":out_V3}
+# # SAVE
+# filename = filename_base + "pop_other_means_with_noise_N_200_sig_005" 
+# dic = {"duration":duration, "res_SRC":out_SRC, "res_FC":out_FC, "res_V1":out_V1, "res_V2":out_V2, "res_V3":out_V3}
 
-if os.path.isfile(filename):
-    print("Le fichier ", filename, " existe déjà.")
-    filename = filename + '_bis'
-fil = open(filename,"xb")
-pickle.dump(dic,fil)
-fil.close()
+# if os.path.isfile(filename):
+#     print("Le fichier ", filename, " existe déjà.")
+#     filename = filename + '_bis'
+# fil = open(filename,"xb")
+# pickle.dump(dic,fil)
+# fil.close()
