@@ -1,13 +1,3 @@
-import pickle
-filename = "means_Aliza"
-with open(filename, 'rb') as fichier:
-    dic_init = pickle.load(fichier)
-# fil = open(filename,"rb")
-# dic_init = pickle.load(fil)
-# fil.close()
-res_pop = dic_init["res_pop"]
-
-
 import sys
 sys.path.insert(1, '../')
 sys.path.insert(1, '../../')
@@ -85,6 +75,7 @@ lam = 500
 # pickle.dump(dic,fil)
 # fil.close()
 
+res_pop = np.load('res_pop_Aliza.npy', allow_pickle=True)
 
 time_init = time.time()
 res = Parallel(n_jobs=N_sign)(delayed(compute_all_means_louper)(res_pop[k], list_Y[k], lbda_bounds, n_call_bayopt=n_call_bayopt, sigma=lam) for k in range(N_sign))
