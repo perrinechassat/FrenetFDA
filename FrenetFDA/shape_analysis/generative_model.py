@@ -121,15 +121,20 @@ class GenerativeModel:
         rand_X = np.zeros((num,self.n+1,3))
        
         if self.init=='mean':
-            se3 = SpecialEuclidean(n=3)
+            so3 = SpecialOrthogonal(n=3)
             for k in range(num):
-                Z = solve_FrenetSerret_ODE_SE(theta=lambda x: (interp1d(time_bis, r_theta_warp[k].T)(x)).T, t_eval=r_s_scale[k], Z0=np.eye(4))
-                Z_mean = FrechetMean(metric=se3.metric).fit(Z).estimate_
-                init_Z = r_Z0[k]@Z_mean.T
-                Z_random =  solve_FrenetSerret_ODE_SE(theta=r_theta_warp_func[k], t_eval=r_s_scale[k], Z0=init_Z)
+                Q = solve_FrenetSerret_ODE_SO(theta=lambda x: (interp1d(time_bis, r_theta_warp[k].T)(x)).T, t_eval=r_s_scale[k], Q0=np.eye(3))
+                print(Q.shape)
+                Q = so3.projection(Q)
+                print(Q.shape)
+                Q_mean = FrechetMean(metric=so3.metric).fit(Q).estimate_
+                init_Q = r_Z0[k,:3,:3]@Q_mean.T
+                init_Z = np.eye(4)
+                init_Z[:3,:3] = init_Q
+                Z_random =  solve_FrenetSerret_ODE_SE(theta=lambda x: (interp1d(time_bis, r_theta_warp[k].T)(x)).T, t_eval=r_s_scale[k], Z0=init_Z)
                 rand_Z[k] = Z_random
                 rand_Q[k] = Z_random[:,:3,:3]
-                rand_X_scale[k] = Z_random[:,:3,3]
+                rand_X_scale[k] = Z_random[:,:3,3] + r_Z0[k,:3,3]
                 rand_X[k] = rand_X_scale[k]*r_L[k]
 
         elif self.init=='init':
@@ -308,8 +313,8 @@ def pca_init_position(Q0, X0):
     mean.fit(Z0)
     mean_Z0 = se.projection(mean.estimate_)
     # metric = se.bi_invariant_metric
-    tpca = TangentPCA(metric=se.metric, n_components='mle')
-    # tpca = TangentPCA(metric=metric, n_components=n_components)
+    # tpca = TangentPCA(metric=se.metric, n_components='mle')
+    tpca = TangentPCA(metric=se.metric, n_components=3)
     tpca = tpca.fit(Z0, base_point=mean_Z0)
     tangent_projected_data = tpca.transform(Z0)
 

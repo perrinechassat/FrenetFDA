@@ -7,6 +7,7 @@ from FrenetFDA.utils.Frenet_Serret_utils import solve_FrenetSerret_ODE_SO, solve
 import FrenetFDA.utils.visualization as visu
 from FrenetFDA.utils.smoothing_utils import VectorBSplineSmoothing
 from joblib import Parallel, delayed
+import time as tt
 
 class SRVF:
 
@@ -42,7 +43,7 @@ class SRVF:
         N = len(x0)
         q0, len0, lenq0 = fs.curve_functions.curve_to_q(x0.T)
         if align:
-            x1_align, q1_align, R_opt, h_opt = self.align_srvf(x0, x1)
+            x1_align, q1_align, R_opt, h_opt = self.align(x0, x1)
             x1_align = x1_align.T
         else:
             R_opt = np.eye(self.dim)
@@ -107,7 +108,7 @@ class SRVF:
         N = len(x0)
         q0, len0, lenq0 = fs.curve_functions.curve_to_q(x0.T)
         if align:
-            x1_align, q1_align, R_opt, h_opt = self.align_srvf(x0, x1)
+            x1_align, q1_align, R_opt, h_opt = self.align(x0, x1)
             x1_align = x1_align.T
         else:
             R_opt = np.eye(self.dim)
@@ -179,7 +180,7 @@ class SRC:
         """
         if np.linalg.norm(c0(time)-c1(time),'fro') > 0.0001:
             gam = orN2.coptimum_reparam_curve(np.ascontiguousarray(c0(time)), time, np.ascontiguousarray(c1(time)), lam)
-            c1_align = self.warp_src(c1, gam, smooth)
+            c1_align = self.warp(c1, gam, smooth)
         else:
             gam = time
             c1_align = c1
@@ -202,7 +203,7 @@ class SRC:
         c0_theta = lambda t: theta0(t)/np.sqrt(np.linalg.norm(theta0(t)))
         c1_theta = lambda t: theta1(t)/np.sqrt(np.linalg.norm(theta1(t)))
         if align:
-            _, gamma_opt = self.align_src(c0_theta, c1_theta, time, lam=lam, smooth=smooth)
+            _, gamma_opt = self.align(c0_theta, c1_theta, time, lam=lam, smooth=smooth)
             tmp_spline = interpolate.UnivariateSpline(time, gamma_opt, s=0.0001)
             gam_smooth = lambda t: (tmp_spline(t) - tmp_spline(time).min())/ (tmp_spline(time).max() - tmp_spline(time).min())
             c1_theta_align = lambda t: c1_theta(gam_smooth(t))*np.sqrt(tmp_spline(t,1))
@@ -275,24 +276,58 @@ class SRC:
         c0_theta = lambda t: theta0(t)/np.sqrt(np.linalg.norm(theta0(t)))
         c1_theta = lambda t: theta1(t)/np.sqrt(np.linalg.norm(theta1(t)))
         if align:
-            _, gamma_opt = self.align_src(c0_theta, c1_theta, time, lam=lam, smooth=smooth)
+            _, gamma_opt = self.align(c0_theta, c1_theta, time, lam=lam, smooth=smooth)
             gamma_opt = (gamma_opt - gamma_opt.min())/(gamma_opt.max() - gamma_opt.min())
             binsize = np.mean(np.diff(time))
             psi_gamma_opt = np.sqrt(np.gradient(gamma_opt,binsize))
-            s1_h = np.interp(s0(time), time, gamma_opt)
+            s1_h = np.interp(s0, time, gamma_opt)
             s1_h = (s1_h - s1_h.min())/(s1_h.max() - s1_h.min())
             c1_theta_align_s0 = c1_theta(s1_h)*psi_gamma_opt
         else:
             gamma_opt = time
-            s1_h = s1(time)
-            c1_theta_align_s0 = c1_theta(s0(time))
+            s1_h = s1
+            c1_theta_align_s0 = c1_theta(s0)
         
         binsize = np.mean(np.diff(time))
-        psi0 = np.sqrt(np.gradient(s0(time),binsize))
+        psi0 = np.sqrt(np.gradient(s0,binsize))
         psi1 = np.sqrt(np.gradient(s1_h,binsize))
         dist_gam = Sphere.dist(psi0, psi1)
-        dist = np.linalg.norm(psi0*(c0_theta(s0(time))-c1_theta_align_s0)) + lam*dist_gam    
+        dist = np.linalg.norm(psi0*(c0_theta(s0)-c1_theta_align_s0)) + lam*dist_gam    
         return dist
+
+
+    def dist_bis(self, theta0, theta1, s0, s1, time, lam=1):
+        """
+            Compute the geodesic distance under the SRC framework.
+
+            Inputs:
+            - theta0, theta1: functions such that theta_i(t) is a numpy array of shape (dim-1); Frenet curvatures of the two curves from which we want to compute the geodesic distance.
+            - s0, s1: function on [0,1]; Arc-length function of x0 and x1.
+            - time: numpy array of shape (N,); grid of N time points between 0 and 1.
+            - lam: float; ponderation coefficient in SRC distance.
+            - smooth: if True an additional smoothing of the optimal warping function is made.
+            - align: if True the optimal reparameterization is computed before computed the geodesic. 
+        """
+        T = len(time)
+        c0 = np.zeros((len(s0),self.dim-1))
+        c1 = np.zeros((len(s1),self.dim-1))
+        for j in range(T):
+            c0[j,:] = theta0(s0[j])/np.sqrt(np.linalg.norm(theta0(s0[j])))
+            c1[j,:] = theta1(s1[j])/np.sqrt(np.linalg.norm(theta1(s1[j])))
+        h_opt = orN2.coptimum_reparam_curve(np.ascontiguousarray(c0.T), time, np.ascontiguousarray(c1.T), lam)
+        h_opt = (h_opt - h_opt.min())/(h_opt.max() - h_opt.min())
+        grad_h_opt = np.gradient(h_opt,time)
+        s1_h = np.interp(h_opt, time, s1)
+        c1_h = np.zeros(c1.shape)
+        for j in range(T):
+            c1_h[j] = np.sqrt(grad_h_opt[j])*theta1(s1_h[j])/np.sqrt(np.linalg.norm(theta1(s1_h[j])))
+
+        psi0 = np.sqrt(np.gradient(s0,time))
+        psi1 = np.sqrt(np.gradient(s1_h,time))
+        dist_gam = Sphere.dist(psi0, psi1)
+        dist = np.linalg.norm((c0-c1_h)) + dist_gam  
+        return dist
+    
     
     def karcher_mean_old(self, arr_theta, arr_arc_s, tol, max_iter, lam=1):
         """
