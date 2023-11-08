@@ -1,7 +1,6 @@
 import sys
 sys.path.insert(1, '../')
-# sys.path.insert(1, '../../')
-# sys.path.insert(1, '../../../')
+sys.path.insert(1, '../../')
 from FrenetFDA.utils.Frenet_Serret_utils import *
 from FrenetFDA.utils.smoothing_utils import *
 from FrenetFDA.processing_Euclidean_curve.unified_estimate_Frenet_state_space.EM_Frenet_state_space_CV import FrenetStateSpaceCV_global
@@ -12,12 +11,10 @@ from FrenetFDA.processing_Euclidean_curve.estimate_Frenet_curvatures import Extr
 from FrenetFDA.processing_Frenet_path.estimate_Frenet_curvatures import ApproxFrenetODE, LocalApproxFrenetODE
 import FrenetFDA.utils.visualization as visu
 from utils_functions import *
-from pickle import *
+import pickle
 import time 
 import os.path
 import os
-import dill as pickle
-from tqdm import tqdm
 import pandas as pd
 import numpy as np
 from scipy.interpolate import interp1d
@@ -81,9 +78,11 @@ lam = 500
 
 
 filename = "means_Aliza"
-fil = open(filename,"rb")
-dic_init = pickle.load(fil)
-fil.close()
+with open(filename, 'rb') as fichier:
+    dic_init = pickle.load(fichier)
+# fil = open(filename,"rb")
+# dic_init = pickle.load(fil)
+# fil.close()
 res_pop = dic_init["res_pop"]
 
 time_init = time.time()
