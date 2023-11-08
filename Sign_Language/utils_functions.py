@@ -282,6 +282,67 @@ def EM_from_init_theta(filename_save, filename_simu, sigma_init, n_splits_CV, n_
 
 
 
+def EM_from_init_theta_single_group(filename_save, filename_simu, ind_group_simu, sigma_init, n_splits_CV, n_call_bayopt, bounds_lambda, tol_EM, max_iter_EM):
+
+    init_Sigma = lambda s: sigma_init**2*np.array([[1 + 0*s, 0*s],[0*s, 1 + 0*s]]) 
+    P0_init = sigma_init**2*np.eye(6)
+
+    filename = filename_simu 
+    fil = open(filename,"rb")
+    dic_init = pickle.load(fil)
+    fil.close()
+
+    tab_Y_scale = dic_init["tab_Y_scale"][ind_group_simu[0]:ind_group_simu[1]]
+    tab_Z_hat_GS = dic_init["tab_Z_hat_GS"][ind_group_simu[0]:ind_group_simu[1]]
+    tab_smooth_theta_coefs = dic_init["tab_smooth_theta_coefs"][ind_group_simu[0]:ind_group_simu[1]]
+    tab_grid_arc_s = dic_init["tab_grid_arc_s"][ind_group_simu[0]:ind_group_simu[1]]
+    tab_nb_basis = dic_init["tab_nb_basis"][ind_group_simu[0]:ind_group_simu[1]]
+    tab_knots = dic_init["tab_knots"][ind_group_simu[0]:ind_group_simu[1]]
+    n_curves = len(tab_Y_scale)
+
+    Gamma_tab = []
+    mu0_tab = []
+    # nb_basis_tab = []
+    for k in range(n_curves):
+        Gamma_tab.append(((tab_Y_scale[k] - tab_Z_hat_GS[k][:,:3,3]).T @ (tab_Y_scale[k] - tab_Z_hat_GS[k][:,:3,3]))/len(tab_Y_scale[k]))
+        mu0_tab.append(tab_Z_hat_GS[k][0])
+        # nb_basis_tab.append(int(np.sqrt(tab_Y_scale[k].shape[0])))
+
+    time_init = time.time()
+
+    with tqdm(total=n_curves) as pbar:
+        res = Parallel(n_jobs=n_curves)(delayed(bayesian_CV_optimization_regularization_parameter)(n_CV=n_splits_CV, n_call_bayopt=n_call_bayopt, lambda_bounds=bounds_lambda, grid_obs=tab_grid_arc_s[k], 
+                                                                    Y_obs=tab_Y_scale[k], tol=tol_EM, max_iter=max_iter_EM, nb_basis=tab_nb_basis[k], knots=tab_knots[k], 
+                                                                    init_params={"Gamma":Gamma_tab[k], "coefs":tab_smooth_theta_coefs[k], "mu0":mu0_tab[k], "Sigma":init_Sigma, "P0":P0_init}) for k in range(n_curves))
+    pbar.update()
+
+    time_end = time.time()
+    duration = time_end - time_init
+
+    FS_statespace_tab = []
+    res_bayopt_tab = []
+    for k in range(n_curves):
+        FS_statespace_tab.append(res[k][0])
+        res_bayopt_tab.append(res[k][1])
+
+
+    filename = filename_save
+
+    dic = {"duration":duration, "FS_statespace_tab":FS_statespace_tab, "res_bayopt_tab":res_bayopt_tab, "nb_basis_tab":tab_nb_basis, "mu0_tab":mu0_tab, "Gamma_tab":Gamma_tab, "knots_tab":tab_knots}
+
+    if os.path.isfile(filename):
+        print("Le fichier ", filename, " existe déjà.")
+        filename = filename + '_bis'
+    fil = open(filename,"xb")
+    pickle.dump(dic,fil)
+    fil.close()
+
+    print('___________________________ End EM ___________________________')
+
+    return 
+
+
+
 def estimation_extrinsic_formulas(filename_base, list_Y, n_call_bayopt_der, bounds_h_der, bounds_lbda, n_call_bayopt_theta):
     
     N_curves = len(list_Y)
@@ -714,7 +775,7 @@ def compute_all_means_louper(res_pop, pop_x, lbda_bounds, n_call_bayopt=20, sigm
     for k in range(n_samples):
         pop_x_scale[k] = centering(pop_x_scale[k])
         pop_Q[k] = pop_Z[k][:,:3,:3] 
-        
+
     knots = [concat_grid_arc_s[0]]
     grid_bis = concat_grid_arc_s[1:-1]
     for i in range(0,len(grid_bis),4):
