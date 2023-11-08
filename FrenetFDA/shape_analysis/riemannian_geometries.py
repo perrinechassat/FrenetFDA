@@ -513,11 +513,14 @@ class SRC:
         T = len(arr_arc_s[0])
         time = np.linspace(0,1,T)
 
+        eps = 1e-03
         arr_src_theta = np.zeros((N_samples,T,self.dim-1))
         for i in range(N_samples):
             theta_i = np.squeeze((bspline_decomp.basis_fct(time).T @ arr_theta_coefs[i]).T)
             for j in range(T):
                 arr_src_theta[i,j,:] = theta_i[j]/np.sqrt(np.linalg.norm(theta_i[j]))
+                # if arr_src_theta[i,j,0] <= 0:
+                #     arr_src_theta[i,j,0] = eps
         mean_src_theta = np.mean(arr_src_theta, axis=0)
 
         dist_arr = np.zeros(N_samples)
@@ -532,6 +535,9 @@ class SRC:
 
         arr_gam = np.array([np.linspace(0,1,T) for i in range(N_samples)])
         
+        visu.plot_array_2D(time, arr_src_theta[:,:,0], 'curv')
+        visu.plot_array_2D(time, arr_src_theta[:,:,1], 'tors')
+
         print("Aligning %d functions in maximum %d iterations..."
             % (N_samples, max_iter))
         while up_err > tol and k < max_iter:
@@ -567,6 +573,9 @@ class SRC:
                     for j in range(0, self.dim-1):
                         time0 = (time[-1] - time[0]) * gam + time[0]
                         arr_src_align[i,:,j] = np.interp(time0, time, arr_src_theta[i, :, j]) * np.sqrt(np.gradient(gam, time))
+
+                visu.plot_array_2D(time, arr_src_align[:,:,0], 'curv')
+                visu.plot_array_2D(time, arr_src_align[:,:,1], 'tors')
 
             mean_src_theta = np.mean(arr_src_align, axis=0)
             error = np.linalg.norm((mean_src_theta - temp_mean_src_theta))  
