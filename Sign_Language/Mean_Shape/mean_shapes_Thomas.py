@@ -1,6 +1,7 @@
 import sys
 sys.path.insert(1, '../')
 sys.path.insert(1, '../../')
+sys.path.insert(1, '../../../')
 from FrenetFDA.utils.Frenet_Serret_utils import *
 from FrenetFDA.utils.smoothing_utils import *
 from FrenetFDA.processing_Euclidean_curve.unified_estimate_Frenet_state_space.EM_Frenet_state_space_CV import FrenetStateSpaceCV_global
