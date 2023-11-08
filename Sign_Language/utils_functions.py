@@ -706,15 +706,15 @@ def compute_all_means_louper(res_pop, pop_x, lbda_bounds, n_call_bayopt=20, sigm
     pop_L = res_pop[9]
     concat_grid_arc_s = res_pop[10]
 
-    pop_Q = np.zeros((n_samples, N, dim, dim))
-    for k in range(n_samples):
-        pop_x_scale[k] = centering(pop_x_scale[k])
-        pop_Q[k] = pop_Z[k][:,:3,:3]
-
     N = len(concat_grid_arc_s)
     grid_time = np.linspace(0,1,N)
     h_bounds = np.array([np.max((concat_grid_arc_s[1:]-concat_grid_arc_s[:-1])), np.min((np.max((concat_grid_arc_s[1:]-concat_grid_arc_s[:-1]))*8,0.08))])
 
+    pop_Q = np.zeros((n_samples, N, dim, dim))
+    for k in range(n_samples):
+        pop_x_scale[k] = centering(pop_x_scale[k])
+        pop_Q[k] = pop_Z[k][:,:3,:3] 
+        
     knots = [concat_grid_arc_s[0]]
     grid_bis = concat_grid_arc_s[1:-1]
     for i in range(0,len(grid_bis),4):
