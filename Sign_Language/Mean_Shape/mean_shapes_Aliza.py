@@ -1,3 +1,13 @@
+import pickle
+filename = "means_Aliza"
+with open(filename, 'rb') as fichier:
+    dic_init = pickle.load(fichier)
+# fil = open(filename,"rb")
+# dic_init = pickle.load(fil)
+# fil.close()
+res_pop = dic_init["res_pop"]
+
+
 import sys
 sys.path.insert(1, '../')
 sys.path.insert(1, '../../')
@@ -11,7 +21,6 @@ from FrenetFDA.processing_Euclidean_curve.estimate_Frenet_curvatures import Extr
 from FrenetFDA.processing_Frenet_path.estimate_Frenet_curvatures import ApproxFrenetODE, LocalApproxFrenetODE
 import FrenetFDA.utils.visualization as visu
 from utils_functions import *
-import pickle
 import time 
 import os.path
 import os
@@ -76,14 +85,6 @@ lam = 500
 # pickle.dump(dic,fil)
 # fil.close()
 
-
-filename = "means_Aliza"
-with open(filename, 'rb') as fichier:
-    dic_init = pickle.load(fichier)
-# fil = open(filename,"rb")
-# dic_init = pickle.load(fil)
-# fil.close()
-res_pop = dic_init["res_pop"]
 
 time_init = time.time()
 res = Parallel(n_jobs=N_sign)(delayed(compute_all_means_louper)(res_pop[k], list_Y[k], lbda_bounds, n_call_bayopt=n_call_bayopt, sigma=lam) for k in range(N_sign))
