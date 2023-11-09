@@ -77,36 +77,42 @@ n_tot_curves = len(full_x_reshape)
 print(n_tot_curves)
 
 mat_SRC_scaled = np.zeros((n_tot_curves, n_tot_curves))
-mat_SRC = np.zeros((n_tot_curves, n_tot_curves))
-mat_SRVF = np.zeros((n_tot_curves, n_tot_curves))
-mat_FC_scaled = np.zeros((n_tot_curves, n_tot_curves))
-mat_FC = np.zeros((n_tot_curves, n_tot_curves))
+mat_SRC_scaled_bis = np.zeros((n_tot_curves, n_tot_curves))
+# mat_SRC = np.zeros((n_tot_curves, n_tot_curves))
+# mat_SRVF = np.zeros((n_tot_curves, n_tot_curves))
+# mat_FC_scaled = np.zeros((n_tot_curves, n_tot_curves))
+# mat_FC = np.zeros((n_tot_curves, n_tot_curves))
 for i in range(n_tot_curves):
     print(i)
     for j in range(i+1, n_tot_curves):
 
-        mat_SRVF[i,j] = SRVF(3).dist(full_x_reshape[i], full_x_reshape[j])
-        concact_arc_s = np.unique(np.round(np.sort(np.concatenate([full_grid_arc_s[i], full_grid_arc_s[j]])), decimals=8))
+        # mat_SRVF[i,j] = SRVF(3).dist(full_x_reshape[i], full_x_reshape[j])
+        # concact_arc_s = np.unique(np.round(np.sort(np.concatenate([full_grid_arc_s[i], full_grid_arc_s[j]])), decimals=8))
         
         fi = lambda s: interpolate.interp1d(full_grid_arc_s[i], full_theta_scale[i].T)(s).T
         fj = lambda s: interpolate.interp1d(full_grid_arc_s[j], full_theta_scale[j].T)(s).T
-        mat_SRC_scaled[i,j] = SRC(3).dist_bis(fi, fj, full_grid_arc_s_reshape[i], full_grid_arc_s_reshape[j], grid_time, lam=100)
-        mat_FC_scaled[i,j] = Frenet_Curvatures(3).dist(fi, fj, concact_arc_s)
+        mat_SRC_scaled[i,j] = SRC(3).dist_bis(fi, fj, full_grid_arc_s_reshape[i], full_grid_arc_s_reshape[j], grid_time, lam=1)
+        mat_SRC_scaled_bis[i,j] = SRC(3).dist_bis(fi, fj, full_grid_arc_s_reshape[i], full_grid_arc_s_reshape[j], grid_time, lam=500)
+
+        # mat_FC_scaled[i,j] = Frenet_Curvatures(3).dist(fi, fj, concact_arc_s)
         
-        fi = lambda s: interpolate.interp1d(full_grid_arc_s[i], full_theta[i].T)(s).T
-        fj = lambda s: interpolate.interp1d(full_grid_arc_s[j], full_theta[j].T)(s).T
-        mat_SRC[i,j] = SRC(3).dist_bis(fi, fj, full_grid_arc_s_reshape[i], full_grid_arc_s_reshape[j], grid_time, lam=100)
-        mat_FC[i,j] = Frenet_Curvatures(3).dist(fi, fj, concact_arc_s)
+        # fi = lambda s: interpolate.interp1d(full_grid_arc_s[i], full_theta[i].T)(s).T
+        # fj = lambda s: interpolate.interp1d(full_grid_arc_s[j], full_theta[j].T)(s).T
+        # mat_SRC[i,j] = SRC(3).dist_bis(fi, fj, full_grid_arc_s_reshape[i], full_grid_arc_s_reshape[j], grid_time, lam=100)
+        # mat_FC[i,j] = Frenet_Curvatures(3).dist(fi, fj, concact_arc_s)
 
 mat_SRC_scaled = mat_SRC_scaled + mat_SRC_scaled.T
-mat_SRC = mat_SRC + mat_SRC.T
-mat_SRVF = mat_SRVF + mat_SRVF.T 
-mat_FC_scaled = mat_FC_scaled + mat_FC_scaled.T 
-mat_FC = mat_FC + mat_FC.T
+mat_SRC_scaled_bis = mat_SRC_scaled_bis + mat_SRC_scaled_bis.T
+# mat_SRC = mat_SRC + mat_SRC.T
+# mat_SRVF = mat_SRVF + mat_SRVF.T 
+# mat_FC_scaled = mat_FC_scaled + mat_FC_scaled.T 
+# mat_FC = mat_FC + mat_FC.T
 
 
-np.save("results/mat_SRC_scaled", mat_SRC_scaled, allow_pickle=True)
-np.save("results/mat_SRC", mat_SRC, allow_pickle=True)
-np.save("results/mat_SRVF", mat_SRVF, allow_pickle=True)
-np.save("results/mat_FC_scaled", mat_FC_scaled, allow_pickle=True)
-np.save("results/mat_FC", mat_FC, allow_pickle=True)
+np.save("results/mat_SRC_scaled_1", mat_SRC_scaled, allow_pickle=True)
+np.save("results/mat_SRC_scaled_500", mat_SRC_scaled_bis, allow_pickle=True)
+
+# np.save("results/mat_SRC", mat_SRC, allow_pickle=True)
+# np.save("results/mat_SRVF", mat_SRVF, allow_pickle=True)
+# np.save("results/mat_FC_scaled", mat_FC_scaled, allow_pickle=True)
+# np.save("results/mat_FC", mat_FC, allow_pickle=True)
