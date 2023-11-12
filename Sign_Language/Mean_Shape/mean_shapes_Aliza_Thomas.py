@@ -94,7 +94,7 @@ res = Parallel(n_jobs=N_sign)(delayed(compute_all_means_louper)(res_pop[k], list
 time_end = time.time()
 duration = time_end - time_init
 
-out_arithm, out_SRC, out_V2, out_V3 = [], [], [], [], []
+out_arithm, out_SRC, out_V2, out_V3 = [], [], [], []
 for k in range(N_sign):
     out_arithm.append(res[k][0])
     out_SRC.append(res[k][1])
