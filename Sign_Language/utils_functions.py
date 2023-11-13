@@ -788,14 +788,14 @@ def compute_all_means_louper(res_pop, pop_x, lbda_bounds, n_call_bayopt=20, sigm
     # res_pop = collections.namedtuple('res_pop', ['mu_Z0', 'pop_theta', 'pop_theta_coefs', 'pop_Z', 'pop_X', 'pop_x_scale', 'pop_x_scale_init', 'pop_arclgth', 'pop_arclgth_reshape', 'pop_L', 'concat_grid_arc_s'])
     # out_pop = res_pop(mu_Z0, pop_theta, pop_theta_coefs, pop_Z, pop_X, pop_x_scale, pop_x_scale_bis, pop_arclgth, pop_arclgth_reshape, pop_L, concat_grid_arc_s)
 
-    """ arithmetic mean """
-    print('computation arithmetic mean...')
+    # """ arithmetic mean """
+    # print('computation arithmetic mean...')
 
-    mu_arithm = np.mean(pop_x_scale, axis=0)
-    mu_s_arithm, mu_Z_arithm, coefs_opt_arithm, knots_arithm = mean_theta_from_mean_shape(mu_arithm, lbda_bounds, n_call_bayopt, nb_basis=None, knots_step=4)
+    # mu_arithm = np.mean(pop_x_scale, axis=0)
+    # mu_s_arithm, mu_Z_arithm, coefs_opt_arithm, knots_arithm = mean_theta_from_mean_shape(mu_arithm, lbda_bounds, n_call_bayopt, nb_basis=None, knots_step=4)
 
-    res_mean_arithm = collections.namedtuple('res_mean_arithm', ['mu', 'mu_s', 'mu_Z', 'knots_arithm', 'coefs_opt_arithm'])
-    out_arithm = res_mean_arithm(mu_arithm, mu_s_arithm, mu_Z_arithm, knots_arithm, coefs_opt_arithm)
+    # res_mean_arithm = collections.namedtuple('res_mean_arithm', ['mu', 'mu_s', 'mu_Z', 'knots_arithm', 'coefs_opt_arithm'])
+    # out_arithm = res_mean_arithm(mu_arithm, mu_s_arithm, mu_Z_arithm, knots_arithm, coefs_opt_arithm)
 
     """ SRC mean """
     print('computation SRC mean...')
@@ -840,7 +840,7 @@ def compute_all_means_louper(res_pop, pop_x, lbda_bounds, n_call_bayopt=20, sigm
     res_mean_V3 = collections.namedtuple('res_mean_V3', ['h_opt', 'lbda_opt', 'mu', 'mu_Z', 'mu_theta', 'coefs_opt', 'gam', 'results_alignment'])
     out_V3 = res_mean_V3(h_opt, lbda_opt, mu_V3, mu_Z_V3, mu_theta_V3, coefs_opt, statmean_V3.gam, statmean_V3.res_align)
 
-    return out_arithm, out_SRC, out_V2, out_V3
+    return out_SRC, out_V2, out_V3
 
 
 

@@ -94,16 +94,15 @@ res = Parallel(n_jobs=N_sign)(delayed(compute_all_means_louper)(res_pop[k], list
 time_end = time.time()
 duration = time_end - time_init
 
-out_arithm, out_SRC, out_V2, out_V3 = [], [], [], []
+out_SRC, out_V2, out_V3 = [], [], []
 for k in range(N_sign):
-    out_arithm.append(res[k][0])
-    out_SRC.append(res[k][1])
-    out_V2.append(res[k][2])
-    out_V3.append(res[k][3])
+    out_SRC.append(res[k][0])
+    out_V2.append(res[k][1])
+    out_V3.append(res[k][2])
 
 # SAVE
 filename = "means_Aliza_Thomas_correct"
-dic = {"duration":duration, "list_Y":list_Y, "res_arithm":out_arithm, "res_SRC":out_SRC, "res_V2":out_V2, "res_V3":out_V3}
+dic = {"duration":duration, "list_Y":list_Y, "res_SRC":out_SRC, "res_V2":out_V2, "res_V3":out_V3}
 
 if os.path.isfile(filename):
     print("Le fichier ", filename, " existe déjà.")
