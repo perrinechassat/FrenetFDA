@@ -841,3 +841,46 @@ def compute_all_means_louper(res_pop, pop_x, lbda_bounds, n_call_bayopt=20, sigm
     out_V3 = res_mean_V3(h_opt, lbda_opt, mu_V3, mu_Z_V3, mu_theta_V3, coefs_opt, statmean_V3.gam, statmean_V3.res_align)
 
     return out_arithm, out_SRC, out_V2, out_V3
+
+
+
+
+
+def test_all_means_louper(res_pop, pop_x, lbda_bounds, n_call_bayopt=20, sigma=0.0):
+
+    # pop_x est supposé avoir le meme nombre d'observations pour chaque courbe
+    # pop_Q est calculer avec méthode GramScmidt
+    # pop_theta est calculer avec méthode Least Squares
+
+    n_samples = len(pop_x)
+    dim = pop_x[0].shape[1]
+    
+    mu_Z0 = res_pop[0]
+    pop_theta = res_pop[1]
+    pop_theta_coefs = res_pop[2]
+    pop_Z = res_pop[3]
+    pop_X = res_pop[4]
+    pop_x_scale = res_pop[5]
+    pop_x_scale_bis = res_pop[6]
+    pop_arclgth = res_pop[7]
+    pop_arclgth_reshape = res_pop[8]
+    pop_L = res_pop[9]
+    concat_grid_arc_s = res_pop[10]
+
+    N = len(concat_grid_arc_s)
+
+    pop_Q = np.zeros((n_samples, N, dim, dim))
+    for k in range(n_samples):
+        pop_x_scale[k] = centering(pop_x_scale[k])
+        pop_Q[k] = pop_Z[k][:,:3,:3] 
+
+    knots = [concat_grid_arc_s[0]]
+    grid_bis = concat_grid_arc_s[1:-1]
+    for i in range(0,len(grid_bis),4):
+        knots.append(grid_bis[i])
+    knots.append(concat_grid_arc_s[-1])
+
+    res_pop = collections.namedtuple('res_pop', ['mu_Z0', 'pop_theta', 'pop_theta_coefs', 'pop_Z', 'pop_X', 'pop_x_scale', 'pop_x_scale_init', 'pop_arclgth', 'pop_arclgth_reshape', 'pop_L', 'concat_grid_arc_s'])
+    out_pop = res_pop(mu_Z0, pop_theta, pop_theta_coefs, pop_Z, pop_X, pop_x_scale, pop_x_scale_bis, pop_arclgth, pop_arclgth_reshape, pop_L, concat_grid_arc_s)
+
+    return out_pop
