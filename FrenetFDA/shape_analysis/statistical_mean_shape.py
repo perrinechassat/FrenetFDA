@@ -547,8 +547,8 @@ class StatisticalMeanShapeV3(StatisticalMeanShape):
         for i in range(N_samples):
             SRC_tab[:,:,i] = theta[:,:,i]/np.sqrt(np.linalg.norm(theta[:,:,i], axis=0))
 
-        visu.plot_array_2D(S_grid, theta[0,:,:].T, 'curv')
-        visu.plot_array_2D(S_grid, theta[1,:,:].T, 'tors')
+        # visu.plot_array_2D(S_grid, theta[0,:,:].T, 'curv')
+        # visu.plot_array_2D(S_grid, theta[1,:,:].T, 'tors')
 
         if gam_fct is None:
             
@@ -578,8 +578,8 @@ class StatisticalMeanShapeV3(StatisticalMeanShape):
                 for j in range(SRC_align.shape[1]):
                     theta_align[i,j,:] = np.linalg.norm(SRC_align[i,j])*SRC_align[i,j]
 
-            visu.plot_array_2D(S_grid, theta_align[:,:,0], 'curv align')
-            visu.plot_array_2D(S_grid, theta_align[:,:,1], 'tors align')
+            # visu.plot_array_2D(S_grid, theta_align[:,:,0], 'curv align')
+            # visu.plot_array_2D(S_grid, theta_align[:,:,1], 'tors align')
 
             return S_grid, weighted_mean_theta, sum_omega, gam_SRC, ind_conv, SRC_align, theta_align, res, gam_fct
 
