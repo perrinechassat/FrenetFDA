@@ -51,59 +51,27 @@ list_Y = compute_list_Y_from_group(df, group)
 N_sign = len(list_Y)
 
 n_call_bayopt = 30
-lbda_bounds = np.array([[-30,-10],[-30,-10]])
+lbda_bounds = np.array([[-30,-5],[-30,-5]])
 lam = 100
-
-# time_init = time.time()
-# res = Parallel(n_jobs=N_sign)(delayed(compute_all_means)(list_Y[k], lbda_bounds, n_call_bayopt=n_call_bayopt, sigma=lam) for k in range(N_sign))
-# time_end = time.time()
-# duration = time_end - time_init
-
-# out_pop, out_arithm, out_srvf, out_SRC, out_FC, out_V1, out_V2, out_V3 = [], [], [], [], [], [], [], []
-# for k in range(N_sign):
-#     out_pop.append(res[k][0])
-#     out_arithm.append(res[k][1])
-#     out_srvf.append(res[k][2])
-#     out_SRC.append(res[k][3])
-#     out_FC.append(res[k][4])
-#     out_V1.append(res[k][5])
-#     out_V2.append(res[k][6])
-#     out_V3.append(res[k][7])
-
-# # SAVE
-# filename = "means_Aliza_Thomas"
-# dic = {"duration":duration, "list_Y":list_Y, "res_pop":out_pop, "res_arithm":out_arithm, "res_SRVF":out_srvf, "res_SRC":out_SRC, "res_FC":out_FC, "res_V1":out_V1, "res_V2":out_V2, "res_V3":out_V3}
-
-# if os.path.isfile(filename):
-#     print("Le fichier ", filename, " existe déjà.")
-#     filename = filename + '_bis'
-# fil = open(filename,"xb")
-# pickle.dump(dic,fil)
-# fil.close()
-
-
-# filename = "means_Aliza_Thomas"
-# fil = open(filename,"rb")
-# dic_init = pickle.load(fil)
-# fil.close()
-# res_pop = dic_init["res_pop"]
-res_pop = np.load('res_pop_Aliza_Thomas.npy', allow_pickle=True)
+h_deriv_bounds = np.array([0.05, 0.15])
 
 time_init = time.time()
-res = Parallel(n_jobs=N_sign)(delayed(compute_all_means_louper)(res_pop[k], list_Y[k], lbda_bounds, n_call_bayopt=n_call_bayopt, sigma=lam) for k in range(N_sign))
+res = Parallel(n_jobs=N_sign)(delayed(compute_all_means)(list_Y[k], h_deriv_bounds, lbda_bounds, n_call_bayopt=n_call_bayopt, sigma=lam) for k in range(N_sign))
 time_end = time.time()
 duration = time_end - time_init
 
-out_SRC, out_V2, out_V3 = [], [], []
+out_pop, out_SRC, out_FC, out_V1, out_V2, out_V3 = [], [], [], [], [], []
 for k in range(N_sign):
-    out_SRC.append(res[k][0])
-    out_V2.append(res[k][1])
-    out_V3.append(res[k][2])
+    out_pop.append(res[k][0])
+    out_SRC.append(res[k][1])
+    out_FC.append(res[k][2])
+    out_V1.append(res[k][3])
+    out_V2.append(res[k][4])
+    out_V3.append(res[k][5])
 
 # SAVE
-filename = "means_Aliza_Thomas_correct_100"
-dic = {"duration":duration, "list_Y":list_Y, "res_SRC":out_SRC, "res_V2":out_V2, "res_V3":out_V3}
-
+filename = "means_Aliza_Thomas_bis"
+dic = {"duration":duration, "list_Y":list_Y, "res_pop":out_pop, "res_SRC":out_SRC, "res_FC":out_FC, "res_V1":out_V1, "res_V2":out_V2, "res_V3":out_V3}
 
 if os.path.isfile(filename):
     print("Le fichier ", filename, " existe déjà.")
@@ -111,5 +79,36 @@ if os.path.isfile(filename):
 fil = open(filename,"xb")
 pickle.dump(dic,fil)
 fil.close()
+
+
+# filename = "means_Aliza_Thomas"
+# fil = open(filename,"rb")
+# dic_init = pickle.load(fil)
+# fil.close()
+# res_pop = dic_init["res_pop"]
+# res_pop = np.load('res_pop_Aliza_Thomas.npy', allow_pickle=True)
+
+# time_init = time.time()
+# res = Parallel(n_jobs=N_sign)(delayed(compute_all_means_louper)(res_pop[k], list_Y[k], lbda_bounds, n_call_bayopt=n_call_bayopt, sigma=lam) for k in range(N_sign))
+# time_end = time.time()
+# duration = time_end - time_init
+
+# out_SRC, out_V2, out_V3 = [], [], []
+# for k in range(N_sign):
+#     out_SRC.append(res[k][0])
+#     out_V2.append(res[k][1])
+#     out_V3.append(res[k][2])
+
+# # SAVE
+# filename = "means_Aliza_Thomas_correct_100"
+# dic = {"duration":duration, "list_Y":list_Y, "res_SRC":out_SRC, "res_V2":out_V2, "res_V3":out_V3}
+
+
+# if os.path.isfile(filename):
+#     print("Le fichier ", filename, " existe déjà.")
+#     filename = filename + '_bis'
+# fil = open(filename,"xb")
+# pickle.dump(dic,fil)
+# fil.close()
 
 
