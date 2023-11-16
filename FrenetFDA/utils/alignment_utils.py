@@ -17,7 +17,7 @@ def optimum_reparam_curvature_1d(theta1, time, theta2, lam=0.0, grid_dim=7):
 
     gam = orNC.coptimum_reparamN2(np.ascontiguousarray(theta1), time, np.ascontiguousarray(theta2), lam, grid_dim)
     gam = np.squeeze(gam)
-
+    
     return gam
 
 
