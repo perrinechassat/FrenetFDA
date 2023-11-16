@@ -24,13 +24,13 @@ max_iter_EM = 200
 n_splits_CV = 5
 n_call_bayopt = 25
 # bounds_lambda = ((1e-09, 1e-05), (1e-09, 1e-05))
-bounds_lambda = ((-9, -5), (-9, -5))
+bounds_lambda = ((-9, -3), (-9, -3))
 sigma_init = 0.1
 
 print(" Influence init, simu 1")
 
-filename = filename_base + "simu_1"
+filename = filename_base + "simu_1_bis"
 
-filename_simu = "/home/pchassat/FrenetFDA/Simulations_TwoStepEstimation/results/scenario2/model_04/simu_1"
+filename_simu = "/home/pchassat/FrenetFDA/Simulations_TwoStepEstimation/results/scenario2/model_05/simu_1"
 
 EM_from_init_theta(filename, filename_simu, sigma_init, n_splits_CV, n_call_bayopt, bounds_lambda, tol_EM, max_iter_EM)
