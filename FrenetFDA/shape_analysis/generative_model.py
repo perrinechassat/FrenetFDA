@@ -8,16 +8,24 @@ from geomstats.geometry.special_orthogonal import SpecialOrthogonal
 from geomstats.geometry.special_euclidean import SpecialEuclidean
 from geomstats.learning.frechet_mean import FrechetMean
 from FrenetFDA.utils.Frenet_Serret_utils import solve_FrenetSerret_ODE_SO, solve_FrenetSerret_ODE_SE
-
+from scipy.interpolate import UnivariateSpline
 
 class GenerativeModel:
 
-    def __init__(self, mtheta, aligned_theta, tab_gamma, tab_arclength=None, tab_L=None, tab_Q0=None, tab_X0=None, tab_T=None, init="init"):
+    def __init__(self, mtheta, aligned_theta, tab_gamma, tab_arclength=None, tab_L=None, tab_Q0=None, tab_X0=None, tab_T=None, init="init", s_smooth=0.0):
         self.mtheta = mtheta
         self.N = len(aligned_theta)
         self.n = len(tab_gamma[0])
         self.Ntheta = aligned_theta
-        self.Ngamma = tab_gamma
+        self.s_smooth = s_smooth
+        if s_smooth == 0.0:
+            self.Ngamma = tab_gamma
+        else:
+            grid = np.linspace(0,1,self.n)
+            for i in range(self.N):
+                tmp_spline = UnivariateSpline(grid, tab_gamma[i], s=self.s_smooth)
+                tab_gamma[i] = tmp_spline(grid)
+            self.Ngamma = tab_gamma
         if tab_arclength is None:
             self.Narclength = np.array([np.linspace(0,1,self.n) for i in range(self.N)])
             self.onlyshape = True
@@ -96,10 +104,18 @@ class GenerativeModel:
         r_theta_warp = np.zeros((num,r_gamma[0].shape[0],2))
         r_theta_warp_func = np.empty((num), dtype=object)
         for k in range(num):
-            time0 = (time[-1] - time[0]) * r_gamma[k] + time[0]
-            grad = np.gradient(r_gamma[k], 1 / float(len(r_gamma[k]) - 1))
-            r_theta_warp[k,:,0] = np.interp(time0, time, r_theta[k,:,0]) * grad
-            r_theta_warp[k,:,1] = np.interp(time0, time, r_theta[k,:,1]) * grad
+            if self.s_smooth == 0.0:
+                time0 = (time[-1] - time[0]) * r_gamma[k] + time[0]
+                grad = np.gradient(r_gamma[k], 1 / float(len(r_gamma[k]) - 1))
+                r_theta_warp[k,:,0] = np.interp(time0, time, r_theta[k,:,0]) * grad
+                r_theta_warp[k,:,1] = np.interp(time0, time, r_theta[k,:,1]) * grad
+            else:
+                time_bis = np.linspace(0,1,len(r_gamma[k]))
+                tmp_spline = UnivariateSpline(time_bis, r_gamma[k], s=self.s_smooth)
+                gam = tmp_spline(time_bis)
+                gam_der = tmp_spline(time_bis, 1)
+                r_theta_warp[k,:,0] = np.interp(gam, time, r_theta[k,:,0]) * gam_der
+                r_theta_warp[k,:,1] = np.interp(gam, time, r_theta[k,:,1]) * gam_der
 
             # ajouter une étape de smoothing ici éventuellement
             # if smoothing:
