@@ -47,11 +47,14 @@ list_Y = compute_list_Y_from_group_single_signer(df, group, 'Aliza')
 N_sign = len(list_Y)
 
 n_call_bayopt = 30
-lbda_bounds = np.array([[-30,-10],[-30,-10]])
+lbda_bounds = np.array([[-30,-5],[-30,-5]])
 lam = 100
+h_deriv_bounds = np.array([0.05, 0.15])
+
+print('modif')
 
 time_init = time.time()
-res = Parallel(n_jobs=N_sign)(delayed(compute_all_means)(list_Y[k], lbda_bounds, n_call_bayopt=n_call_bayopt, sigma=lam) for k in range(N_sign))
+res = Parallel(n_jobs=N_sign)(delayed(compute_all_means)(list_Y[k], h_deriv_bounds, lbda_bounds, n_call_bayopt=n_call_bayopt, sigma=lam) for k in range(N_sign))
 time_end = time.time()
 duration = time_end - time_init
 
