@@ -55,8 +55,9 @@ max_iter_EM = 200
 nb_basis = 15
 n_splits_CV = 5
 grid_bandwidth = np.array([0.05, 0.1, 0.12, 0.15, 0.17, 0.2, 0.25])
-n_call_bayopt = 20
-bounds_lambda = ((1e-09, 1e-06), (1e-09, 1e-06))
+n_call_bayopt = 25
+# bounds_lambda = ((1e-09, 1e-06), (1e-09, 1e-06))
+bounds_lambda = np.array([[-9.0,-3.0],[-9.0,-3.0]])
 sigma_init = 0.05
 N = 100
 gamma = 0.001
@@ -65,8 +66,8 @@ arc_length = arc_length_fct(grid_time)
 Gamma = gamma**2*np.eye(3)
 mu_Z = solve_FrenetSerret_ODE_SE(theta, arc_length, mu0)
 
-directory = r"results/simulation_from_sde/model_02/"
-filename_base = "results/simulation_from_sde/model_02/"
+directory = r"results/simulation_from_sde/model_03/"
+filename_base = "results/simulation_from_sde/model_03/"
 
 current_directory = os.getcwd()
 final_directory = os.path.join(current_directory, directory)

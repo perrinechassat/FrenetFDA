@@ -63,9 +63,16 @@ class GenerativeModel:
         self.fpca_gam = res_fpca_gam
         c_gam = res_fpca_gam.coef
 
-        res_fpca_theta = vertical_pca(self.mtheta, self.Ntheta, time)
+        res_fpca_theta = vertical_pca(self.mtheta(time), self.Ntheta, time)
         self.fpca_theta = res_fpca_theta
         c_theta = res_fpca_theta.coef
+
+        # res_fpca_curv = vertical_pca(self.mtheta(time)[:,0], self.Ntheta[:,:,0], time)
+        # self.fpca_curv = res_fpca_curv
+        # res_fpca_tors = vertical_pca(self.mtheta(time)[:,1], self.Ntheta[:,:,1], time)
+        # self.fpca_tors = res_fpca_tors
+        # c_curv = res_fpca_curv.coef
+        # c_tors = res_fpca_tors.coef
 
         res_pca_Z0 = pca_init_position(self.NQ0, self.Nx0)
         self.pca_Z0 = res_pca_Z0
@@ -76,6 +83,7 @@ class GenerativeModel:
         c_LT = res_pca_LT.coef
 
         self.mat_coef = np.concatenate((c_s,c_gam,c_theta,c_Z0,c_LT), axis=1).T
+        # self.mat_coef = np.concatenate((c_s,c_gam,c_curv,c_tors,c_Z0,c_LT), axis=1).T
 
         self.cov = np.cov(self.mat_coef)
         
@@ -89,6 +97,7 @@ class GenerativeModel:
         self.random_coef = random_coef
 
         no = np.cumsum([0, self.fpca_s.no, self.fpca_gam.no, self.fpca_theta.no, self.pca_Z0.no, self.pca_LT.no])
+        # no = np.cumsum([0, self.fpca_s.no, self.fpca_gam.no, self.fpca_curv.no, self.fpca_tors.no, self.pca_Z0.no, self.pca_LT.no])
 
         r_s_scale = inv_horizontal_pca(random_coef[:,no[0]:no[1]], self.fpca_s.U, self.fpca_s.psi_mu)
         r_s_scale = r_s_scale.T
@@ -97,6 +106,13 @@ class GenerativeModel:
         r_theta = inv_vertical_pca(random_coef[:,no[2]:no[3]], self.fpca_theta.U, self.fpca_theta.mflatten_theta) # num x n x 2
         r_Z0 = inv_pca_init_position(self.pca_Z0.tpca, random_coef[:,no[3]:no[4]])
         r_LT = inv_pca(random_coef[:,no[4]:no[5]], self.pca_LT.U, self.pca_LT.mu)
+        # r_curv = inv_vertical_pca(random_coef[:,no[2]:no[3]], self.fpca_curv.U, self.fpca_curv.mflatten_theta) # num x n 
+        # r_tors = inv_vertical_pca(random_coef[:,no[3]:no[4]], self.fpca_tors.U, self.fpca_tors.mflatten_theta) # num x n 
+        # r_Z0 = inv_pca_init_position(self.pca_Z0.tpca, random_coef[:,no[4]:no[5]])
+        # r_LT = inv_pca(random_coef[:,no[5]:no[6]], self.pca_LT.U, self.pca_LT.mu)
+
+        # r_theta = np.stack((r_curv, r_tors), axis=-1)
+        # print(r_curv.shape, r_tors.shape, r_theta.shape)
 
         time = np.linspace(0,1,self.n)
         time_bis = np.linspace(0,1,r_gamma[0].shape[0])
@@ -109,13 +125,17 @@ class GenerativeModel:
                 grad = np.gradient(r_gamma[k], 1 / float(len(r_gamma[k]) - 1))
                 r_theta_warp[k,:,0] = np.interp(time0, time, r_theta[k,:,0]) * grad
                 r_theta_warp[k,:,1] = np.interp(time0, time, r_theta[k,:,1]) * grad
+                # r_theta_warp[k,:,0] = np.interp(time0, time, r_curv[k,:]) * grad
+                # r_theta_warp[k,:,1] = np.interp(time0, time, r_tors[k,:]) * grad
             else:
                 time_bis = np.linspace(0,1,len(r_gamma[k]))
                 tmp_spline = UnivariateSpline(time_bis, r_gamma[k], s=self.s_smooth)
                 gam = tmp_spline(time_bis)
                 gam_der = tmp_spline(time_bis, 1)
-                r_theta_warp[k,:,0] = np.interp(gam, time, r_theta[k,:,0]) * gam_der
+                r_theta_warp[k,:,0] = np.interp(gam, time, abs(r_theta[k,:,0])) * gam_der
                 r_theta_warp[k,:,1] = np.interp(gam, time, r_theta[k,:,1]) * gam_der
+                # r_theta_warp[k,:,0] = np.interp(gam, time, r_curv[k,:]) * gam_der
+                # r_theta_warp[k,:,1] = np.interp(gam, time, r_tors[k,:]) * gam_der
 
             # ajouter une étape de smoothing ici éventuellement
             # if smoothing:
@@ -196,10 +216,12 @@ def inv_pca(coef, U, mu):
 
 def vertical_pca(mtheta, Ntheta, grid, stds = np.arange(-1, 2)):
     N = len(Ntheta)
-    flat_mtheta = mtheta(grid).flatten(order='F')
+    # flat_mtheta = mtheta(grid).flatten(order='F')
+    # flat_mtheta = mtheta.flatten(order='F')
+    flat_mtheta = np.mean(Ntheta, axis=0).flatten(order='F')
     flat_theta_aligned = np.zeros((N, len(flat_mtheta)))
     for i in range(N):
-        flat_theta_aligned[i] = Ntheta[i].flatten(order='F')
+        flat_theta_aligned[i] = Ntheta[i].flatten(order='F') - flat_mtheta
     
     Nstd = stds.shape[0]
 
@@ -218,7 +240,8 @@ def vertical_pca(mtheta, Ntheta, grid, stds = np.arange(-1, 2)):
     c = np.zeros((N, no))
     for k in range(0, no):
         for l in range(0, N):
-            c[l, k] = sum(((flat_theta_aligned.T)[:, l] - flat_mtheta.T) * U[:, k])
+            # c[l, k] = sum(((flat_theta_aligned.T)[:, l] - flat_mtheta.T) * U[:, k])
+            c[l, k] = sum(((flat_theta_aligned.T)[:, l]) * U[:, k])
 
     res_fpca = collections.namedtuple('res_fPCA', ['theta_pca', 'U', 'coef', 'latent', 'no', 'stds', 'mflatten_theta'])
     out = res_fpca(theta_pca, U[:,0:no], c, s[0:no], no, stds, flat_mtheta)
@@ -232,6 +255,7 @@ def inv_vertical_pca(coef, U, mu):
     v = U @ coef.T
     flat_theta = mu + v.T
 
+    # theta = flat_theta
     theta = np.zeros((flat_theta.shape[0], int(flat_theta.shape[1]/2), 2))
     theta[:,:,0] = flat_theta[:,:int(flat_theta.shape[1]/2)]
     theta[:,:,1] = flat_theta[:,int(flat_theta.shape[1]/2):]
