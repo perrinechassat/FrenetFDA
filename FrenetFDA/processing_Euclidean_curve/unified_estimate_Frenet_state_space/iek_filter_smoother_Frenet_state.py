@@ -49,8 +49,8 @@ class IEKFilterSmootherFrenetState():
         self.Q = np.eye(self.n) if Z0 is None else Z0[:self.n,:self.n]
         self.X = np.zeros((self.n)) if Z0 is None else Z0[:self.n,self.n]
         self.Z = np.vstack((np.hstack((self.Q,self.X[:,np.newaxis])),np.hstack((np.zeros((self.n)), np.array((1)))))) if Z0 is None else Z0
-        # self.U = np.eye(self.dim_g)
-        # self.list_U = [self.U]
+        self.U = np.eye(self.dim_g)
+        self.list_U = [self.U]
         self.K_pts = K_pts
 
         self.F = lambda s: -SE3.Ad(np.array([theta(s)[1], 0*s, theta(s)[0], 1+0*s, 0*s, 0*s]))
@@ -104,19 +104,19 @@ class IEKFilterSmootherFrenetState():
         self.C = sol.y[:,0].reshape(self.dim_g, self.dim_g)
 
 
-    # def __propagation_U(self, t_span):
-    #     """
+    def __propagation_U(self, t_span):
+        """
         
-    #     """
-    #     x_eval = np.linspace(t_span[0],t_span[-1],self.K_pts)
-    #     u_eval = x_eval[1:] - x_eval[:-1]
-    #     v_eval = (x_eval[1:] + x_eval[:-1])/2
-    #     ode_func = lambda t,p: (np.matmul(self.F(t),p.reshape(self.dim_g, self.dim_g)) + np.matmul(p.reshape(self.dim_g, self.dim_g),self.F(t).T) + self.L @ self.Sigma(t) @ self.L.T).flatten()
-    #     sol = solve_ivp(ode_func, t_span=t_span, y0=self.P.flatten(), t_eval=v_eval) #, method='Radau')
-    #     self.list_P = sol.y[:,:].reshape(self.dim_g, self.dim_g, self.K_pts-1)
-    #     for i in range(self.K_pts-1):
-    #         self.U = expm(u_eval[i]*(self.F(v_eval[i]) + self.L @ self.Sigma(v_eval[i]) @ self.L.T @np.linalg.inv(self.list_P[:,:,i])))@self.U
-    #         self.list_U.append(self.U)
+        """
+        x_eval = np.linspace(t_span[0],t_span[-1],self.K_pts)
+        u_eval = x_eval[1:] - x_eval[:-1]
+        v_eval = (x_eval[1:] + x_eval[:-1])/2
+        ode_func = lambda t,p: (np.matmul(self.F(t),p.reshape(self.dim_g, self.dim_g)) + np.matmul(p.reshape(self.dim_g, self.dim_g),self.F(t).T) + self.L @ self.Sigma(t) @ self.L.T).flatten()
+        sol = solve_ivp(ode_func, t_span=t_span, y0=self.P.flatten(), t_eval=v_eval) #, method='Radau')
+        self.list_P = sol.y[:,:].reshape(self.dim_g, self.dim_g, self.K_pts-1)
+        for i in range(self.K_pts-1):
+            self.U = expm(u_eval[i]*(self.F(v_eval[i]) + self.L @ self.Sigma(v_eval[i]) @ self.L.T @np.linalg.inv(self.list_P[:,:,i])))@self.U
+            self.list_U.append(self.U)
 
 
     def __predict(self, ti, tf):
@@ -128,7 +128,7 @@ class IEKFilterSmootherFrenetState():
             self.__propagation_Z(t_span)
             # self.__propagation_xi(t_span)
             self.__propagation_C(t_span)
-            # self.__propagation_U(t_span)
+            self.__propagation_U(t_span)
             self.__propagation_P(t_span)
         else:
             raise NotImplementedError("Propagation step not implemented for n != 3.")
@@ -190,7 +190,7 @@ class IEKFilterSmootherFrenetState():
         self.track_X = np.array(track_X)
         # self.track_xi = np.array(track_xi)
         self.track_P = track_P
-        # self.list_U = np.array(self.list_U)
+        self.list_U = np.array(self.list_U)
 
         return
     
@@ -234,7 +234,9 @@ class IEKFilterSmootherFrenetState():
         # self.smooth_P_bis = np.array(list(reversed(smooth_P_bis)))
         # self.smooth_P_dble_bis = np.array(list(reversed(smooth_P_dble_bis)))
 
-        # P_full, P_full_mat = self.__compute_full_P_smooth()
+        self.P_full, self.P_full_mat = self.__compute_full_P_smooth()
+        print(self.P_full.shape, self.P_full_mat.shape)
+
         # smooth_P_dble = np.zeros((len(P_full)-1,self.dim_g,self.dim_g))
         # smooth_P = np.zeros((len(P_full),self.dim_g,self.dim_g))
         # for i in range(len(P_full)):
