@@ -1,6 +1,13 @@
 import numpy as np
+import os
+import sys
+stderr = sys.stderr
+sys.stderr = open(os.devnull, 'w')
 from geomstats.geometry.special_orthogonal import SpecialOrthogonal
-
+from geomstats.geometry.discrete_curves import DiscreteCurves, SRVMetric
+from geomstats.learning.frechet_mean import FrechetMean
+from geomstats.geometry.matrices import Matrices
+sys.stderr = stderr
 
 class SO3:
     """Rotation matrix in :math:`SO(3)`
@@ -264,14 +271,48 @@ class SO3:
     def geodesic_distance(self, Q1, Q2):
         """ pointwise distance 
         """
-        SO3 = SpecialOrthogonal(3)
-        gdist = SO3.metric.dist(Q1, Q2)
+        so3 = SpecialOrthogonal(3)
+        gdist = so3.metric.dist(Q1, Q2)
         return gdist
     
+
+    @classmethod
+    def srv_distance(self, Q1, Q2):
+        so3 = SpecialOrthogonal(3, point_type='vector')
+        Q1_vec = so3.rotation_vector_from_matrix(Q1)
+        Q2_vec = so3.rotation_vector_from_matrix(Q2)
+        N = Q1.shape[0]
+        dc = DiscreteCurves(so3, k_sampling_points=N, start_at_the_origin=False)
+        srv_Q1 = SRVMetric(dc).f_transform(Q1_vec)
+        srv_Q2 = SRVMetric(dc).f_transform(Q2_vec)
+        dist = np.sqrt(self.geodesic_distance(Q1[0],Q2[0])**2 + np.linalg.norm(srv_Q1-srv_Q2)**2)
+        return dist 
+
+
+    @classmethod
+    def frechet_mean(self, arr_R, weights=None):
+        """ pointwise distance 
+        """
+        try:
+            so3 = SpecialOrthogonal(3)
+            mean = FrechetMean(metric=so3.metric)
+            mean.fit(arr_R, weights=weights)
+            return mean.estimate_
+
+        except:
+            # print('mean with projections')
+            so3 = SpecialOrthogonal(3)
+            mean = FrechetMean(metric=so3.metric)
+            arr_R_bis = so3.projection(arr_R)
+            mean.fit(arr_R_bis, weights=weights)
+            return mean.estimate_
+
+
     @classmethod
     def random_point_uniform(self, n_samples, bound=1):
-        SO3 = SpecialOrthogonal(3)
-        return SO3.random_point(n_samples, bound=bound)
+        so3 = SpecialOrthogonal(3)
+        return so3.random_point(n_samples, bound=bound)
+
 
     @classmethod
     def random_point_fisher(self, n_samples, K, mean_directions=None):

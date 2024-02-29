@@ -1,7 +1,14 @@
 import numpy as np
 from FrenetFDA.utils.Lie_group.SO3_utils import SO3
+import os
+import sys
+stderr = sys.stderr
+sys.stderr = open(os.devnull, 'w')
 from geomstats.geometry.special_euclidean import SpecialEuclidean
-
+from geomstats.geometry.special_orthogonal import SpecialOrthogonal
+from geomstats.geometry.discrete_curves import DiscreteCurves, SRVMetric
+from geomstats.learning.frechet_mean import FrechetMean
+sys.stderr = stderr
 
 class SE3:
     """Homogeneous transformation matrix in :math:`SE(3)`.
@@ -189,6 +196,36 @@ class SE3:
 
     @classmethod
     def geodesic_distance(self, Z1, Z2):
-        SE3 = SpecialEuclidean(3)
-        gdist = SE3.metric.dist(Z1, Z2)
+        se3 = SpecialEuclidean(3)
+        gdist = se3.metric.dist(Z1, Z2)
         return gdist
+    
+
+    @classmethod
+    def srv_distance(self, Z1, Z2):
+        se3 = SpecialEuclidean(3, point_type='vector')
+        so3 = SpecialOrthogonal(3, point_type='vector')
+        rot_Z1_vec = so3.rotation_vector_from_matrix(Z1[:,:3,:3])
+        rot_Z2_vec = so3.rotation_vector_from_matrix(Z2[:,:3,:3])
+        Z1_vec = np.concatenate((rot_Z1_vec, Z1[:,:3,3]), axis=-1)
+        Z2_vec = np.concatenate((rot_Z2_vec, Z2[:,:3,3]), axis=-1)
+        N = Z1.shape[0]
+        dc = DiscreteCurves(se3, k_sampling_points=N, start_at_the_origin=False)
+        srv_Z1 = SRVMetric(dc).f_transform(Z1_vec)
+        srv_Z2 = SRVMetric(dc).f_transform(Z2_vec)
+        dist = np.sqrt(self.geodesic_distance(Z1[0],Z2[0])**2 + np.linalg.norm(srv_Z1-srv_Z2)**2)
+        return dist 
+    
+    @classmethod
+    def frechet_mean(self, arr_Z, weights=None):
+        """ pointwise distance 
+        """
+        se3 = SpecialEuclidean(3)
+        mean = FrechetMean(metric=se3.metric)
+        mean.fit(arr_Z, weights=weights)
+        return mean.estimate_
+    
+    @classmethod
+    def random_point_uniform(self, n_samples, bound=1):
+        se3 = SpecialEuclidean(3)
+        return se3.random_point(n_samples, bound=bound)

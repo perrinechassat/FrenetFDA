@@ -7,7 +7,6 @@ import plotly.io as pio
 from plotly.subplots import make_subplots
 
 layout = go.Layout(
-    # paper_bgcolor='rgba(0,0,0,0)',
     plot_bgcolor='rgba(0,0,0,0)'
 )
 
@@ -35,7 +34,7 @@ def plot_array_2D(x, array_y, name_ind, legend={"index":False}, mode='lines'):
     fig = go.Figure(layout=layout)
     N = len(array_y)
     for i in range(N):
-        fig.add_trace(go.Scatter(x=x, y=array_y[i], mode=mode, name=name_ind+str(i), line=dict(width=1, color=color_list[(i-9)%9])))
+        fig.add_trace(go.Scatter(x=x, y=array_y[i], mode=mode, name=name_ind+str(i), line=dict(width=1)))
     if legend['index']==True:
         fig.update_layout(
         title=legend["title"],
@@ -49,7 +48,7 @@ def plot_array_2D_names(x, array_y, names, legend={"index":False}, mode='lines')
     fig = go.Figure(layout=layout)
     N = len(array_y)
     for i in range(N):
-        fig.add_trace(go.Scatter(x=x, y=array_y[i], mode=mode, name=names[i], line=dict(width=1, color=color_list[(i-9)%9])))
+        fig.add_trace(go.Scatter(x=x, y=array_y[i], mode=mode, name=names[i], line=dict(width=1)))
     if legend['index']==True:
         fig.update_layout(
         title=legend["title"],
@@ -63,7 +62,7 @@ def plot_2array_2D(x, array_y, legend={"index":False}, mode='lines'):
     fig = go.Figure(layout=layout)
     N = len(array_y)
     for i in range(N):
-        fig.add_trace(go.Scatter(x=x[i], y=array_y[i], mode=mode, line=dict(width=1, color=color_list[(i-9)%9])))
+        fig.add_trace(go.Scatter(x=x[i], y=array_y[i], mode=mode, line=dict(width=1)))
     if legend['index']==True:
         fig.update_layout(
         title=legend["title"],
@@ -84,7 +83,7 @@ def plot_3D(features, names, save=False, filename='', mode='lines'):
                 z=feat[:,2],
                 name=names[i],
                 mode=mode,
-                line=dict(width=3,color=color_list[i])
+                line=dict(width=3)
             )
         )
     fig.update_layout(legend=dict(orientation="h",yanchor="top",y=1.2,xanchor="right", x=1),
@@ -112,6 +111,106 @@ def plot_3D(features, names, save=False, filename='', mode='lines'):
         pio.write_image(fig, filename, format='png')
     fig.show()
 
+
+
+def plot_results_curvature(grid, list_tab_curvature, mean_curvature, list_legend, yaxis_legend='', xaxis_legend=''):
+
+    nb_tab = len(list_tab_curvature)
+    nb_curves = len(list_tab_curvature[0])
+
+    fig = go.Figure(layout=layout)
+
+    for k in range(nb_tab):
+        fig.add_trace(go.Scatter(x=grid, y=list_tab_curvature[k][0], mode='lines', name=list_legend[k], opacity=0.8, line=dict(
+                width=2, dash='solid', color=color_list[k+1],),showlegend=True))
+
+    for i in range(1,nb_curves):
+        for k in range(nb_tab):
+            fig.add_trace(go.Scatter(x=grid, y=list_tab_curvature[k][i], mode='lines', opacity=0.6, line=dict(
+                    width=2,dash='solid',color=color_list[k+1],),showlegend=False))
+      
+    fig.add_trace(go.Scatter(x=grid, y=mean_curvature, mode='lines', name='true', line=dict(width=3, color='black'), showlegend=True))
+
+    fig.update_layout(legend=dict(orientation="h",yanchor="top",y=1.15,xanchor="right", x=1), xaxis_title=xaxis_legend, yaxis_title=yaxis_legend)
+    fig.update_xaxes(showline=True, showgrid=False, linewidth=1, linecolor='black')
+    fig.update_yaxes(showline=True, showgrid=False, linewidth=1, linecolor='black')
+    fig.update_layout(font=dict(size=20))
+    fig.update_layout(autosize=False,width=1050,height=750,)
+    fig.show()
+
+    return fig
+
+
+def plot_compare_results_curvature(grid, list_tab_curvature, mean_curvature, list_legend, yaxis_legend='', xaxis_legend='', k_color=0):
+    
+    nb_tab = len(list_tab_curvature)
+    nb_curves = len(list_tab_curvature[0])
+
+    fig = make_subplots(rows=1, cols=nb_tab, shared_xaxes=True, shared_yaxes=True, horizontal_spacing = 0.04)
+
+    for k in range(nb_tab):
+        fig.add_trace(go.Scatter(x=grid, y=list_tab_curvature[k][0], mode='lines', name=list_legend[k], opacity=0.8, line=dict(
+                width=2, dash='solid', color=color_list[k_color+k+1],),showlegend=True), row=1, col=k+1)
+
+        for i in range(1,len(list_tab_curvature[k])):
+            fig.add_trace(go.Scatter(x=grid, y=list_tab_curvature[k][i], mode='lines', opacity=0.7, line=dict(
+                    width=2,dash='solid',color=color_list[k_color+k+1],),showlegend=False), row=1, col=k+1)
+
+        if k==0:
+            fig.add_trace(go.Scatter(x=grid, y=mean_curvature, mode='lines', name='true', line=dict(width=3, color='black'), showlegend=True), row=1, col=k+1)
+        else:
+            fig.add_trace(go.Scatter(x=grid, y=mean_curvature, mode='lines', name='true', line=dict(width=3, color='black'), showlegend=False), row=1, col=k+1)
+
+        fig.update_xaxes(showline=True, showgrid=False, linewidth=1, linecolor='black', title_text='s', row=1, col=k+1)
+        fig.update_yaxes(showline=True, showgrid=False, linewidth=1, linecolor='black', row=1, col=k+1)
+
+       
+    fig.update_layout(legend=dict(orientation="h",yanchor="top",y=1.15,xanchor="right", x=1), xaxis_title=xaxis_legend, yaxis_title=yaxis_legend)
+    fig.update_layout(go.Layout(plot_bgcolor='rgba(0,0,0,0)'))
+    fig.update_layout(font=dict(size=25))
+    fig.update_layout(
+        autosize=False,
+        width=nb_tab*1000,
+        height=750,)
+    fig.show()
+
+    return fig
+
+
+def plot_compare_results_curvature_2(list_grid, list_tab_curvature, mean_grid, mean_curvature, list_legend, yaxis_legend='', xaxis_legend='', k_color=0):
+    
+    nb_tab = len(list_tab_curvature)
+    nb_curves = len(list_tab_curvature[0])
+
+    fig = make_subplots(rows=1, cols=nb_tab, shared_xaxes=True, shared_yaxes=True, horizontal_spacing = 0.04)
+
+    for k in range(nb_tab):
+        fig.add_trace(go.Scatter(x=list_grid[k], y=list_tab_curvature[k][0], mode='lines', name=list_legend[k], opacity=0.8, line=dict(
+                width=2, dash='solid', color=color_list[k_color+k+1],),showlegend=True), row=1, col=k+1)
+
+        for i in range(1,len(list_tab_curvature[k])):
+            fig.add_trace(go.Scatter(x=list_grid[k], y=list_tab_curvature[k][i], mode='lines', opacity=0.7, line=dict(
+                    width=2,dash='solid',color=color_list[k_color+k+1],),showlegend=False), row=1, col=k+1)
+
+        if k==0:
+            fig.add_trace(go.Scatter(x=mean_grid, y=mean_curvature, mode='lines', name='true', line=dict(width=3, color='black'), showlegend=True), row=1, col=k+1)
+        else:
+            fig.add_trace(go.Scatter(x=mean_grid, y=mean_curvature, mode='lines', name='true', line=dict(width=3, color='black'), showlegend=False), row=1, col=k+1)
+
+        fig.update_xaxes(showline=True, showgrid=False, linewidth=1, linecolor='black', title_text='s', row=1, col=k+1)
+        fig.update_yaxes(showline=True, showgrid=False, linewidth=1, linecolor='black', row=1, col=k+1)
+
+       
+    fig.update_layout(legend=dict(orientation="h",yanchor="top",y=1.15,xanchor="right", x=1), xaxis_title=xaxis_legend, yaxis_title=yaxis_legend)
+    fig.update_layout(go.Layout(plot_bgcolor='rgba(0,0,0,0)'))
+    fig.update_layout(font=dict(size=25))
+    fig.update_layout(
+        autosize=False,
+        width=nb_tab*1000,
+        height=750,)
+    fig.show()
+
+    return fig
 
 # def plot_geodesic(curves, curvatures, torsions, s):
 #     k = len(curves)
@@ -402,46 +501,46 @@ def plot_3D(features, names, save=False, filename='', mode='lines'):
 
 
 
-# def plot_curvatures_grey(s, kappa, tau, kappa_mean, tau_mean, names_mean, names1, path="", size=[100,100]):
-#     N = len(kappa)
-#     n = len(kappa_mean)
-#     fig = go.Figure(layout=layout)
-#     for i in range(N):
-#         fig.add_trace(go.Scatter(x=s, y=kappa[i], mode='lines', name=names1+str(i), opacity=0.8, line=dict(
-#                 width=1.5,dash='solid',color='grey',),showlegend=False))
-#     for i in range(n):
-#         fig.add_trace(go.Scatter(x=s, y=kappa_mean[i], mode='lines', name=names_mean[i], line=dict(width=3, color=dict_color[names_mean[i]]),showlegend=False))
-#         # fig.add_trace(go.Scatter(x=s, y=kappa_mean[i], mode='lines', name=names_mean[i], line=dict(width=3, color=dict_color[names_mean[i]])))
+def plot_curvatures_grey(s, kappa, tau, kappa_mean, tau_mean, names_mean, names1, path="", size=[100,100]):
+    N = len(kappa)
+    n = len(kappa_mean)
+    fig = go.Figure(layout=layout)
+    for i in range(N):
+        fig.add_trace(go.Scatter(x=s, y=kappa[i], mode='lines', name=names1+str(i), opacity=0.8, line=dict(
+                width=1.5,dash='solid',color='grey',),showlegend=False))
+    for i in range(n):
+        fig.add_trace(go.Scatter(x=s, y=kappa_mean[i], mode='lines', name=names_mean[i], line=dict(width=3), showlegend=False))
+        # fig.add_trace(go.Scatter(x=s, y=kappa_mean[i], mode='lines', name=names_mean[i], line=dict(width=3, color=dict_color[names_mean[i]])))
 
-#     # fig.update_layout(legend=dict(orientation="h",yanchor="top",y=1.15,xanchor="right", x=1), xaxis_title='s', yaxis_title='curvature')
-#     if path!="":
-#         fig.write_html(path+"kappa.html")
-#     fig.update_xaxes(showline=True, showgrid=False, linewidth=1, linecolor='black')
-#     fig.update_yaxes(showline=True, showgrid=False, linewidth=1, linecolor='black')
-#     fig.update_layout(
-#     autosize=False,
-#     width=size[0],
-#     height=size[1],)
-#     fig.show()
+    # fig.update_layout(legend=dict(orientation="h",yanchor="top",y=1.15,xanchor="right", x=1), xaxis_title='s', yaxis_title='curvature')
+    if path!="":
+        fig.write_html(path+"kappa.html")
+    fig.update_xaxes(showline=True, showgrid=False, linewidth=1, linecolor='black')
+    fig.update_yaxes(showline=True, showgrid=False, linewidth=1, linecolor='black')
+    fig.update_layout(
+    autosize=False,
+    width=size[0],
+    height=size[1],)
+    fig.show()
 
-#     fig = go.Figure(layout=layout)
-#     for i in range(N):
-#         fig.add_trace(go.Scatter(x=s, y=tau[i], mode='lines', name=names1+str(i), opacity=0.8, line=dict(
-#                 width=1.5,dash='solid',color='grey',),showlegend=False))
-#     for i in range(n):
-#         fig.add_trace(go.Scatter(x=s, y=tau_mean[i], mode='lines', name=names_mean[i], line=dict(width=3, color=dict_color[names_mean[i]]),showlegend=False))
-#         # fig.add_trace(go.Scatter(x=s, y=tau_mean[i], mode='lines', name=names_mean[i], line=dict(width=3, color=dict_color[names_mean[i]])))
+    fig = go.Figure(layout=layout)
+    for i in range(N):
+        fig.add_trace(go.Scatter(x=s, y=tau[i], mode='lines', name=names1+str(i), opacity=0.8, line=dict(
+                width=1.5,dash='solid',color='grey',),showlegend=False))
+    for i in range(n):
+        fig.add_trace(go.Scatter(x=s, y=tau_mean[i], mode='lines', name=names_mean[i], line=dict(width=3),showlegend=False))
+        # fig.add_trace(go.Scatter(x=s, y=tau_mean[i], mode='lines', name=names_mean[i], line=dict(width=3, color=dict_color[names_mean[i]])))
 
-#     # fig.update_layout(legend=dict(orientation="h",yanchor="top",y=1.15,xanchor="right", x=1), xaxis_title='s', yaxis_title='torsion')
-#     if path!="":
-#         fig.write_html(path+"tors.html")
-#     fig.update_xaxes(showline=True, showgrid=False, linewidth=1, linecolor='black')
-#     fig.update_yaxes(showline=True, showgrid=False, linewidth=1, linecolor='black')
-#     fig.update_layout(
-#     autosize=False,
-#     width=size[0],
-#     height=size[1],)
-#     fig.show()
+    # fig.update_layout(legend=dict(orientation="h",yanchor="top",y=1.15,xanchor="right", x=1), xaxis_title='s', yaxis_title='torsion')
+    if path!="":
+        fig.write_html(path+"tors.html")
+    fig.update_xaxes(showline=True, showgrid=False, linewidth=1, linecolor='black')
+    fig.update_yaxes(showline=True, showgrid=False, linewidth=1, linecolor='black')
+    fig.update_layout(
+    autosize=False,
+    width=size[0],
+    height=size[1],)
+    fig.show()
 
 
 # def plot_curvatures(s, kappa, tau, kappa_mean, tau_mean, names_mean, names1, path=""):
