@@ -1,0 +1,10 @@
+scikit-fda==0.6.1
+Cython
+numpy > 1.22.3
+scipy > 1.10.1
+geomstats==2.6.0
+scikit-optimize==0.8.1
+sklearn
+fdasrsf==2.3.6
+plotly==5.9.0
+
